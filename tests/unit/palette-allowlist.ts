@@ -1,0 +1,23 @@
+// Files allowed to use raw colours. Each entry needs a reason. Prefer tokens.
+export const ALLOWLIST: Record<string, string> = {
+  "components/reader/code-block.tsx": "code surface is a VS Code dark palette in both themes",
+  "components/composer/code-block-editor.tsx": "code surface is a VS Code dark palette in both themes",
+  "components/reader/mermaid-renderer.tsx": "mermaid themeVariables need literal colours; diagram is fixed dark",
+  "app/api/og/[handle]/[slug]/route.ts": "server-rendered OG image SVG has no CSS variables",
+  "app/api/newsletter/confirm/route.ts": "standalone HTML page, no app stylesheet",
+  "app/api/newsletter/unsubscribe/route.ts": "standalone HTML page, no app stylesheet",
+  "components/code-preview.tsx": "iframe preview of user code needs a white page background",
+  "app/studio/settings/page.tsx": "QR code must be dark-on-white to scan",
+  "components/reader/media-lightbox.tsx": "lightbox scrim/controls are over-photo overlays, theme independent",
+  "components/reader/image-block.tsx": "over-photo zoom badge, theme independent",
+  "components/reader/mermaid-block.tsx": "over-diagram zoom badge, theme independent",
+  "components/ui/alert-dialog.tsx": "modal scrim black/80 is theme independent",
+  "components/ui/dialog.tsx": "modal scrim black/80 is theme independent",
+  "components/ui/drawer.tsx": "modal scrim black/80 is theme independent",
+  "lib/flair.ts": "user-purchasable named colours (Sage, Ember, Rose...) are the product, not theme",
+  "lib/email.ts": "email HTML has no CSS variables",
+  "lib/email-layout.ts": "email HTML has no CSS variables; hex mirror of the light theme tokens",
+  "actions/social/subscriptions.ts": "email HTML has no CSS variables",
+  "components/ui/chart.tsx": "shadcn recharts attribute selectors match library default #ccc/#fff",
+  "components/ui/sheet.tsx": "modal scrim black/80 is theme independent",
+}

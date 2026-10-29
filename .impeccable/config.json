@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "components/composer/block-card.tsx"
+        ],
+        "createdAt": "2026-10-09T23:19:54.649Z",
+        "reason": "user confirmed: leave existing composer side-tab accent styling"
+      }
+    ]
+  }
+}

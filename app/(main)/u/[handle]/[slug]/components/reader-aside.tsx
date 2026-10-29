@@ -1,0 +1,271 @@
+import Link from "next/link"
+import { List, Link2, ArrowUpRight, ThumbsUp, ThumbsDown } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { TipJar } from "@/components/tip-jar"
+import { ClapButton } from "@/components/clap-button"
+import { FollowButton } from "@/components/follow-button"
+import {
+  PieceData,
+  AuthorData,
+  BranchData,
+  RelatedPiece,
+} from "@/lib/types/content"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { submitRecommendationFeedback } from "@/actions/recommendations"
+import { useState } from "react"
+import { toast } from "sonner"
+
+interface ReaderAsideProps {
+  piece: PieceData
+  author: AuthorData | null
+  headings: Array<{ id: string; text: string }>
+  branches: BranchData[]
+  related: RelatedPiece[]
+  authed: boolean
+  isAuthor?: boolean
+  tipRef: React.RefObject<HTMLDivElement | null>
+  onSignInRequired: () => void
+  isMobileSheet?: boolean
+  variant?: "desktop" | "mobile-sheet" | "mobile-footer"
+}
+
+export function ReaderAside({
+  piece,
+  author,
+  headings,
+  branches,
+  related,
+  authed,
+  isAuthor,
+  tipRef,
+  onSignInRequired,
+  isMobileSheet,
+  variant = "desktop",
+}: ReaderAsideProps) {
+  const effectiveVariant = isMobileSheet ? "mobile-sheet" : variant
+  const showOutline =
+    effectiveVariant === "desktop" || effectiveVariant === "mobile-sheet"
+  const showBranches =
+    effectiveVariant === "desktop" || effectiveVariant === "mobile-sheet"
+  const showAuthor =
+    effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
+  const showTipJar =
+    effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
+  const showRelated =
+    effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
+  const showTipText =
+    effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
+  const showClap = effectiveVariant === "desktop"
+
+  const [feedbackState, setFeedbackState] = useState<Record<string, boolean>>({})
+  const [feedbackLoading, setFeedbackLoading] = useState<Record<string, boolean>>({})
+
+  const handleFeedback = async (pieceId: string, isLike: boolean) => {
+    if (!authed) {
+      onSignInRequired()
+      return
+    }
+    setFeedbackLoading((prev) => ({ ...prev, [pieceId]: true }))
+    try {
+      const res = await submitRecommendationFeedback(pieceId, isLike)
+      if (res.success) {
+        setFeedbackState((prev) => ({ ...prev, [pieceId]: isLike }))
+        toast.success(isLike ? "Show more like this" : "Show less like this")
+      } else {
+        toast.error(res.error || "Failed to submit feedback")
+      }
+    } catch {
+      toast.error("An error occurred")
+    } finally {
+      setFeedbackLoading((prev) => ({ ...prev, [pieceId]: false }))
+    }
+  }
+
+  return (
+    <aside className="space-y-6">
+      {/* Outline */}
+      {showOutline && headings.length > 0 && (
+        <div className="surface top-24 rounded-md p-5">
+          <p className="mb-3 flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
+            <List className="size-3" /> On this page
+          </p>
+          <nav aria-label="In-page outline" className="space-y-1.5">
+            {headings.map((h) => (
+              <Link
+                key={h.id}
+                href={`#${h.id}`}
+                className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {h.text}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      )}
+
+      {showAuthor && author && (
+        <div className="surface rounded-md p-5">
+          <p className="text-xs tracking-wider text-muted-foreground uppercase">
+            Author
+          </p>
+          <div className="mt-2 flex items-center gap-2">
+            <Avatar className="h-10 w-10">
+              <AvatarImage src={author.avatar_url as string} />
+              <AvatarFallback>{author.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <p className="font-display text-lg leading-tight text-foreground">
+                <Link
+                  href={`/u/${author.handle}`}
+                  className="group flex items-center text-foreground hover:text-primary"
+                >
+                  {author.display_name}
+                  <ArrowUpRight className="ml-1 hidden size-3 group-hover:block group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+              </p>
+              <span className="text-xs text-muted-foreground">@{author.handle}</span>
+            </div>
+          </div>
+          {author.bio && (
+            <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
+              {author.bio}
+            </p>
+          )}
+          <div className="mt-4 flex flex-col gap-2">
+            {!isAuthor && (
+              <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" className="w-full" />
+            )}
+            <Button asChild size="sm" variant="outline" className="w-full">
+              <Link href={`/u/${author.handle}`}>See all pieces →</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {showTipJar && author && (
+        <div ref={tipRef}>
+          <TipJar
+            authorId={piece.author_id}
+            authorName={author.display_name}
+            contentObjectId={piece.id}
+          />
+        </div>
+      )}
+
+      {showClap && (
+        <div className="block">
+          <ClapButton
+            pieceId={piece.id}
+            authed={authed}
+            disabled={isAuthor}
+            onSignInRequired={onSignInRequired}
+          />
+        </div>
+      )}
+
+      {showBranches && (
+        <div id="branches" className="surface scroll-mt-24 rounded-md p-5">
+          <p className="mb-3 text-xs tracking-wider text-muted-foreground uppercase">
+            Branches
+          </p>
+          {branches.length === 0 && (
+            <p className="text-sm text-muted-foreground">No branches yet.</p>
+          )}
+          <ul className="space-y-3">
+            {branches.map((b) => {
+              const gated = b.visibility !== "public" && !authed
+              return (
+                <li key={b.id}>
+                  <p className="text-xs tracking-wider text-primary uppercase">
+                    {b.branch_type}
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {b.purpose ?? b.summary ?? "Untitled branch"}
+                  </p>
+                  {gated && (
+                    <Link
+                      href="/login"
+                      className="mt-1 inline-block text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Sign in to read →
+                    </Link>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+
+      {showRelated && related.length > 0 && (
+        <div className="surface rounded-md p-5">
+          <p className="mb-3 inline-flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
+            <Link2 className="size-3" /> Related
+          </p>
+          <ul className="space-y-3">
+            {related.map((r) => (
+              <li key={r.id}>
+                <p className="text-[10px] tracking-wider text-primary uppercase">
+                  {r.type}
+                </p>
+                <Link
+                  href={`/u/${r.handle}/${r.slug}`}
+                  className="mt-0.5 block text-sm text-foreground hover:text-primary"
+                >
+                  {r.title}
+                </Link>
+                {r.summary && (
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                    {r.summary}
+                  </p>
+                )}
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  {(r.claps ?? 0) > 0 && (
+                    <span className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground" title={`${r.claps} claps`}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-hand">
+                        <path d="M18 11V6a2 2 0 0 0-4 0v4" />
+                        <path d="M14 10V4a2 2 0 0 0-4 0v6" />
+                        <path d="M10 10.5V3a2 2 0 0 0-4 0v9" />
+                        <path d="m7 15-1.76-1.76a2 2 0 0 0-2.83 2.82l3.6 3.6C7.5 21.14 9.2 22 12 22h2a8 8 0 0 0 8-8V7a2 2 0 1 0-4 0v5" />
+                      </svg>
+                      {r.claps}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleFeedback(r.id, true)}
+                      disabled={feedbackLoading[r.id]}
+                      className={`inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/60 ${feedbackState[r.id] === true ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      title="Show more like this"
+                    >
+                      <ThumbsUp className="size-3" />
+                    </button>
+                    <button
+                      onClick={() => handleFeedback(r.id, false)}
+                      disabled={feedbackLoading[r.id]}
+                      className={`inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/60 ${feedbackState[r.id] === false ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      title="Show less like this"
+                    >
+                      <ThumbsDown className="size-3" />
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {showTipText && (
+        <p className="px-1 text-[11px] text-muted-foreground">
+          Tip: press{" "}
+          <kbd className="rounded bg-muted px-1 py-0.5 text-[10px]">1</kbd>–
+          <kbd className="rounded bg-muted px-1 py-0.5 text-[10px]">5</kbd> to
+          switch reading modes.
+        </p>
+      )}
+    </aside>
+  )
+}

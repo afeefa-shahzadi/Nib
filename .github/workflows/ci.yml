@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder
+  SUPABASE_SECRET_KEY: placeholder
+  NEXT_PUBLIC_APP_URL: http://localhost:3000
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Unit tests (money paths)
+        run: pnpm test:coverage
+
+      - name: Build
+        run: pnpm build
+
+  e2e:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Applies every migration (doubles as the drift check). Mailpit stays: signup e2e reads the confirm link.
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector
+
+      # $GITHUB_ENV overrides the placeholder workflow env; real process env
+      # also beats any .env* file in Next, so the build/start use local Supabase.
+      - name: Export local Supabase env
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=${API_URL}"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}"
+            echo "SUPABASE_SECRET_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+            echo "SUPABASE_SERVICE_ROLE_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}"
+            echo "BYOK_ENCRYPTION_KEY=$(openssl rand -hex 32)"
+          } >> "$GITHUB_ENV"
+
+      - name: Seed
+        run: |
+          pnpm seed
+          npx tsx scripts/seed_test_users.ts
+          node scripts/seed-users.mjs
+          pnpm seed:blog
+
+      - run: npx playwright install --with-deps chromium
+
+      - run: pnpm build
+
+      - name: E2E (chromium + mobile, local Supabase)
+        run: npx playwright test --project=chromium --project=mobile --workers=1
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

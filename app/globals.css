@@ -1,0 +1,427 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Nib design tokens.
+ * Editorial software meets intelligent infrastructure.
+ * Warm charcoal (dark, default) + warm paper beige (light).
+ * Teal accent only. Refined serif display + modern sans body.
+ */
+
+@theme inline {
+  --font-display: var(--nf-display), "Fraunces", ui-serif, Georgia, serif;
+  --font-reading: var(--nf-reading), "Source Serif 4", ui-serif, Georgia, serif;
+  --font-sans: var(--nf-sans), "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--nf-mono), "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-rule: var(--rule);
+  --color-ink-soft: var(--ink-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-note: var(--note);
+  --color-note-foreground: var(--note-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warn: var(--warn);
+  --color-warn-foreground: var(--warn-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --max-width-350: 87.5rem;
+}
+
+/*
+ * LIGHT theme (warm paper) is the :root base; .dark above overrides it.
+ * ACCENT tokens (primary, ring, sidebar-primary/ring, chart-1) are grouped at the end of each block
+ * so a [data-accent] layer can override them in one place.
+ */
+:root {
+  --radius: 0.5rem;
+
+  --background: oklch(0.97 0.012 80);
+  --foreground: oklch(0.22 0.012 60);
+  --surface: oklch(0.945 0.014 80);
+  --surface-elevated: oklch(0.925 0.016 80);
+  --ink-soft: oklch(0.38 0.012 60);
+
+  --card: oklch(0.96 0.013 80);
+  --card-foreground: oklch(0.22 0.012 60);
+  --popover: oklch(0.97 0.012 80);
+  --popover-foreground: oklch(0.22 0.012 60);
+
+  --primary-foreground: oklch(0.98 0.005 80);
+
+  --secondary: oklch(0.92 0.014 80);
+  --secondary-foreground: oklch(0.22 0.012 60);
+
+  --muted: oklch(0.93 0.013 80);
+  --muted-foreground: oklch(0.46 0.012 60);
+
+  --accent: oklch(0.92 0.02 190);
+  --accent-foreground: oklch(0.22 0.012 60);
+
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(0.98 0.005 80);
+
+  --border: oklch(0.86 0.012 80);
+  --rule: oklch(0.86 0.012 80);
+  --input: oklch(0.88 0.012 80);
+
+  --chart-2: oklch(0.50 0.09 240);
+  --chart-3: oklch(0.48 0.11 300);
+  --chart-4: oklch(0.58 0.11 80);
+  --chart-5: oklch(0.55 0.15 30);
+
+  --sidebar: oklch(0.95 0.013 80);
+  --sidebar-foreground: oklch(0.22 0.012 60);
+  --sidebar-primary-foreground: oklch(0.98 0.005 80);
+  --sidebar-accent: oklch(0.92 0.014 80);
+  --sidebar-accent-foreground: oklch(0.22 0.012 60);
+  --sidebar-border: oklch(0.86 0.012 80);
+
+  --note: oklch(0.48 0.08 95);
+  --note-foreground: oklch(0.98 0.005 80);
+  --warn: oklch(0.48 0.12 45);
+  --success: oklch(0.47 0.08 155);
+  --success-foreground: oklch(0.98 0.005 80);
+  --warn-foreground: oklch(0.98 0.005 80);
+  --info: oklch(0.50 0.08 240);
+  --info-foreground: oklch(0.98 0.005 80);
+
+  /* ACCENT */
+  --primary: oklch(0.45 0.12 262);
+  --ring: oklch(0.45 0.12 262);
+  --chart-1: oklch(0.45 0.12 262);
+  --sidebar-primary: oklch(0.45 0.12 262);
+  --sidebar-ring: oklch(0.45 0.12 262);
+}
+
+/* Dark theme (warm charcoal): next-themes sets .dark on <html>. */
+.dark {
+  --background: oklch(0.18 0.012 60);
+  --foreground: oklch(0.96 0.005 80);
+  --surface: oklch(0.215 0.013 60);
+  --surface-elevated: oklch(0.245 0.013 60);
+  --ink-soft: oklch(0.78 0.008 70);
+
+  --card: oklch(0.215 0.013 60);
+  --card-foreground: oklch(0.96 0.005 80);
+  --popover: oklch(0.22 0.013 60);
+  --popover-foreground: oklch(0.96 0.005 80);
+
+  --primary-foreground: oklch(0.16 0.012 60);
+
+  --secondary: oklch(0.27 0.013 60);
+  --secondary-foreground: oklch(0.96 0.005 80);
+
+  --muted: oklch(0.245 0.013 60);
+  --muted-foreground: oklch(0.68 0.012 70);
+
+  --accent: oklch(0.27 0.02 190);
+  --accent-foreground: oklch(0.96 0.005 80);
+
+  --destructive: oklch(0.64 0.18 25);
+  --destructive-foreground: oklch(0.16 0.01 60);
+
+  --border: oklch(0.30 0.012 60);
+  --rule: oklch(0.30 0.012 60);
+  --input: oklch(0.28 0.012 60);
+
+  --chart-2: oklch(0.70 0.08 240);
+  --chart-3: oklch(0.62 0.10 300);
+  --chart-4: oklch(0.78 0.10 80);
+  --chart-5: oklch(0.66 0.14 30);
+
+  --sidebar: oklch(0.20 0.013 60);
+  --sidebar-foreground: oklch(0.92 0.006 80);
+  --sidebar-primary-foreground: oklch(0.16 0.012 60);
+  --sidebar-accent: oklch(0.255 0.013 60);
+  --sidebar-accent-foreground: oklch(0.96 0.005 80);
+  --sidebar-border: oklch(0.28 0.012 60);
+
+  --note: oklch(0.80 0.08 95);
+  --note-foreground: oklch(0.16 0.012 60);
+  --warn: oklch(0.74 0.12 45);
+  --success: oklch(0.76 0.08 155);
+  --success-foreground: oklch(0.16 0.012 60);
+  --warn-foreground: oklch(0.16 0.012 60);
+  --info: oklch(0.75 0.07 240);
+  --info-foreground: oklch(0.16 0.012 60);
+
+  /* ACCENT */
+  --primary: oklch(0.76 0.10 255);
+  --ring: oklch(0.76 0.10 255);
+  --chart-1: oklch(0.76 0.10 255);
+  --sidebar-primary: oklch(0.76 0.10 255);
+  --sidebar-ring: oklch(0.76 0.10 255);
+}
+
+/* Accent themes (user-picked in Settings > Appearance). Ink is the :root/.dark default above;
+   these override ONLY the accent group. Set on <html> before paint by app/layout.tsx. */
+[data-accent="ink"] {
+  --primary: oklch(0.45 0.12 262);
+  --ring: oklch(0.45 0.12 262);
+  --chart-1: oklch(0.45 0.12 262);
+  --sidebar-primary: oklch(0.45 0.12 262);
+  --sidebar-ring: oklch(0.45 0.12 262);
+}
+.dark [data-accent="ink"],
+.dark[data-accent="ink"] {
+  --primary: oklch(0.76 0.10 255);
+  --ring: oklch(0.76 0.10 255);
+  --chart-1: oklch(0.76 0.10 255);
+  --sidebar-primary: oklch(0.76 0.10 255);
+  --sidebar-ring: oklch(0.76 0.10 255);
+}
+[data-accent="oxblood"] {
+  --primary: oklch(0.46 0.13 22);
+  --ring: oklch(0.46 0.13 22);
+  --chart-1: oklch(0.46 0.13 22);
+  --sidebar-primary: oklch(0.46 0.13 22);
+  --sidebar-ring: oklch(0.46 0.13 22);
+}
+.dark [data-accent="oxblood"],
+.dark[data-accent="oxblood"] {
+  --primary: oklch(0.74 0.10 22);
+  --ring: oklch(0.74 0.10 22);
+  --chart-1: oklch(0.74 0.10 22);
+  --sidebar-primary: oklch(0.74 0.10 22);
+  --sidebar-ring: oklch(0.74 0.10 22);
+}
+[data-accent="teal"] {
+  --primary: oklch(0.52 0.10 190);
+  --ring: oklch(0.52 0.10 190);
+  --chart-1: oklch(0.52 0.10 190);
+  --sidebar-primary: oklch(0.52 0.10 190);
+  --sidebar-ring: oklch(0.52 0.10 190);
+}
+.dark [data-accent="teal"],
+.dark[data-accent="teal"] {
+  --primary: oklch(0.74 0.11 190);
+  --ring: oklch(0.74 0.11 190);
+  --chart-1: oklch(0.74 0.11 190);
+  --sidebar-primary: oklch(0.74 0.11 190);
+  --sidebar-ring: oklch(0.74 0.11 190);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "ss02";
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 35%, transparent);
+    color: var(--foreground);
+  }
+
+  /* Tiptap Placeholder */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    color: var(--color-muted-foreground);
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+
+  /* Global Scrollbar Styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+  }
+  * {
+    scrollbar-color: var(--color-border) var(--color-background);
+    scrollbar-width: thin;
+  }
+}
+
+/* Rich text: Tailwind preflight strips list markers and link styling; restore them (no typography plugin). */
+@layer components {
+  .prose ul { list-style-type: disc; padding-left: 1.5em; }
+  .prose ol { list-style-type: decimal; padding-left: 1.5em; }
+  .prose a { text-decoration-line: underline; text-underline-offset: 3px; }
+}
+
+@layer utilities {
+  .surface {
+    background-color: var(--color-surface);
+  }
+  .surface-elevated {
+    background-color: var(--color-surface-elevated);
+  }
+  .hairline {
+    border: 1px solid var(--color-rule);
+  }
+  .hairline-l {
+    border-left: 1px solid var(--color-rule);
+  }
+  .hairline-r {
+    border-right: 1px solid var(--color-rule);
+  }
+  .hairline-b {
+    border-bottom: 1px solid var(--color-rule);
+  }
+  .hairline-t {
+    border-top: 1px solid var(--color-rule);
+  }
+  .container-prose {
+    width: 100%;
+    max-width: 42rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+  .container-wide {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+  }
+}
+/* Driver.js Theme Overrides */
+.theme-driver-popover {
+  --driver-popover-bg: var(--color-background);
+  --driver-popover-text: var(--color-foreground);
+  --driver-popover-border-color: var(--color-border);
+  background: var(--color-background) !important;
+  color: var(--color-foreground) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1) !important;
+}
+.theme-driver-popover .driver-popover-title {
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+}
+.theme-driver-popover .driver-popover-description {
+  color: var(--color-muted-foreground) !important;
+}
+.theme-driver-popover .driver-popover-footer button {
+  font-family: var(--font-sans) !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 500 !important;
+  text-shadow: none !important;
+}
+.theme-driver-popover .driver-popover-next-btn {
+  background: var(--color-primary) !important;
+  color: var(--color-primary-foreground) !important;
+  border-color: var(--color-primary) !important;
+}
+.theme-driver-popover .driver-popover-prev-btn, .theme-driver-popover .driver-popover-close-btn {
+  color: var(--color-muted-foreground) !important;
+  background: transparent !important;
+  border-color: var(--color-border) !important;
+}
+.theme-driver-popover .driver-popover-progress-text {
+  color: var(--color-muted-foreground) !important;
+}
+
+
+.collaboration-cursor__caret {
+  border-left: 1px solid #0d0d0d;
+  border-right: 1px solid #0d0d0d;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-cursor__label {
+  border-radius: 3px 3px 3px 0;
+  color: #0d0d0d;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  left: -1px;
+  line-height: normal;
+  padding: 0.1rem 0.3rem;
+  position: absolute;
+  top: -1.4em;
+  user-select: none;
+  white-space: nowrap;
+}
+
