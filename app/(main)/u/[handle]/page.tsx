@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { getAuthorByHandle } from "@/actions/content"
-import { getProfileRecommendations } from "@/actions/network"
-import { listCollectionsByCurator } from "@/actions/monetization/collections"
+import { cachedAuthorByHandle, cachedProfileRecommendations, cachedCollectionsByCurator } from "@/lib/public-cache"
 import AuthorClient from "./author-client"
 import { notFound } from "next/navigation"
 import { Piece, TierItem } from "@/lib/types/content"
@@ -13,12 +11,12 @@ export default async function AuthorPage({
 }) {
   const { handle } = await params
 
-  const data = await getAuthorByHandle({ data: { handle } })
+  const data = await cachedAuthorByHandle(handle)
   if (!data) return notFound()
 
   const [recommendations, collections] = await Promise.all([
-    getProfileRecommendations(handle),
-    listCollectionsByCurator(data.author.id).catch(() => []),
+    cachedProfileRecommendations(handle),
+    cachedCollectionsByCurator(data.author.id).catch(() => []),
   ])
 
   return (

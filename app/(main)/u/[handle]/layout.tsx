@@ -1,6 +1,6 @@
 import { SITE_URL } from "@/lib/brand"
 import { Metadata } from "next"
-import { getAuthorByHandle } from "@/actions/content"
+import { cachedAuthorByHandle } from "@/lib/public-cache"
 import { jsonLdHtml } from "@/lib/json-ld"
 
 type Props = {
@@ -10,7 +10,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle } = await params
   try {
-    const data = await getAuthorByHandle({ data: { handle } })
+    const data = await cachedAuthorByHandle(handle)
     if (!data) return { title: "Author — Nib" }
     return {
       title: `${data.author.display_name} (@${data.author.handle}) — Nib`,
@@ -47,7 +47,7 @@ export default async function Layout({
   const { handle } = await params
   let jsonLd = null
   try {
-    const data = await getAuthorByHandle({ data: { handle } })
+    const data = await cachedAuthorByHandle(handle)
     if (data) {
       jsonLd = {
         "@context": "https://schema.org",

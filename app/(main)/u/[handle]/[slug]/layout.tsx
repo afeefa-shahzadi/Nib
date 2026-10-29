@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { getPieceBySlug } from "@/actions/content"
+import { pieceBySlug } from "@/lib/public-cache"
 import { jsonLdHtml } from "@/lib/json-ld"
 
 type Props = {
@@ -9,7 +9,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { handle, slug } = await params
   try {
-    const data = await getPieceBySlug({ data: { slug } })
+    const data = await pieceBySlug(slug)
     // null (not found) or the owner-restricted variant → no public metadata.
     if (!data || "restricted" in data)
       return { title: "Nib", robots: { index: false } }
@@ -54,7 +54,7 @@ export default async function Layout({
   const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   let jsonLd = null
   try {
-    const data = await getPieceBySlug({ data: { slug } })
+    const data = await pieceBySlug(slug)
     if (data && !("restricted" in data) && !data.piece.is_nsfw) {
       const pieceUrl = `${base}/u/${handle}/${slug}`
       // @graph so answer engines get the article, its author, and breadcrumbs in

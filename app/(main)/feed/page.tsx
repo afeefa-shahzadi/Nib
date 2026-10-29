@@ -1,6 +1,7 @@
 import { Rss } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import { getFollowingFeed, getDiscoverFeed } from "@/actions/social"
+import { getFollowingFeed } from "@/actions/social"
+import { cachedDiscoverFeed } from "@/lib/public-cache"
 import { FeedClient } from "./feed-client"
 import { ComponentProps } from "react"
 
@@ -15,7 +16,7 @@ export default async function FeedPage() {
   // Fetch initial data in parallel
   const [followingRes, discoverRes] = await Promise.all([
     signedIn ? getFollowingFeed() : Promise.resolve(null),
-    getDiscoverFeed(),
+    cachedDiscoverFeed(),
   ])
 
   return (

@@ -2,10 +2,9 @@
 import { SITE_URL } from "@/lib/brand"
 import { Suspense } from "react"
 import { notFound } from "next/navigation"
-import { getPieceBySlug } from "@/actions/content"
 import { listRoomsForPiece } from "@/actions/debate"
-import { getRelatedPieces, isSaved } from "@/actions/content"
-import { listActiveBoosts } from "@/actions/monetization/payments"
+import { isSaved } from "@/actions/content"
+import { cachedRelatedPieces, cachedActiveBoosts, pieceBySlug } from "@/lib/public-cache"
 import { getMyAccess } from "@/actions/payments"
 import { tryGetViewerId } from "@/actions/content/helpers"
 import { getMyProfile } from "@/actions/content"
@@ -23,7 +22,7 @@ export default async function ReaderPage({
   params: Promise<{ slug: string; handle: string }>
 }) {
   const { slug } = await params
-  const res = await getPieceBySlug({ data: { slug } })
+  const res = await pieceBySlug(slug)
 
   // Disabled by a copyright claim — show a transparency surface (to everyone)
   // and a counter-notice link (to the author) instead of a 404.
@@ -102,9 +101,9 @@ export default async function ReaderPage({
     listRoomsForPiece({ data: { content_object_id: res.piece.id } }).catch(
       () => []
     ),
-    getRelatedPieces({ data: { piece_id: res.piece.id } }).catch(() => []),
+    cachedRelatedPieces(res.piece.id).catch(() => []),
     shouldFetchBoosts
-      ? listActiveBoosts().catch(() => [])
+      ? cachedActiveBoosts().catch(() => [])
       : Promise.resolve([]),
     viewerId
       ? getMyAccess().catch(() => ({ purchases: [], subscriptions: [] }))
