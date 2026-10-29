@@ -8,11 +8,13 @@ import {
   Workflow,
   Eye,
   Sparkles,
+  Users,
 } from "lucide-react"
 
 export const PILLARS = [
   {
     icon: Layers,
+    id: "blocks",
     label: "Block model",
     title: "Every paragraph is a typed unit.",
     body: "Twelve block primitives — paragraph, heading, citation, quote, code, callout, question, image, chart, exercise, audio, embed. Each declares its semantic role, mode visibility, monetization eligibility, and AI variants.",
@@ -25,6 +27,7 @@ export const PILLARS = [
   },
   {
     icon: Eye,
+    id: "modes",
     label: "Reading modes",
     title: "Five views of the same source.",
     body: "Skim, Standard, Expert, Teach, Debate. The reader switches modes via a sticky toggle and the piece literally re-composes from the underlying blocks.",
@@ -38,6 +41,7 @@ export const PILLARS = [
   },
   {
     icon: GitBranch,
+    id: "branches",
     label: "Branches",
     title: "Counter-arguments without dilution.",
     body: "Branches are first-class siblings of a canonical piece. Audio versions, translations, expansions, rebuttals — each lives next to the original, discoverable but distinct.",
@@ -50,6 +54,7 @@ export const PILLARS = [
   },
   {
     icon: Package,
+    id: "bundles",
     label: "Bundles",
     title: "Outcome-shaped products.",
     body: "Group pieces and branches into courses, dossiers, or playbooks. Sell as one-time purchases, attach to membership tiers, or hand to students.",
@@ -62,6 +67,7 @@ export const PILLARS = [
   },
   {
     icon: MessagesSquare,
+    id: "debates",
     label: "Debates",
     title: "Structured disagreement.",
     body: "Convert any claim block into a debate. Readers post responses tagged to specific blocks. The strongest counter — measured by citations and engagement — surfaces first.",
@@ -74,6 +80,7 @@ export const PILLARS = [
   },
   {
     icon: Library,
+    id: "archive",
     label: "Archive",
     title: "Your past work, alive.",
     body: "Every block you've ever written is addressable, taggable, and surfaced contextually as you write new pieces. The composer treats your archive as working memory.",
@@ -86,6 +93,7 @@ export const PILLARS = [
   },
   {
     icon: Workflow,
+    id: "composer",
     label: "Composer",
     title: "A bespoke editor for structured writing.",
     body: "Three-pane workspace: outline navigator, canvas with mode strip, and inspector for block metadata. Each block is an isolated semantic unit with its own rich text editor, mode visibility flags, and metadata — not a monolithic document.",
@@ -98,6 +106,7 @@ export const PILLARS = [
   },
   {
     icon: Sparkles,
+    id: "ai",
     label: "AI variants",
     title: "Generation alongside, never overwriting.",
     body: "Ask the AI to draft a Skim summary, a teaching reframe, or a counter-argument for any block. Variants are stored as siblings; you choose which to promote into the live piece.",
@@ -105,6 +114,19 @@ export const PILLARS = [
       "Per-block generation with mode-aware prompts",
       "Side-by-side diff before accepting",
       "Variant history retained",
+      "Bring your own key: OpenAI, Anthropic, Google, Mistral, OpenRouter, Ollama or NVIDIA, billed by the provider",
+    ],
+  },
+  {
+    icon: Users,
+    id: "audience",
+    label: "Your audience",
+    title: "Readers you can take with you.",
+    body: "Readers pay you directly through tips, memberships and bundles. No ads, and no algorithm deciding who sees your work.",
+    bullets: [
+      "Export every piece as a .zip at any time",
+      "Download your subscriber list as CSV",
+      "RSS feed and email to followers built in",
     ],
   },
 ]

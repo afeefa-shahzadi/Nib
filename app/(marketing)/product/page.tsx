@@ -36,18 +36,25 @@ export default function Product() {
       />
       <main className="flex-1">
         <section className="container-wide pt-16 md:pt-24 pb-16">
-          <p className="text-xs tracking-[0.22em] text-primary uppercase">
-            Product
-          </p>
-          <h1 className="mt-4 max-w-4xl font-display text-5xl leading-[1.05] md:text-7xl">
-            A creator OS shaped like
-            <br />
-            an idea — not a page.
+          <h1 className="max-w-3xl font-display text-5xl leading-[1.05] md:text-6xl">
+            Everything Nib does
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            Nib replaces the article with an adaptive knowledge object.
-            Same source. Many surfaces. Eight pillars, one consistent model.
+            A piece on Nib is built from blocks, so the same writing can be
+            skimmed, studied, debated, translated or sold. Here is each part
+            in detail.
           </p>
+          <nav aria-label="On this page" className="mt-8 flex flex-wrap gap-2">
+            {PILLARS.map((p) => (
+              <a
+                key={p.id}
+                href={`#${p.id}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+              >
+                {p.label}
+              </a>
+            ))}
+          </nav>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
               <Link href="/signup">Create your studio</Link>
@@ -58,15 +65,14 @@ export default function Product() {
           </div>
         </section>
 
-        {PILLARS.map((p, i) => {
+        {PILLARS.map((p) => {
           const Icon = p.icon
-          const reverse = i % 2 === 1
           return (
-            <section key={p.label} className="hairline-t">
-              <div className="container-wide grid items-start gap-12 py-20 md:grid-cols-12">
-                <div className={`md:col-span-5 ${reverse ? "md:order-2" : ""}`}>
-                  <Icon className="mb-5 size-6 text-primary" />
-                  <p className="mb-3 text-sm font-medium text-primary">
+            <section key={p.label} id={p.id} className="hairline-t scroll-mt-16">
+              <div className="container-wide grid items-start gap-10 py-16 md:grid-cols-12 md:gap-12 md:py-24">
+                <div className="md:sticky md:top-24 md:col-span-5">
+                  <p className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Icon aria-hidden className="size-4" />
                     {p.label}
                   </p>
                   <h2 className="font-display text-3xl leading-tight md:text-4xl">
@@ -76,9 +82,7 @@ export default function Product() {
                     {p.body}
                   </p>
                 </div>
-                <ul
-                  className={`space-y-px md:col-span-7 ${reverse ? "md:order-1" : ""}`}
-                >
+                <ul className="md:col-span-7">
                   {p.bullets.map((b) => (
                     <li
                       key={b}
@@ -95,9 +99,9 @@ export default function Product() {
         })}
 
         <section className="hairline-t">
-          <div className="container-wide py-28 text-center">
+          <div className="container-wide py-16 text-center md:py-24">
             <h2 className="mx-auto max-w-3xl font-display text-4xl md:text-5xl">
-              Stop publishing pages. Start publishing knowledge.
+              Start with one piece.
             </h2>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">

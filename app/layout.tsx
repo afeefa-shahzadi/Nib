@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Fraunces, Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google"
+import { Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "./providers"
 import { ACCENT_SCRIPT } from "@/lib/accent"
@@ -11,13 +11,6 @@ const inter = Inter({
   display: "swap",
 })
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--nf-display",
-  display: "swap",
-  axes: ["opsz"],
-})
-
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--nf-mono",
@@ -25,11 +18,12 @@ const jetbrainsMono = JetBrains_Mono({
   preload: false,
 })
 
+// One serif for headings and reading; the opsz axis gives headings a display cut.
 const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
   variable: "--nf-reading",
   display: "swap",
-  preload: false,
+  axes: ["opsz"],
 })
 
 export const metadata: Metadata = {
@@ -59,7 +53,7 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${fraunces.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
+      className={`${inter.variable} ${jetbrainsMono.variable} ${sourceSerif.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: ACCENT_SCRIPT }} />

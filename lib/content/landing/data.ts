@@ -1,35 +1,44 @@
 import { BRAND_NAME as BRAND } from "@/lib/brand"
 
+export const MODE_LINES = [
+  { name: "Skim", line: "The claims, in two minutes." },
+  { name: "Standard", line: "The piece as written." },
+  { name: "Expert", line: "Sources, detail and footnotes." },
+  { name: "Teach", line: "Examples and questions added." },
+  { name: "Debate", line: "The claim and its best objection." },
+]
+
+// anchor = section id on /product.
 export const FEATURE_BLOCKS = [
   {
     label: "Blocks",
-    title: "Every paragraph has a job.",
-    body: "Mark a paragraph as a claim, evidence, a counter-argument, a citation or a supporters-only section. Readers and search see the structure.",
-  },
-  {
-    label: "Reading modes",
-    title: "Five views of one piece.",
-    body: "Skim, Standard, Expert, Teach and Debate. You choose which blocks appear in each, and readers switch whenever they like.",
+    anchor: "blocks",
+    body: "Mark a paragraph as a claim, evidence, a counter-argument, a citation or a supporters-only section.",
   },
   {
     label: "Branches",
-    title: "Follow-ups that stay attached.",
-    body: "Add a translation, an audio version, a deeper dive or a reply to a critic. Each one sits beside the original piece.",
+    anchor: "branches",
+    body: "Translations, audio versions, deeper dives and replies stay attached to the original piece.",
   },
   {
     label: "Bundles",
-    title: "Sell a course or a reading list.",
-    body: "Group pieces into a bundle, then sell it, gift it or keep it for members.",
+    anchor: "bundles",
+    body: "Group pieces into a course or reading list, then sell it, gift it or keep it for members.",
   },
   {
     label: "Debates",
-    title: "Disagreement with structure.",
-    body: "Open a contested claim to responses. Readers vote up the strongest counter-argument, and the best replies rise.",
+    anchor: "debates",
+    body: "Open a contested claim to responses. Readers vote, and the strongest counter-argument rises.",
+  },
+  {
+    label: "Your audience",
+    anchor: "audience",
+    body: "Readers pay you directly. Export your pieces and subscriber list whenever you like.",
   },
   {
     label: "Your own AI key",
-    title: "Optional, and yours.",
-    body: "Connect OpenAI, Anthropic, Google, Mistral, OpenRouter, Ollama or NVIDIA to draft summaries and teaching versions. You pay the provider directly.",
+    anchor: "ai",
+    body: "Optional. Connect OpenAI, Anthropic, Google and others to draft summaries; you pay the provider.",
   },
 ]
 

@@ -11,7 +11,7 @@ export const NIB_EMAIL = {
   success: "#1f7a7a",
   warning: "#9a3b33",
   onPrimary: "#faf8f5",
-  serif: `Fraunces, Georgia, 'Times New Roman', serif`,
+  serif: `'Source Serif 4', Georgia, 'Times New Roman', serif`,
   sans: `Inter, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif`,
 }
 

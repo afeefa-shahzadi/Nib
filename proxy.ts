@@ -52,6 +52,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  // Signed-in readers skip the marketing page.
+  if (pathname === "/" && user) {
+    const feed = request.nextUrl.clone()
+    feed.pathname = "/feed"
+    return NextResponse.redirect(feed)
+  }
+
   // A password sign-in only reaches AAL1. Users with a verified TOTP factor
   // must pass the challenge before anything signed-in runs. (Reads the
   // session JWT — no network call.) Requests without a session (webhooks,
