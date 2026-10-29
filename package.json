@@ -86,7 +86,7 @@
     "embla-carousel-react": "^8.6.0",
     "idb-keyval": "^6.3.0",
     "input-otp": "^1.4.2",
-    "isomorphic-dompurify": "^3.19.0",
+    "isomorphic-dompurify": "2.26.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.25.0",
     "mermaid": "^11.16.0",
