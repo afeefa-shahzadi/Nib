@@ -42,6 +42,11 @@ function LoginPageContent() {
   const supabase = createClient()
   const destination = redirect || (role === "reader" ? "/feed" : "/studio")
 
+  const linkError = searchParams.get("error") === "link"
+  useEffect(() => {
+    if (linkError) toast.error("That sign-in link is invalid or has expired. Sign in below or request a new one.")
+  }, [linkError])
+
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => {
       if (s?.user) router.replace(destination)
