@@ -1,7 +1,26 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { cache } from "react"
 
-export async function createClient() {
+// One client per request (React cache), and getUser() deduped per access
+// token: a signed-in page render fans out to many actions that each verify
+// the user, and every unmemoized call is a round trip to Supabase Auth.
+// Keyed by token, so a sign-in/refresh mid-request still verifies afresh.
+export const createClient = cache(async () => {
+  const client = await createUncachedClient()
+  const getUser = client.auth.getUser.bind(client.auth)
+  const seen = new Map<string, ReturnType<typeof getUser>>()
+  client.auth.getUser = async (jwt?: string) => {
+    if (jwt) return getUser(jwt)
+    const token = (await client.auth.getSession()).data.session?.access_token
+    if (!token) return getUser()
+    if (!seen.has(token)) seen.set(token, getUser(token))
+    return seen.get(token)!
+  }
+  return client
+})
+
+async function createUncachedClient() {
   const cookieStore = await cookies()
 
   return createServerClient(
