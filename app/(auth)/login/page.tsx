@@ -28,7 +28,11 @@ export default function LoginPage() {
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = safeRedirect(searchParams.get("redirect") || "", undefined, "")
+  const redirect = safeRedirect(
+    searchParams.get("redirect") || "",
+    undefined,
+    ""
+  )
 
   const [role, setRole] = useState<AccountRole | null>(null)
   const [email, setEmail] = useState("")
@@ -83,19 +87,25 @@ function LoginPageContent() {
                   : "We'll take you to the studio."}
               </p>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-6 w-full"
-                onClick={google}
-              >
-                Continue with Google
-              </Button>
-              <div className="my-5 flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
-                <span className="h-px flex-1 bg-border" />
-                or
-                <span className="h-px flex-1 bg-border" />
-              </div>
+              {/* Hidden until the Google provider is enabled in Supabase Auth. */}
+
+              {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-6 w-full"
+                    onClick={google}
+                  >
+                    Continue with Google
+                  </Button>
+                  <div className="my-5 flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
+                    <span className="h-px flex-1 bg-border" />
+                    or
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
 
               <form onSubmit={onSubmit} className="space-y-4">
                 <div>

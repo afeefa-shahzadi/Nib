@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DatePicker } from "@/components/ui/date-picker"
 import { Label } from "@/components/ui/label"
 import {
   RoleStep,
@@ -26,11 +27,13 @@ function SignupPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams?.get("redirect")
-  
+
   const initialRoleParam = searchParams?.get("role")
   const validRoles: AccountRole[] = ["reader", "creator", "organization"]
-  const initialRole = validRoles.includes(initialRoleParam as AccountRole) ? (initialRoleParam as AccountRole) : null
-  
+  const initialRole = validRoles.includes(initialRoleParam as AccountRole)
+    ? (initialRoleParam as AccountRole)
+    : null
+
   const [role, setRole] = useState<AccountRole | null>(initialRole)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -80,17 +83,24 @@ function SignupPageContent() {
     }
     setLoading(true)
     const base = email.split("@")[0]
-    const cleanHandle = base.replace(/[^a-z0-9_]/gi, "").toLowerCase() + Math.floor(Math.random() * 10000)
+    const cleanHandle =
+      base.replace(/[^a-z0-9_]/gi, "").toLowerCase() +
+      Math.floor(Math.random() * 10000)
 
     // date_of_birth flows into the profile via the handle_new_user trigger,
     // which casts raw_user_meta_data->>'date_of_birth' to DATE. It gates NSFW
     // (18+) downstream; without it the age check can never pass.
-    const metaData: Record<string, string> = { display_name: base, handle: cleanHandle, role, date_of_birth: dob }
+    const metaData: Record<string, string> = {
+      display_name: base,
+      handle: cleanHandle,
+      role,
+      date_of_birth: dob,
+    }
     if (role === "organization") {
       metaData.org_name = base
       metaData.org_type = orgType === "other" ? otherOrgType : orgType
     }
-    
+
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
@@ -135,12 +145,18 @@ function SignupPageContent() {
         <div className="surface-elevated w-full max-w-sm rounded-lg p-8">
           {sent ? (
             <div className="text-center">
-              <h1 className="font-display text-2xl text-foreground">Confirm your email</h1>
+              <h1 className="font-display text-2xl text-foreground">
+                Confirm your email
+              </h1>
               <p className="mt-3 text-sm text-muted-foreground">
-                We sent a confirmation link to <span className="text-foreground">{email}</span>.
-                Click it to activate your account, then sign in.
+                We sent a confirmation link to{" "}
+                <span className="text-foreground">{email}</span>. Click it to
+                activate your account, then sign in.
               </p>
-              <Link href="/login" className="mt-6 inline-block text-sm text-foreground underline">
+              <Link
+                href="/login"
+                className="mt-6 inline-block text-sm text-foreground underline"
+              >
                 Go to sign in
               </Link>
             </div>
@@ -150,14 +166,18 @@ function SignupPageContent() {
             <>
               <RoleBadge role={role} onChange={() => setRole(null)} />
               <h1 className="font-display text-3xl text-foreground">
-                {isOrg ? "Create your organization" : isAuthor ? "Start your studio" : "Create your account"}
+                {isOrg
+                  ? "Create your organization"
+                  : isAuthor
+                    ? "Start your studio"
+                    : "Create your account"}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
                 {isOrg
                   ? "Set up your workspace and invite members."
                   : isAuthor
-                  ? "It's free to write and publish."
-                  : "Follow authors and shape the discourse."}
+                    ? "It's free to write and publish."
+                    : "Follow authors and shape the discourse."}
               </p>
 
               <label className="mt-6 flex items-start gap-2 text-sm text-muted-foreground">
@@ -169,31 +189,45 @@ function SignupPageContent() {
                 />
                 <span>
                   I agree to the{" "}
-                  <Link href="/terms" target="_blank" className="text-foreground underline">
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="text-foreground underline"
+                  >
                     Terms
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy" target="_blank" className="text-foreground underline">
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="text-foreground underline"
+                  >
                     Privacy Policy
                   </Link>
                   .
                 </span>
               </label>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="mt-4 w-full"
-                onClick={google}
-                disabled={!agreed}
-              >
-                Continue with Google
-              </Button>
-              <div className="my-5 flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
-                <span className="h-px flex-1 bg-border" />
-                or
-                <span className="h-px flex-1 bg-border" />
-              </div>
+              {/* Hidden until the Google provider is enabled in Supabase Auth. */}
+
+              {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1" && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4 w-full"
+                    onClick={google}
+                    disabled={!agreed}
+                  >
+                    Continue with Google
+                  </Button>
+                  <div className="my-5 flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
+                    <span className="h-px flex-1 bg-border" />
+                    or
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                </>
+              )}
 
               <form onSubmit={onSubmit} className="space-y-4">
                 {isOrg && (
@@ -208,7 +242,9 @@ function SignupPageContent() {
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="educational_institution">Educational Institution</SelectItem>
+                          <SelectItem value="educational_institution">
+                            Educational Institution
+                          </SelectItem>
                           <SelectItem value="business">Business</SelectItem>
                           <SelectItem value="non_profit">Non-Profit</SelectItem>
                           <SelectItem value="government">Government</SelectItem>
@@ -234,16 +270,17 @@ function SignupPageContent() {
                 )}
                 <div>
                   <Label htmlFor="dob">Date of birth</Label>
-                  <Input
+                  <DatePicker
                     id="dob"
-                    type="date"
-                    required
                     value={dob}
-                    max={new Date().toISOString().slice(0, 10)}
-                    onChange={(e) => setDob(e.target.value)}
+                    onChange={setDob}
+                    min={new Date(1900, 0, 1)}
+                    max={new Date()}
+                    placeholder="Select your date of birth"
                   />
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Used to confirm you meet the minimum age and to gate mature content.
+                    Used to confirm you meet the minimum age and to gate mature
+                    content.
                   </p>
                 </div>
                 <div>
@@ -267,7 +304,11 @@ function SignupPageContent() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading || !agreed}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loading || !agreed}
+                >
                   {loading ? "Creating…" : "Create account"}
                 </Button>
               </form>
