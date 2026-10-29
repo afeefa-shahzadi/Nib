@@ -30,6 +30,7 @@ export function ImageBlock({ block }: { block: Block }) {
             alt={altText}
             width={800}
             height={640}
+            sizes="(max-width: 800px) 100vw, 800px"
             className="max-h-160 w-full rounded-md border border-border bg-muted/30 object-contain transition-opacity group-hover:opacity-90"
           />
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
@@ -66,6 +67,7 @@ export function ImageBlock({ block }: { block: Block }) {
           alt={altText}
           width={1600}
           height={1200}
+          sizes="85vw"
           className="max-h-[85vh] max-w-[85vw] rounded-md object-contain"
           onClick={() => setOpen(false)}
         />
