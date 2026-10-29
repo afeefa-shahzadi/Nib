@@ -230,6 +230,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       repost_credits_required?: number
       is_nsfw?: boolean
       is_ai_generated?: boolean
+      prose_only?: boolean
       cover_image_url?: string | null
       allow_inline_comments?: boolean
     }
@@ -249,6 +250,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       "repost_credits_required",
       "is_nsfw",
       "is_ai_generated",
+      "prose_only",
       "cover_image_url",
       "allow_inline_comments",
     ] as const) {

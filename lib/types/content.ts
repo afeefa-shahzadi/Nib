@@ -35,6 +35,7 @@ export interface PieceData {
   cover_image_url?: string | null
   is_nsfw?: boolean | null
   is_ai_generated?: boolean | null
+  prose_only?: boolean | null
   sources?: SourceCitation[] | null
   source_url?: string | null
 }

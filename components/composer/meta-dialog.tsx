@@ -41,6 +41,8 @@ interface MetaDialogProps {
   setIsNsfw: (value: boolean) => void
   isAiGenerated: boolean
   setIsAiGenerated: (value: boolean) => void
+  proseOnly: boolean
+  setProseOnly: (value: boolean) => void
   allowInlineComments: boolean
   setAllowInlineComments: (value: boolean) => void
   onSuggestMeta: () => Promise<void>
@@ -74,6 +76,8 @@ export function MetaDialog({
   setIsNsfw,
   isAiGenerated,
   setIsAiGenerated,
+  proseOnly,
+  setProseOnly,
   allowInlineComments,
   setAllowInlineComments,
   onSuggestMeta,
@@ -294,6 +298,19 @@ export function MetaDialog({
                   id="ai-generated"
                   checked={isAiGenerated}
                   onCheckedChange={setIsAiGenerated}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <div>
+                  <Label htmlFor="prose-only">Prose only</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Hide reading-mode and AI-variant controls on each block while writing.
+                  </p>
+                </div>
+                <Switch
+                  id="prose-only"
+                  checked={proseOnly}
+                  onCheckedChange={setProseOnly}
                 />
               </div>
               <div className="flex items-center justify-between mt-4">

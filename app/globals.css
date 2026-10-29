@@ -425,3 +425,8 @@
   white-space: nowrap;
 }
 
+
+/* Composer "Prose only" piece setting: hide per-block reading-mode and AI-variant controls. */
+[data-prose-only] .mode-chrome {
+  display: none !important;
+}

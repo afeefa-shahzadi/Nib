@@ -63,6 +63,7 @@ interface PieceMeta {
   repostCreditsRequired: boolean
   isNsfw: boolean
   isAiGenerated: boolean
+  proseOnly: boolean
   allowInlineComments: boolean
   coverImageUrl: string | null
 }
@@ -77,6 +78,7 @@ const DEFAULT_META: PieceMeta = {
   repostCreditsRequired: true,
   isNsfw: false,
   isAiGenerated: false,
+  proseOnly: false,
   allowInlineComments: true,
   coverImageUrl: null,
 }
@@ -129,6 +131,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const repostCreditsRequired = meta.repostCreditsRequired
   const isNsfw = meta.isNsfw
   const isAiGenerated = meta.isAiGenerated
+  const proseOnly = meta.proseOnly
   const allowInlineComments = meta.allowInlineComments
   const coverImageUrl = meta.coverImageUrl
 
@@ -141,6 +144,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const setRepostCreditsRequired = (v: boolean) => setMeta((m) => ({ ...m, repostCreditsRequired: v }))
   const setIsNsfw = (v: boolean) => setMeta((m) => ({ ...m, isNsfw: v }))
   const setIsAiGenerated = (v: boolean) => setMeta((m) => ({ ...m, isAiGenerated: v }))
+  const setProseOnly = (v: boolean) => setMeta((m) => ({ ...m, proseOnly: v }))
   const setAllowInlineComments = (v: boolean) => setMeta((m) => ({ ...m, allowInlineComments: v }))
 
   const [blocks, setBlocks] = useState<BlockDraft[]>([])
@@ -320,6 +324,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       repostCreditsRequired: piece.repost_credits_required ?? true,
       isNsfw: piece.is_nsfw ?? false,
       isAiGenerated: piece.is_ai_generated ?? false,
+      proseOnly: piece.prose_only ?? false,
       allowInlineComments: piece.allow_inline_comments ?? true,
       coverImageUrl: piece.cover_image_url ?? null,
     })
@@ -708,6 +713,7 @@ export function MyceliumComposer({ pieceId }: Props) {
             repost_credits_required: repostCreditsRequired,
             is_nsfw: isNsfw,
             is_ai_generated: isAiGenerated,
+            prose_only: proseOnly,
             allow_inline_comments: allowInlineComments,
             cover_image_url: coverImageUrl,
             ...extra,
@@ -734,6 +740,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       repostCreditsRequired,
       isNsfw,
       isAiGenerated,
+      proseOnly,
       allowInlineComments,
       coverImageUrl,
     ]
@@ -1074,7 +1081,10 @@ export function MyceliumComposer({ pieceId }: Props) {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div
+      className="flex h-screen flex-col bg-background"
+      data-prose-only={proseOnly || undefined}
+    >
       <ComposerHeader
         status={status}
         slug={slug}
@@ -1263,6 +1273,8 @@ export function MyceliumComposer({ pieceId }: Props) {
         setIsNsfw={setIsNsfw}
         isAiGenerated={isAiGenerated}
         setIsAiGenerated={setIsAiGenerated}
+        proseOnly={proseOnly}
+        setProseOnly={setProseOnly}
         allowInlineComments={allowInlineComments}
         setAllowInlineComments={setAllowInlineComments}
         onSuggestMeta={suggestMeta}

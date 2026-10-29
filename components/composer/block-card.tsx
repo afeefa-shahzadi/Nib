@@ -362,7 +362,7 @@ export const BlockCard = memo(function BlockCard({
           </button>
           {/* Mobile mode dots (after NSFW) */}
           <span
-            className="mr-1 flex sm:hidden items-center gap-0.5"
+            className="mode-chrome mr-1 flex sm:hidden items-center gap-0.5"
             title="Mode visibility"
           >
             {MODES.map((m) => (
@@ -379,7 +379,7 @@ export const BlockCard = memo(function BlockCard({
         <div className="flex shrink-0 items-center gap-1 ml-auto">
           {/* Desktop mode dots */}
           <span
-            className="mr-1 hidden sm:flex items-center gap-0.5"
+            className="mode-chrome mr-1 hidden sm:flex items-center gap-0.5"
             title="Mode visibility"
           >
             {MODES.map((m) => (
@@ -393,7 +393,7 @@ export const BlockCard = memo(function BlockCard({
             ))}
           </span>
 
-          <div className="flex items-center bg-muted/30 rounded border border-border/50">
+          <div className="mode-chrome flex items-center bg-muted/30 rounded border border-border/50">
             <button 
               onClick={(e) => { e.stopPropagation(); switchMode(-1); }}
               className="p-1 hover:bg-accent rounded-l text-muted-foreground hover:text-foreground transition-colors"
@@ -415,7 +415,7 @@ export const BlockCard = memo(function BlockCard({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="inline-flex size-5 items-center justify-center rounded text-primary hover:bg-primary/10"
+                className="mode-chrome inline-flex size-5 items-center justify-center rounded text-primary hover:bg-primary/10"
                 title="Generate AI Variant"
                 onClick={(e) => e.stopPropagation()}
               >

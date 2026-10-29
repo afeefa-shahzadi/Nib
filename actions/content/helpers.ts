@@ -5,7 +5,7 @@ import { isLaunchFree } from "@/lib/plan"
 
 // Explicit column list excludes search_tsv (tsvector, not serializable)
 export const CO_COLS =
-  "id, author_id, title, slug, summary, canonical_thesis, status, visibility, tags, scheduled_for, published_at, created_at, updated_at, tips_enabled, sponsorship_enabled, repost_credits_required, reposted_from, is_nsfw, is_ai_generated, allow_inline_comments, cover_image_url, source_url" as const
+  "id, author_id, title, slug, summary, canonical_thesis, status, visibility, tags, scheduled_for, published_at, created_at, updated_at, tips_enabled, sponsorship_enabled, repost_credits_required, reposted_from, is_nsfw, is_ai_generated, prose_only, allow_inline_comments, cover_image_url, source_url" as const
 
 // Resolve viewer user id (if any) from current session, without throwing.
 export async function tryGetViewerId(): Promise<string | null> {
