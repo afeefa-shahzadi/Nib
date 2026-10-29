@@ -30,6 +30,12 @@ import {
   YoutubeIcon,
 } from "@/components/brand/social-icons"
 
+// Mounted on first open so cmdk and the search actions stay out of the first-load bundle.
+const SearchPalette = dynamic(
+  () => import("@/components/search-palette").then((m) => m.SearchPalette),
+  { ssr: false }
+)
+
 // Signed-in only: keep the bell (and its popover/realtime code) out of the first-load bundle.
 const NotificationsBell = dynamic(
   () => import("@/components/notifications-bell").then((m) => m.NotificationsBell),
@@ -67,7 +73,28 @@ const isActive = (path: string, href: string) =>
 export function SiteHeader() {
   const [me, setMe] = useState<Me | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchUsed, setSearchUsed] = useState(false)
   const router = useRouter()
+
+  const openSearch = () => {
+    setSearchUsed(true)
+    setSearchOpen(true)
+  }
+
+  // ⌘K / Ctrl+K anywhere, and "/" when not typing in a field.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement
+      const typing = el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)
+      if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
+        e.preventDefault()
+        openSearch()
+      }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
   const path = usePathname() ?? "/"
 
   useEffect(() => {
@@ -140,10 +167,15 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-1 sm:gap-2">
-          <Button asChild size="icon" variant="ghost" className="size-11 sm:size-9">
-            <Link prefetch={false} href="/search" aria-label="Search">
-              <Search className="size-4" />
-            </Link>
+          <Button
+            size="icon"
+            variant="ghost"
+            aria-label="Search (Ctrl K)"
+            title="Search (Ctrl K)"
+            className="size-11 sm:size-9"
+            onClick={openSearch}
+          >
+            <Search className="size-4" />
           </Button>
           <div className="hidden sm:block">
             <ThemeToggle />
@@ -204,6 +236,8 @@ export function SiteHeader() {
           </Button>
         </div>
       </div>
+
+      {searchUsed && <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />}
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="right" className="flex w-80 max-w-[85vw] flex-col gap-0 p-0">

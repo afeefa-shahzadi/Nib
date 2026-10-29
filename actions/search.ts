@@ -162,7 +162,8 @@ export async function searchProfiles(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
 
   const __handler = async ({ data }: { data: { q: string } }) => {
-    const q = data.q.trim()
+    // Commas, brackets and wildcards would break or widen the .or() filter.
+    const q = data.q.trim().replace(/[,()%*_\\]/g, " ").trim()
     if (!q) return []
 
     const { data: profiles } = await supabaseAdmin
