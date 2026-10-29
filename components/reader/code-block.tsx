@@ -7,7 +7,9 @@ import { Block, getText, getStr } from "../block-renderer"
 import { useCodeRun } from "@/lib/run-code"
 import { isRunnableLang } from "@/lib/code-languages"
 import { CodePreview, isWebBlock } from "@/components/code-preview"
-import { Play, Loader2, FileCode2, X, Copy, Check, Eye } from "lucide-react"
+import { Play, Loader2, FileCode2, X, Copy, Check, Eye, RotateCcw } from "lucide-react"
+import Editor from "react-simple-code-editor"
+import { useAuth } from "@/hooks/use-auth"
 
 export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: boolean }) {
   const fallbackText = getText(block.content)
@@ -27,11 +29,18 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
   const executionLang = files.find(f => f.name.startsWith("main"))?.lang || files[0]?.lang || fallbackLang
   const isRunnable = isRunnableLang(executionLang)
   const rootRef = useRef<HTMLDivElement>(null)
-  const runFiles = files.map(f => ({ name: f.name, content: f.content }))
+  // Signed-in readers can edit their own copy to experiment. Edits live only in
+  // this component and are never saved, even for the piece's author.
+  const { user } = useAuth()
+  const editable = !isPreview && !!user
+  const [drafts, setDrafts] = useState<Record<number, string>>({})
+  const contentOf = (i: number): string => drafts[i] ?? files[i]?.content ?? ""
+  const edited = Object.keys(drafts).length > 0
+  const runFiles = files.map((f, i) => ({ name: f.name, content: contentOf(i) }))
   const { run, running: isRunning, loadedMb } = useCodeRun(rootRef, executionLang, runFiles, !isPreview && isRunnable && !web)
 
   const handleCopy = () => {
-    const textToCopy = files[activeTab]?.content || ""
+    const textToCopy = contentOf(activeTab)
     navigator.clipboard.writeText(textToCopy)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -83,6 +92,16 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
           <p className="font-mono text-[10px] tracking-wider text-[#858585] uppercase mr-1">
             {activeFile.lang || "text"}
           </p>
+          {edited && (
+            <button
+              onClick={() => setDrafts({})}
+              className="flex size-6 cursor-pointer items-center justify-center rounded-sm text-[#858585] transition-colors hover:bg-[#333] hover:text-white"
+              title="Reset to the author's code"
+              aria-label="Reset to the author's code"
+            >
+              <RotateCcw className="size-3" />
+            </button>
+          )}
           {!isPreview && (
             <button
               onClick={handleCopy}
@@ -96,7 +115,7 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
           {!isPreview && isRunnable && !web && (
             <button
               onClick={handleRun}
-              disabled={isRunning || !activeFile?.content.trim()}
+              disabled={isRunning || !contentOf(activeTab).trim()}
               className="flex h-6 items-center gap-1.5 rounded bg-[#4fc1ff]/10 px-2 text-[10px] font-medium text-[#4fc1ff] transition-colors hover:bg-[#4fc1ff]/20 disabled:opacity-50"
             >
               {isRunning ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
@@ -119,26 +138,56 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
 
       {/* Code Editor Area */}
       <div className="relative bg-[#1e1e1e] min-h-25">
-        <Highlight
-          theme={themes.vsDark}
-          code={activeFile.content || ""}
-          language={(activeFile.lang || "text") as import("prism-react-renderer").Language}
-        >
-          {({ className, style, tokens, getLineProps, getTokenProps }) => (
-            <pre
-              className={`${className} overflow-x-auto p-4 font-mono text-[13px] leading-relaxed`}
-              style={{ ...style, backgroundColor: "transparent" }}
-            >
-              {tokens.map((line, i) => (
-                <div key={i} {...getLineProps({ line })}>
-                  {line.map((token, key) => (
-                    <span key={key} {...getTokenProps({ token })} />
-                  ))}
-                </div>
-              ))}
-            </pre>
-          )}
-        </Highlight>
+        {editable ? (
+          <Editor
+            value={contentOf(activeTab)}
+            onValueChange={(code) => setDrafts((d) => ({ ...d, [activeTab]: code }))}
+            highlight={(code) => (
+              <Highlight
+                theme={themes.vsDark}
+                code={code}
+                language={(activeFile.lang || "text") as import("prism-react-renderer").Language}
+              >
+                {({ tokens, getLineProps, getTokenProps }) => (
+                  <>
+                    {tokens.map((line, i) => (
+                      <div key={i} {...getLineProps({ line })}>
+                        {line.map((token, key) => (
+                          <span key={key} {...getTokenProps({ token })} />
+                        ))}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </Highlight>
+            )}
+            padding={16}
+            textareaClassName="focus:outline-none"
+            className="font-mono text-[13px] leading-relaxed text-[#d4d4d4]"
+            aria-label={`Edit ${activeFile.name || "code"} (changes are not saved)`}
+          />
+        ) : (
+          <Highlight
+            theme={themes.vsDark}
+            code={activeFile.content || ""}
+            language={(activeFile.lang || "text") as import("prism-react-renderer").Language}
+          >
+            {({ className, style, tokens, getLineProps, getTokenProps }) => (
+              <pre
+                className={`${className} overflow-x-auto p-4 font-mono text-[13px] leading-relaxed`}
+                style={{ ...style, backgroundColor: "transparent" }}
+              >
+                {tokens.map((line, i) => (
+                  <div key={i} {...getLineProps({ line })}>
+                    {line.map((token, key) => (
+                      <span key={key} {...getTokenProps({ token })} />
+                    ))}
+                  </div>
+                ))}
+              </pre>
+            )}
+          </Highlight>
+        )}
       </div>
       
       {/* Output Panel */}
