@@ -1,7 +1,7 @@
  
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,6 +58,27 @@ export default function DocsPage() {
   const visible = new Set(filtered.map((s) => s.id))
   const show = (id: string) => !q || visible.has(id)
 
+  // Highlight the section nearest the top of the viewport in the sidebar.
+  const [active, setActive] = useState("intro")
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => {
+        const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]
+        if (hit) setActive(hit.target.id)
+      },
+      { rootMargin: "-80px 0px -70% 0px" }
+    )
+    document.querySelectorAll("article > section[id]").forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [query])
+  // On phones the list is one sideways row; keep the current chip visible.
+  useEffect(() => {
+    const nav = document.querySelector<HTMLElement>('nav[aria-label="Documentation sections"]')
+    const chip = nav?.querySelector<HTMLElement>('[aria-current="location"]')
+    if (nav && chip && nav.scrollWidth > nav.clientWidth)
+      nav.scrollTo({ left: chip.offsetLeft - 20, behavior: "smooth" })
+  }, [active])
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <script
@@ -66,15 +87,11 @@ export default function DocsPage() {
       />
       <main className="flex-1">
         <section className="container-wide max-w-4xl pt-16 md:pt-24 pb-10">
-          <p className="text-xs tracking-[0.22em] text-primary uppercase">
+          <h1 className="font-display text-5xl leading-[1.05] md:text-6xl">
             Documentation
-          </p>
-          <h1 className="mt-4 font-display text-5xl leading-[1.05] md:text-6xl">
-            Learn Nib by doing.
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-            Every concept is explained with a working demo. Click, toggle, type
-            — the docs are the playground.
+            How Nib works, with a demo you can try in most sections.
           </p>
 
           <div className="relative mt-8 max-w-xl">
@@ -119,19 +136,20 @@ export default function DocsPage() {
 
         <div className="container-wide grid gap-10 pb-24 md:grid-cols-12">
           {/* TOC */}
-          <aside className="md:col-span-3">
-            <div className="sticky top-20">
-              <p className="mb-3 text-sm font-medium text-foreground">
+          <aside className="sticky top-16 z-10 -mx-5 bg-background/95 px-5 backdrop-blur md:static md:mx-0 md:bg-transparent md:px-0 md:backdrop-blur-none md:col-span-3 min-w-0">
+            <div className="md:sticky md:top-20">
+              <p className="mb-3 hidden text-sm font-medium text-foreground md:block">
                 On this page
               </p>
-              <nav aria-label="Documentation sections" className="space-y-1">
+              <nav aria-label="Documentation sections" className="no-scrollbar flex gap-1 overflow-x-auto py-2 md:block md:space-y-1 md:overflow-visible md:py-0">
                 {(q ? filtered : SECTIONS).map((s) => {
                   const Icon = s.icon
                   return (
                     <Link
                       key={s.id}
                       href={`#${s.id}`}
-                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                      aria-current={active === s.id ? "location" : undefined}
+                      className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground aria-[current=location]:bg-accent aria-[current=location]:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Icon className="size-3.5" aria-hidden />
                       {s.label}
@@ -148,7 +166,7 @@ export default function DocsPage() {
           </aside>
 
           {/* CONTENT */}
-          <article className="prose-invert max-w-none space-y-24 md:col-span-9">
+          <article className="prose-invert max-w-none min-w-0 space-y-20 md:col-span-9 [&_section>p]:max-w-[68ch]">
             {show("intro") && (
               <section id="intro" className="scroll-mt-20">
                 <SectionHeader id="intro" title="Introduction" />
@@ -176,8 +194,7 @@ export default function DocsPage() {
               <section id="concepts" className="scroll-mt-20">
                 <SectionHeader
                   id="concepts"
-                  eyebrow="Concepts"
-                  title="Pieces, blocks, branches, bundles."
+                  title="Concepts"
                 />
                 <p className="mt-4 leading-relaxed text-foreground/85">
                   Four nouns. Everything else is a property.
@@ -202,8 +219,7 @@ export default function DocsPage() {
               <section id="composer" className="scroll-mt-20">
                 <SectionHeader
                   id="composer"
-                  eyebrow="Composer"
-                  title="Build a block. Watch the modes update."
+                  title="Composer"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-muted-foreground">
                   Pick a block type, write its content, and toggle which reading
@@ -246,8 +262,7 @@ export default function DocsPage() {
               <section id="reference" className="scroll-mt-20">
                 <SectionHeader
                   id="reference"
-                  eyebrow="Editor reference"
-                  title="Every block, shortcut, and tool."
+                  title="Editor reference"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-muted-foreground">
                   Everything below works in any text block of the composer
@@ -382,8 +397,7 @@ export default function DocsPage() {
               <section id="modes" className="scroll-mt-20">
                 <SectionHeader
                   id="modes"
-                  eyebrow="Reading modes"
-                  title="Same draft. Five readers. One toggle."
+                  title="Reading modes"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-muted-foreground">
                   Below is an example piece with 7 blocks. Switch modes and
@@ -402,8 +416,7 @@ export default function DocsPage() {
               <section id="branches" className="scroll-mt-20">
                 <SectionHeader
                   id="branches"
-                  eyebrow="Branches"
-                  title="Counter-arguments without dilution."
+                  title="Branches"
                 />
                 <p className="mt-4 leading-relaxed text-foreground/85">
                   A branch is a labelled companion to a piece. Create one in
@@ -433,8 +446,7 @@ export default function DocsPage() {
               <section id="bundles" className="scroll-mt-20">
                 <SectionHeader
                   id="bundles"
-                  eyebrow="Bundles"
-                  title="Outcome-shaped products."
+                  title="Bundles"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-foreground/85">
                   Bundles package your pieces around an outcome — a course, a
@@ -467,8 +479,7 @@ export default function DocsPage() {
               <section id="debates" className="scroll-mt-20">
                 <SectionHeader
                   id="debates"
-                  eyebrow="Debates"
-                  title="Structured disagreement, not comment threads."
+                  title="Debates"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-muted-foreground">
                   Open a debate room on any of your pieces from Studio →
@@ -485,8 +496,7 @@ export default function DocsPage() {
               <section id="ai" className="scroll-mt-20">
                 <SectionHeader
                   id="ai"
-                  eyebrow="AI & BYOK"
-                  title="Generation alongside, never overwriting."
+                  title="AI & BYOK"
                 />
                 <p className="mt-4 leading-relaxed text-foreground/85">
                   Click a block, then use the wand icon on it (or Inspector →
@@ -572,8 +582,7 @@ export default function DocsPage() {
               <section id="monetization" className="scroll-mt-20">
                 <SectionHeader
                   id="monetization"
-                  eyebrow="Monetization"
-                  title="Several paths to revenue."
+                  title="Monetization"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-foreground/85">
                   Gated blocks for premium-within-a-free-piece: mark a block
@@ -617,8 +626,7 @@ export default function DocsPage() {
               <section id="import" className="scroll-mt-20">
                 <SectionHeader
                   id="import"
-                  eyebrow="Import, export & feeds"
-                  title="Come in easily. Leave anytime."
+                  title="Import, export & feeds"
                 />
                 <ul className="mt-6">
                   {IMPORT_EXPORT.map((x) => (
@@ -640,8 +648,7 @@ export default function DocsPage() {
               <section id="privacy" className="scroll-mt-20">
                 <SectionHeader
                   id="privacy"
-                  eyebrow="Privacy & sovereignty"
-                  title="Your audience is yours."
+                  title="Privacy & sovereignty"
                 />
                 <ul className="mt-6 space-y-3">
                   {PRIVACY_POINTS.map((x) => (
@@ -661,8 +668,7 @@ export default function DocsPage() {
               <section id="faq" className="scroll-mt-20">
                 <SectionHeader
                   id="faq"
-                  eyebrow="FAQ"
-                  title="Everything else."
+                  title="FAQ"
                 />
                 <dl className="mt-6 space-y-px">
                   {FAQ_ITEMS.map((f) => (
