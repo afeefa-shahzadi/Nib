@@ -6,7 +6,9 @@
 
 type Post = { slug: string; title: string; summary: string; tags: string[]; body: string }
 
-const chart = (content: Record<string, unknown>) => "~~~block chart\n" + JSON.stringify(content) + "\n~~~"
+const block = (type: string, content: Record<string, unknown>) => `~~~block ${type}\n${JSON.stringify(content)}\n~~~`
+const chart = (content: Record<string, unknown>) => block("chart", content)
+const rich = (text: string) => ({ text, html: `<p>${text}</p>` })
 
 const node = (id: string, x: number, y: number, title: string, subtitle = "", primary = false) => ({
   id,
@@ -650,5 +652,418 @@ pie               "Label" : 40
 - Every shortcut: [Keyboard shortcuts](/u/nib/keyboard-shortcuts).
 `,
     },
+    {
+      slug: "teaching-blocks",
+      title: "Teaching blocks: exercises, quizzes, polls and questions",
+      summary: "Every exercise type with a live example: multiple choice, select all, matching, fill in the blanks, short answer and polls.",
+      tags: ["guide", "composer", "teaching", "reference"],
+      body: `
+An **Exercise** block asks the reader to do something before they see the answer. Readers answer in place, press **Check Answer**, and see your solution. Nothing is graded or stored: it's practice, for them. Every exercise on this page is live, so try them.
+
+## Adding one
+
+1. Type \`/exercise\` and press Enter.
+2. Pick a type, write the prompt, then fill in the options or the answer.
+3. Add a hint if you like. Readers can open it before answering.
+
+## Multiple choice
+
+One right answer. Mark it as correct in the editor.
+
+${block("exercise", { exerciseType: "multiple_choice", prompt: "Which chart suits change over time best?", hint: "Think about what the order of the labels means.", options: [{ id: "a", text: "Pie" }, { id: "b", text: "Line", isCorrect: true }, { id: "c", text: "Radar" }], answer: "A line chart, because the order of the labels (time) matters." })}
+
+## Select all that apply
+
+Several right answers. The reader ticks every one they think is correct.
+
+${block("exercise", { exerciseType: "multi_select", prompt: "Which of these languages can a code block run?", options: [{ id: "a", text: "Python", isCorrect: true }, { id: "b", text: "Rust" }, { id: "c", text: "Go", isCorrect: true }, { id: "d", text: "SQL", isCorrect: true }] })}
+
+## Matching
+
+Pairs. Readers match each item on the left to one on the right.
+
+${block("exercise", { exerciseType: "matching", prompt: "Match each Mermaid diagram to what it shows.", options: [{ id: "a", text: "sequenceDiagram", pairText: "Who talks to whom, in order" }, { id: "b", text: "gantt", pairText: "Tasks on a calendar" }, { id: "c", text: "mindmap", pairText: "Ideas around a centre" }] })}
+
+## Fill in the blanks
+
+Write the sentence with blanks in the prompt and the missing words in the answer.
+
+${block("exercise", { exerciseType: "fill_in_the_blanks", prompt: "A piece is made of ____. Readers choose a reading ____, such as Skim or Expert.", answer: "blocks, mode" })}
+
+## Short answer
+
+An open question. The reader writes an answer, then sees yours to compare.
+
+${block("exercise", { exerciseType: "short_answer", prompt: "In one sentence: when would you draw a flowchart by hand instead of using Mermaid?", answer: "When the exact position of each box matters, such as a site map or an org chart you want laid out a particular way." })}
+
+## Poll
+
+No right answer: readers pick an option and press **Submit Vote**. Use it to get readers thinking about where they stand before the argument starts.
+
+${block("exercise", { exerciseType: "poll", prompt: "How do you usually read a long guide?", options: [{ id: "a", text: "Skim the headings first" }, { id: "b", text: "Top to bottom" }, { id: "c", text: "Jump to the part I need" }] })}
+
+## Question blocks
+
+A **Question** block (\`/question\`) is an open question in the flow of the piece. It doesn't check an answer; it invites readers to think, and it can start a debate. Show it in **Teach** mode only, from the block's mode settings, to keep it out of the way of readers who skim.
+
+${block("question", rich("What is one thing in your field that readers always get wrong, and how would you test for it?"))}
+
+## Making a lesson
+
+- Put an exercise straight after the idea it tests, not at the end.
+- Use the hint for the first step, not the answer.
+- Write a solution that explains *why*, so a wrong answer still teaches.
+- Mix types: a multiple choice to check recall, a short answer to check understanding.
+`,
+    },
+    {
+      slug: "rich-blocks",
+      title: "Rich blocks: callouts, quotes, citations, embeds, audio and images",
+      summary: "The blocks that make a piece easier to read and easier to trust, with what each looks like and when to use it.",
+      tags: ["guide", "composer", "reference"],
+      body: `
+These blocks don't run or compute anything. They make a piece easier to scan and easier to trust. Each one is a \`/\` command away.
+
+## Callout: the one thing not to miss
+
+Type \`/callout\`. Use one or two per piece; a page of callouts is a page of noise.
+
+!note Callouts are hidden in Skim mode by default, so put anything a skimmer must see in a heading or the first paragraph of a section too.
+
+## Quote: a line worth pausing on
+
+Type \`/quote\` for a pulled-out quotation in large type.
+
+${block("quote", rich("Write the piece once. Let each reader choose how much of it they need."))}
+
+## Citation: show where a claim comes from
+
+Type \`/citation\` and fill in the **source**, a **link**, and optionally the exact **quote** and **page**. Readers can follow the link to check you. Use one wherever a reader might ask "says who?".
+
+${block("citation", { source: "Mermaid documentation", url: "https://mermaid.js.org/intro/", quote: "Mermaid lets you create diagrams and visualizations using text and code." })}
+
+## Embed: video and links inline
+
+Type \`/embed\` and paste a link. YouTube, Vimeo and Loom play in the page; other links show as a card. Add a title so readers know what they're about to watch.
+
+## Audio and video clips
+
+Type \`/audio\` to add a clip. Add a **transcript**: readers who can't listen can read it, and search can find it.
+
+## Images
+
+Paste or drop an image anywhere in the composer, or type \`/image\`. Always fill in the **alt text** (what the image shows, for readers using screen readers) and add a caption when the image needs explaining. Images are hidden in Skim mode, so don't put the only copy of an important fact in one.
+
+## Headings
+
+Type \`/heading\`. Headings are what Skim readers see first and what the outline is built from, so make each one say something: "Costs doubled in March" beats "Results".
+
+## Which block when
+
+- The reader must not miss it: **callout**.
+- A line worth remembering: **quote**.
+- A claim someone could doubt: **citation**.
+- Something to watch or hear: **embed** or **audio**.
+- Something to see: **image**, with alt text.
+- More: [Charts](/u/nib/charts), [Diagrams](/u/nib/diagrams), [Teaching blocks](/u/nib/teaching-blocks), and the [cheat sheet](/u/nib/cheat-sheet).
+`,
+    },
+    {
+      slug: "nib-for-software-engineers",
+      title: "Nib for software engineers",
+      summary: "Write tutorials, design docs and postmortems that readers can run: multi-file code, architecture diagrams and Expert mode.",
+      tags: ["guide", "roles", "code"],
+      body: `
+Technical writing has two audiences at once: the person who needs the idea and the person who needs the details. Here you write once and both get what they came for.
+
+## What you can do
+
+- **Runnable code.** Readers press Run and see output, in ten languages, with several files per block. No setup, nothing to host.
+- **Architecture as text.** Mermaid sequence, class and ER diagrams live next to the prose and change in a line.
+- **Two depths in one piece.** Put the implementation detail in Expert mode and the overview in Standard.
+- **Exercises** that check understanding, for tutorials and onboarding.
+
+## A worked example: explaining a cache
+
+A reader learning caching sees the idea first.
+
+~~~mermaid Read-through cache
+sequenceDiagram
+  participant C as Client
+  participant K as Cache
+  participant D as Database
+  C->>K: get(user:42)
+  K-->>C: miss
+  C->>D: SELECT user 42
+  D-->>C: row
+  C->>K: set(user:42)
+~~~
+
+Then runs it, and sees five reads cost two database calls.
+>expert In production, bound the cache (LRU or TTL), and decide what happens when two requests miss at once: without a lock or request coalescing, both hit the database.
+
+\`\`\`python main.py
+from cache import Cache
+calls = 0
+def load(key):
+    global calls
+    calls += 1
+    return key.upper()
+c = Cache(load)
+for k in ["a", "b", "a", "a", "b"]:
+    c.get(k)
+print("database calls:", calls)
+\`\`\`
+\`\`\`python cache.py
+class Cache:
+    def __init__(self, loader):
+        self.loader, self.data = loader, {}
+    def get(self, key):
+        if key not in self.data:
+            self.data[key] = self.loader(key)
+        return self.data[key]
+\`\`\`
+
+## Good pieces to write here
+
+- Tutorials where the reader runs every step.
+- Design docs with sequence and ER diagrams.
+- Postmortems with a timeline diagram and an Expert-mode appendix.
+- Interview prep with exercises.
+
+## Start here
+
+Read [Code blocks](/u/nib/code-blocks), keep [examples in every language](/u/nib/code-examples) open, and copy diagrams from [Diagrams](/u/nib/diagrams).
+`,
+    },
+    {
+      slug: "nib-for-educators",
+      title: "Nib for teachers and educators",
+      summary: "Turn a lesson into a piece that teaches: Teach mode, self-checking exercises, diagrams and charts.",
+      tags: ["guide", "roles", "teaching"],
+      body: `
+A good lesson explains, shows, then checks. There's a block for each step, and a **Teach** reading mode that keeps the scaffolding for learners and hides it from everyone else.
+
+## What you can do
+
+- **Teach mode.** Write a simpler version of any paragraph for learners, and questions shown only to them.
+- **Exercises** that check themselves: multiple choice, select all, matching, fill in the blanks, short answer.
+- **Diagrams and charts** that explain at a glance.
+- **Runnable code** for computing lessons, with nothing to install.
+
+## A worked example: a five-minute lesson on photosynthesis
+
+~~~mermaid What a leaf does
+flowchart LR
+  S[Sunlight] --> L((Leaf))
+  W[Water] --> L
+  C[Carbon dioxide] --> L
+  L --> G[Glucose]
+  L --> O[Oxygen]
+~~~
+
+${block("exercise", { exerciseType: "multiple_choice", prompt: "Which gas does a leaf release in sunlight?", hint: "Look at the arrows leaving the leaf.", options: [{ id: "a", text: "Carbon dioxide" }, { id: "b", text: "Oxygen", isCorrect: true }, { id: "c", text: "Nitrogen" }], answer: "Oxygen. The leaf takes in carbon dioxide and gives out oxygen." })}
+
+${block("exercise", { exerciseType: "fill_in_the_blanks", prompt: "Plants turn sunlight, water and ____ into glucose and ____.", answer: "carbon dioxide, oxygen" })}
+
+## Good pieces to write here
+
+- Lessons with a check after each idea.
+- Revision sheets in Skim mode, full notes in Standard.
+- Reading lists as a collection, in the order to read them.
+
+## Start here
+
+[Teaching blocks](/u/nib/teaching-blocks) has every exercise type. [Diagrams](/u/nib/diagrams) and [Charts](/u/nib/charts) cover the visuals.
+`,
+    },
+    {
+      slug: "nib-for-marketers",
+      title: "Nib for marketers",
+      summary: "Publish launch plans, campaign reports and customer stories with real charts, polls and embedded video.",
+      tags: ["guide", "roles", "marketing"],
+      body: `
+Marketing writing has to prove its point fast. Lead with the number, show the chart, and let the reader who wants the method open it.
+
+## What you can do
+
+- **Charts from real numbers**, with the takeaway in the caption.
+- **Polls** that get readers to commit to a view before you make your case.
+- **Embeds** for product videos and Looms.
+- **Skim mode** for the executive who reads headings only.
+- **Scheduling**, so a launch post goes live on the day.
+
+## A worked example: a launch report
+
+~~~mermaid The launch plan
+gantt
+  dateFormat YYYY-MM-DD
+  section Prepare
+  Landing page   :a1, 2026-11-02, 4d
+  Email sequence :a2, after a1, 3d
+  section Launch
+  Launch day     :milestone, after a2, 0d
+  Paid social    :a3, after a2, 7d
+~~~
+
+${chart({ chartType: "composed", caption: "Signups more than doubled in launch week while conversion held", labels: ["Week 1", "Week 2", "Launch", "Week 4"], series: [{ label: "Signups", data: [120, 140, 330, 290] }, { label: "Conversion %", data: [3.1, 3.3, 3.6, 3.4] }] })}
+
+${block("exercise", { exerciseType: "poll", prompt: "Which channel do you think drove launch week?", options: [{ id: "a", text: "Email" }, { id: "b", text: "Paid social" }, { id: "c", text: "Word of mouth" }] })}
+
+## Good pieces to write here
+
+- Launch announcements and changelogs.
+- Campaign reports with the takeaway in the chart caption.
+- Customer stories with an embedded interview.
+- Market notes with citations for every number.
+
+## Start here
+
+[Charts](/u/nib/charts) for picking the right chart, [Rich blocks](/u/nib/rich-blocks) for embeds and citations, and Gantt and quadrant charts in [Diagrams](/u/nib/diagrams).
+`,
+    },
+    {
+      slug: "nib-for-presenters",
+      title: "Nib for presenters and speakers",
+      summary: "Turn a talk into a piece people read afterwards: diagrams instead of slides, charts with the takeaway, and headings that follow your story.",
+      tags: ["guide", "roles", "presenting"],
+      body: `
+The talk lasts forty minutes; the write-up is what people share. Publish the talk as a piece that works without you in the room.
+
+## What you can do
+
+- **Plan the talk** with a Mermaid mind map, then write a section per branch.
+- **Diagrams and charts** in place of slides, readable on a phone.
+- **Embed the recording** at the top.
+- **Skim mode** gives readers the talk's outline in a minute: the headings are your slides.
+
+## A worked example: planning a talk
+
+~~~mermaid Plan the story before the slides
+mindmap
+  root((Why our releases got faster))
+    The problem
+      Two-week cycles
+      Manual testing
+    What we changed
+      Smaller changes
+      Automated checks
+    The result
+      Daily releases
+    The ask
+~~~
+
+${chart({ chartType: "bar", caption: "Releases per month went from 2 to 21 in a quarter", labels: ["Jan", "Feb", "Mar", "Apr"], series: [{ label: "Releases", data: [2, 6, 14, 21] }] })}
+
+!note Write each heading as the sentence you'd put on a slide: "Releases went from 2 to 21 a month", not "Results".
+
+## Good pieces to write here
+
+- The write-up of a talk, with the video embedded.
+- Workshop handouts with exercises.
+- Speaker notes as a private draft, published after the event.
+
+## Start here
+
+[Diagrams](/u/nib/diagrams) for mind maps and timelines, [Charts](/u/nib/charts) for numbers, and [Keyboard shortcuts](/u/nib/keyboard-shortcuts) to write faster.
+`,
+    },
+    {
+      slug: "nib-for-researchers",
+      title: "Nib for researchers and students",
+      summary: "Publish findings with citations, charts from your data, runnable analysis and an Expert mode for the method.",
+      tags: ["guide", "roles", "research"],
+      body: `
+Research writing is read by people who want the finding and people who want to check it. Write the finding in Standard, put the method in Expert, and cite everything.
+
+## What you can do
+
+- **Citations** with a source, link, quote and page.
+- **Charts** from your data, with the takeaway in the caption.
+- **Runnable analysis** in Python or SQL, so a reader can rerun your numbers.
+- **Expert mode** for methods, assumptions and caveats.
+- **Diagrams** for study designs and pipelines.
+
+## A worked example: a small finding
+
+${chart({ chartType: "scatter", caption: "Study time and score rise together until about 15 hours", labels: ["2", "5", "8", "10", "12", "15", "20"], series: [{ label: "Score", data: [52, 61, 70, 74, 80, 84, 85] }] })}
+
+Press Run to recompute the correlation from the same numbers.
+>expert Seven points show a trend, not a law. Correlation says nothing about cause, and the flattening after 15 hours needs more data at the top of the range to tell apart from noise.
+
+\`\`\`python analysis.py
+hours = [2, 5, 8, 10, 12, 15, 20]
+score = [52, 61, 70, 74, 80, 84, 85]
+n = len(hours)
+mx, my = sum(hours) / n, sum(score) / n
+cov = sum((x - mx) * (y - my) for x, y in zip(hours, score))
+sx = sum((x - mx) ** 2 for x in hours) ** 0.5
+sy = sum((y - my) ** 2 for y in score) ** 0.5
+print("correlation:", round(cov / (sx * sy), 3))
+\`\`\`
+
+## Good pieces to write here
+
+- Paper summaries with the full method in Expert mode.
+- Lab notes with runnable analysis.
+- Literature reviews as a collection, one piece per paper.
+- Study guides with exercises for revision.
+
+## Start here
+
+[Rich blocks](/u/nib/rich-blocks) for citations, [Charts](/u/nib/charts), and [examples in every language](/u/nib/code-examples) for Python and SQL.
+`,
+    },
+    {
+      slug: "nib-for-writers",
+      title: "Nib for writers and journalists",
+      summary: "Essays, reporting and newsletters with reading modes, sourcing, imports from Substack and Medium, and readers who respond.",
+      tags: ["guide", "roles", "writing"],
+      body: `
+You already know how to write. This adds what a page can't: a version for the reader in a hurry, sources a reader can check, and readers who argue back in the open.
+
+## What you can do
+
+- **Reading modes.** A Skim version for the busy reader, the full piece for everyone else.
+- **Citations and quotes** that show your sourcing.
+- **Timelines** for reporting that spans months.
+- **Import** your back catalogue from Substack, Medium or Markdown.
+- **Debates, branches and comments** where readers respond to a specific paragraph.
+
+## A worked example: a story that spans a year
+
+~~~mermaid How the story unfolded
+timeline
+  January : Complaints start
+  March : Council review
+  June : Report published : Two officials resign
+  October : New rules take effect
+~~~
+
+${block("quote", rich("We didn't know the numbers until a reader sent them to us."))}
+
+!note Put the news in the first paragraph of each section. Skim mode keeps headings and those first paragraphs, so a skimmer still gets the story.
+
+## Good pieces to write here
+
+- Essays with a Skim version.
+- Investigations with a timeline and citations.
+- Newsletters, with readers following you for new pieces.
+
+## Start here
+
+[The composer guide](/u/nib/composer-guide), [Importing your writing](/u/nib/importing-your-writing), and [Rich blocks](/u/nib/rich-blocks) for quotes and citations.
+`,
+    },
   ]
 }
+
+// Reading lists curated by the official account, one per role. Items are post slugs, in reading order.
+export const roleCollections: { title: string; description: string; slugs: string[] }[] = [
+  { title: "For software engineers", description: "Runnable code, architecture diagrams and technical writing.", slugs: ["nib-for-software-engineers", "code-blocks", "code-examples", "diagrams", "importing-your-writing", "keyboard-shortcuts"] },
+  { title: "For teachers and educators", description: "Lessons that explain, show and check.", slugs: ["nib-for-educators", "teaching-blocks", "diagrams", "charts", "composer-guide", "cheat-sheet"] },
+  { title: "For marketers", description: "Launches, reports and customer stories with real numbers.", slugs: ["nib-for-marketers", "charts", "rich-blocks", "diagrams", "plans-explained"] },
+  { title: "For presenters and speakers", description: "Turn a talk into a piece people read and share.", slugs: ["nib-for-presenters", "diagrams", "charts", "rich-blocks", "keyboard-shortcuts"] },
+  { title: "For researchers and students", description: "Findings with citations, data and runnable analysis.", slugs: ["nib-for-researchers", "rich-blocks", "charts", "code-examples", "teaching-blocks"] },
+  { title: "For writers and journalists", description: "Essays, reporting and newsletters.", slugs: ["nib-for-writers", "composer-guide", "importing-your-writing", "rich-blocks", "community-features", "reading-and-discovery"] },
+]

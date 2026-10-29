@@ -16,7 +16,7 @@ import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync } from "node:fs"
 import { createHash } from "node:crypto"
 import { join } from "node:path"
-import { guidePosts } from "./seed_blog_guides"
+import { guidePosts, roleCollections } from "./seed_blog_guides"
 
 // ── Brand: rename here and re-run. ──────────────────────────────────────────
 const BRAND = "Nib"
@@ -1397,6 +1397,29 @@ async function main() {
     const words = blocks.reduce((n, b) => n + String(b.content.text ?? "").split(/\s+/).filter(Boolean).length, 0)
     const images = blocks.filter((b) => b.type === "image").length
     console.log(`✓ /u/${HANDLE}/${p.slug}  "${p.title}"  ${blocks.length} blocks, ${images} images, ~${words} words`)
+  }
+
+  // Role reading lists. Matched by title; items are replaced in order, one insert
+  // at a time, because a collection reads back ordered by created_at.
+  for (const c of roleCollections) {
+    const { data: found } = await db.from("collections").select("id").eq("curator_id", authorId).eq("title", c.title).maybeSingle()
+    let colId = found?.id as string | undefined
+    if (colId) {
+      await db.from("collections").update({ description: c.description, is_public: true }).eq("id", colId)
+    } else {
+      const { data, error } = await db.from("collections").insert({ curator_id: authorId, title: c.title, description: c.description, is_public: true }).select("id").single()
+      if (error || !data) throw new Error(`collection ${c.title}: ${error?.message}`)
+      colId = data.id as string
+    }
+    await db.from("collection_items").delete().eq("collection_id", colId)
+    for (const slug of c.slugs) {
+      const { data: piece } = await db.from("content_objects").select("id").eq("author_id", authorId).eq("slug", slug).single()
+      if (!piece) throw new Error(`collection ${c.title}: no post "${slug}"`)
+      const { error } = await db.from("collection_items").insert({ collection_id: colId, content_object_id: piece.id })
+      if (error) throw new Error(`collection ${c.title} item ${slug}: ${error.message}`)
+      await new Promise((r) => setTimeout(r, 5)) // distinct created_at per item
+    }
+    console.log(`✓ collection "${c.title}"  ${c.slugs.length} posts`)
   }
 }
 
