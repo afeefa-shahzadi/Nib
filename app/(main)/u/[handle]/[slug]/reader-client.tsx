@@ -213,6 +213,25 @@ export function ReaderClient({
   })
   useEffect(() => {
     let canPromptFollow = !!author && viewerId !== piece.author_id
+    const promptFollow = () => {
+      if (!canPromptFollow) return
+      canPromptFollow = false
+      const key = `has_seen_follow_dialog_${piece.author_id}`
+      try {
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, "true")
+          setShowFollowDialog(true)
+        }
+      } catch {}
+    }
+    const fitsOnScreen = () => {
+      const el = articleRef.current
+      return !!el && el.scrollHeight <= window.innerHeight
+    }
+    // A piece that fits on one screen never reaches 60%: prompt after 25s instead.
+    const shortTimer = setTimeout(() => {
+      if (fitsOnScreen()) promptFollow()
+    }, 25000)
     const onScroll = () => {
       const el = articleRef.current
       if (!el) return
@@ -221,16 +240,7 @@ export function ReaderClient({
       const scrolled = Math.max(0, -rect.top)
       const p = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0
       // One-time follow dialog, once the reader is well into the piece.
-      if (p >= 60 && canPromptFollow) {
-        canPromptFollow = false
-        const key = `has_seen_follow_dialog_${piece.author_id}`
-        try {
-          if (!localStorage.getItem(key)) {
-            localStorage.setItem(key, "true")
-            setShowFollowDialog(true)
-          }
-        } catch {}
-      }
+      if (p >= 60) promptFollow()
       setProgress((prev) => {
         // Synchronize aside scroll with article scroll
         if (asideRef.current) {
@@ -246,7 +256,10 @@ export function ReaderClient({
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    return () => {
+      clearTimeout(shortTimer)
+      window.removeEventListener("scroll", onScroll)
+    }
   }, [author, viewerId, piece.author_id])
 
   const setMode = useCallback(
