@@ -4,6 +4,9 @@
 // `authenticated` reads fail and the limiter fails open.
 import { createServiceRoleClient } from "@/lib/supabase/server"
 
+// ok = the count before this hit was under the limit, so increment 0 is a
+// pure check ("is there budget left?") and token-sized increments still
+// record usage. Every hit counts, blocked ones included.
 export async function checkRateLimit(
   bucket: string,
   identifier: string,
@@ -11,51 +14,24 @@ export async function checkRateLimit(
   windowSeconds: number,
   increment: number = 1
 ): Promise<{ ok: boolean; remaining: number; resetAt: Date }> {
-  const now = new Date()
-  const { data: existing } = await (await createServiceRoleClient())
-    .from("rate_limits")
-    .select("count, window_start")
-    .eq("bucket", bucket)
-    .eq("identifier", identifier)
-    .maybeSingle()
-
-  const windowMs = windowSeconds * 1000
-  if (
-    !existing ||
-    now.getTime() - new Date(existing.window_start).getTime() > windowMs
-  ) {
-    await (await createServiceRoleClient())
-      .from("rate_limits")
-      .upsert({
-        bucket,
-        identifier,
-        count: increment,
-        window_start: now.toISOString(),
-      })
-    return {
-      ok: true,
-      remaining: limit - increment,
-      resetAt: new Date(now.getTime() + windowMs),
-    }
+  const { data, error } = await (await createServiceRoleClient())
+    .rpc("rate_limit_hit", {
+      p_bucket: bucket,
+      p_identifier: identifier,
+      p_window_seconds: windowSeconds,
+      p_increment: increment,
+    })
+    .single<{ count: number; window_start: string }>()
+  // Fail open (as before) if the DB is unreachable or the migration isn't applied yet.
+  if (error || !data) {
+    console.error("[rate-limit]", error)
+    return { ok: true, remaining: limit, resetAt: new Date(Date.now() + windowSeconds * 1000) }
   }
-  if (existing.count >= limit && increment > 0) {
-    return {
-      ok: false,
-      remaining: 0,
-      resetAt: new Date(new Date(existing.window_start).getTime() + windowMs),
-    }
-  }
-  await (
-    await createServiceRoleClient()
-  )
-    .from("rate_limits")
-    .update({ count: existing.count + increment })
-    .eq("bucket", bucket)
-    .eq("identifier", identifier)
+  const before = data.count - increment
   return {
-    ok: true,
-    remaining: limit - existing.count - increment,
-    resetAt: new Date(new Date(existing.window_start).getTime() + windowMs),
+    ok: before < limit,
+    remaining: Math.max(0, limit - data.count),
+    resetAt: new Date(new Date(data.window_start).getTime() + windowSeconds * 1000),
   }
 }
 
