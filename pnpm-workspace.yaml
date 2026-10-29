@@ -5,3 +5,6 @@ allowBuilds:
   unrs-resolver: true
   msw: false
   esbuild: true
+
+minimumReleaseAgeExclude:
+  - '@browserrun/sandrun@0.3.0'
