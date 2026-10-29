@@ -22,7 +22,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: data.author.bio ?? "Nib author profile.",
         type: "profile",
         url: `/u/${handle}`,
-        images: data.author.avatar_url ? [data.author.avatar_url] : [],
+        images: [`/api/og/${handle}`],
+      },
+      twitter: {
+        card: "summary_large_image",
+        images: [`/api/og/${handle}`],
       },
       alternates: {
         canonical: `/u/${handle}`,
