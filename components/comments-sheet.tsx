@@ -57,6 +57,7 @@ export function CommentsSheet({
 
   useEffect(() => {
     let active = true
+    let refetch: ReturnType<typeof setTimeout> | undefined
     if (open) {
       listComments({ data: { piece_id: pieceId } })
         .then((data) => {
@@ -78,15 +79,22 @@ export function CommentsSheet({
             filter: `piece_id=eq.${pieceId}`,
           },
           () => {
-            listComments({ data: { piece_id: pieceId } }).then((data) => {
-              if (active) setComments(data as any as CommentData[])
-            })
+            // Every open sheet refetches on each insert; coalesce bursts and
+            // spread viewers out so a busy piece isn't hit by all at once.
+            if (refetch) return
+            refetch = setTimeout(() => {
+              refetch = undefined
+              listComments({ data: { piece_id: pieceId } }).then((data) => {
+                if (active) setComments(data as any as CommentData[])
+              })
+            }, 1500 + Math.random() * 1500)
           }
         )
         .subscribe()
         
       return () => {
         active = false
+        clearTimeout(refetch)
         supabase.removeChannel(channel)
       }
     }

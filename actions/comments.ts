@@ -5,6 +5,10 @@ import DOMPurify from "isomorphic-dompurify"
 import { getViewablePiece } from "@/actions/content/helpers"
 import { checkRateLimit } from "@/lib/rate-limit.server"
 
+// Pinned plus the newest MAX_COMMENTS; a reply whose parent falls outside is hidden.
+// ponytail: hard cap, no "load older"; add cursor pagination when a piece nears it.
+const MAX_COMMENTS = 300
+
 export async function listComments(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
   const { data: authData } = await (await createClient()).auth.getUser()
@@ -17,7 +21,8 @@ export async function listComments(args: { data?: any } = {}) {
       .select("id, body, created_at, user_id, parent_id, sources, quoted_text, serialized_range, is_pinned")
       .eq("piece_id", data.piece_id)
       .order("is_pinned", { ascending: false })
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(MAX_COMMENTS)
 
     if (error) {
       if (error.code !== "42P01") {
@@ -27,6 +32,8 @@ export async function listComments(args: { data?: any } = {}) {
     }
 
     if (!rows || rows.length === 0) return []
+    // Fetched pinned + newest; show pinned first, then oldest first as before.
+    rows.sort((a: any, b: any) => Number(b.is_pinned) - Number(a.is_pinned) || a.created_at.localeCompare(b.created_at))
 
     // Fetch profiles
     const userIds = [...new Set(rows.map((r: { user_id: string }) => r.user_id))]
@@ -38,11 +45,14 @@ export async function listComments(args: { data?: any } = {}) {
     const pMap = new Map(profiles?.map(p => [p.id, p]))
 
     // Fetch votes for all responses
+    // Chunked: .in() ids go in the URL, and 300 uuids would overflow it.
     const responseIds = rows.map((r: { id: string }) => r.id)
-    const { data: votes } = await supabaseAdmin
+    const chunks = []
+    for (let i = 0; i < responseIds.length; i += 100) chunks.push(responseIds.slice(i, i + 100))
+    const votes = (await Promise.all(chunks.map((ids) => supabaseAdmin
       .from("piece_response_votes")
       .select("response_id, user_id, vote_type")
-      .in("response_id", responseIds)
+      .in("response_id", ids)))).flatMap((r) => r.data ?? [])
 
     const votesMap = new Map<string, { upvotes: number; downvotes: number; user_vote: number }>()
     votes?.forEach((v: { response_id: string; user_id: string; vote_type: number }) => {
