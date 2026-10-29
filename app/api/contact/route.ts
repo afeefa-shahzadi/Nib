@@ -4,8 +4,14 @@ import { createAdminClient } from "@/lib/supabase/server"
 import nodemailer from "nodemailer"
 import { queueIfRateLimited } from "@/lib/email-outbox"
 import { escapeHtml } from "@/lib/html"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit.server"
 
 export async function POST(req: Request) {
+  // Anonymous form that writes a row and sends email: throttle per client IP.
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+  const rl = await checkRateLimit("contact", ip, 5, 3600)
+  if (!rl.ok) return rateLimitResponse(rl.resetAt)
+
   try {
     const body = await req.json()
     const { fullName, email, organizationName, phoneNumber, intent, expectedSeats, timeline, details } = body

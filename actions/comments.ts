@@ -3,6 +3,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import DOMPurify from "isomorphic-dompurify"
 import { getViewablePiece } from "@/actions/content/helpers"
+import { checkRateLimit } from "@/lib/rate-limit.server"
 
 export async function listComments(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
@@ -107,6 +108,8 @@ export async function postComment(args: { data?: any } = {}) {
   }
 
   if (!authData?.user) throw new Error("Unauthorized")
+  if (!(await checkRateLimit("comment", authData.user.id, 20, 600)).ok)
+    throw new Error("You're commenting too fast. Try again in a few minutes.")
 
   return await __handler({
     data: args?.data as { piece_id: string; body: string; parent_id?: string; quoted_text?: string; serialized_range?: any },

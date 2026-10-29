@@ -3,6 +3,7 @@ import * as cheerio from "cheerio"
 import { lookup } from "dns/promises"
 import { createClient } from "@/lib/supabase/server"
 import { isPrivateAddress } from "@/lib/ssrf"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit.server"
 
 export async function GET(request: NextRequest) {
   // Require a session — this endpoint makes arbitrary outbound requests on the
@@ -14,6 +15,8 @@ export async function GET(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  const rl = await checkRateLimit("link-preview", user.id, 60, 60)
+  if (!rl.ok) return rateLimitResponse(rl.resetAt)
 
   const { searchParams } = new URL(request.url)
   const url = searchParams.get("url")
