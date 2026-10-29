@@ -36,9 +36,13 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // No auth cookie = anonymous: skip the session check entirely. Otherwise
+  // getClaims() verifies the JWT locally against the project's cached ES256
+  // JWKS (refreshing an expired session first) instead of a getUser() round
+  // trip to Supabase Auth on every request. Pages and actions that need a
+  // server-verified identity still call getUser() themselves.
+  const hasSession = request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"))
+  const user = hasSession ? (await supabase.auth.getClaims()).data?.claims ?? null : null
 
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((p) => underPrefix(pathname, p))
