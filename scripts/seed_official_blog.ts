@@ -657,6 +657,8 @@ On **General Settings**:
 - **Require credit on reposts**: people who repost it must credit you.
 - **Mark as NSFW**: mark the whole piece as mature content.
 - **Allow Inline Comments**: let readers comment on specific passages.
+- **Made with AI**: show readers an AI label in the piece header.
+- **Prose only**: hide the reading-mode dots and AI-variant buttons on every block while you write. Handy for fiction and essays you don't split into modes.
 
 **AI suggest** drafts the summary, thesis and tags from your text. Review them before you publish.
 
@@ -1087,7 +1089,7 @@ The original address is kept with the draft, so you can credit where it first ap
 
 ## From Markdown
 
-Click **Import markdown**, then either choose a \`.md\` file or paste Markdown into the box, give it a title, and click **Import**. Headings (\`#\`), quotes (\`>\`) and fenced code blocks become their own blocks; everything else becomes paragraphs.
+Click **Import markdown**, then either choose a \`.md\` file or paste Markdown into the box, give it a title, and click **Import**. Headings (\`#\`), quotes (\`>\`) and fenced code blocks become their own blocks; everything else becomes paragraphs. Bold, italic, inline code and links keep their formatting, and a \`---\` line becomes a \`* * *\` scene break. Images in Markdown aren't imported; add them afterwards with \`/image\`.
 
 ![Importing Markdown](import-markdown.png) Importing a Markdown file.
 

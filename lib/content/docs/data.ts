@@ -107,7 +107,7 @@ export const SECTIONS = [
     label: "Editor reference",
     icon: Keyboard,
     keywords:
-      "slash commands block types markdown shortcuts keyboard hotkeys mention wiki link citation embed youtube loom vimeo code run mermaid chart exercise quiz poll audio video image heading versions history schedule meta seo dictation voice email newsletter heatmap minimap preview archive",
+      "slash commands block types markdown shortcuts keyboard hotkeys mention wiki link citation embed youtube loom vimeo code run mermaid chart exercise quiz poll audio video image heading versions history schedule meta seo prose only made with ai label dictation voice email newsletter heatmap minimap preview archive",
   },
   {
     id: "modes",
@@ -152,7 +152,7 @@ export const SECTIONS = [
     label: "Import, export & feeds",
     icon: ArrowLeftRight,
     keywords:
-      "import substack medium markdown url migrate export zip json csv rss feed.xml llms.txt sitemap",
+      "import substack medium markdown url migrate scene break export zip json csv rss feed.xml llms.txt sitemap",
   },
   {
     id: "privacy",
@@ -291,8 +291,16 @@ export const BLOCK_NOTES = [
 
 export const COMPOSER_TOOLS = [
   {
+    k: "Prose only",
+    v: "Meta → Prose only. For fiction, essays and anything you don't split into modes: hides the reading-mode dots and AI-variant buttons on every block while you write. Saved per piece; turn it off any time.",
+  },
+  {
+    k: "Made with AI",
+    v: "Meta → Made with AI. Shows readers a label in the piece header. Use it when AI wrote a substantial part of the text.",
+  },
+  {
     k: "Meta",
-    v: "Summary (≤160 chars), thesis, tags, tips, sponsors, repost credit, NSFW, inline comments. The AI button drafts summary, thesis, and tags for you to edit.",
+    v: "Summary (≤160 chars), thesis, tags, tips, sponsors, repost credit, NSFW, Made with AI, Prose only, inline comments. The AI button drafts summary, thesis, and tags for you to edit.",
   },
   {
     k: "Schedule",
@@ -323,7 +331,7 @@ export const COMPOSER_TOOLS = [
 export const IMPORT_EXPORT = [
   {
     k: "Markdown",
-    v: "Studio → Drafts → Import markdown. Paste text or load a .md file. Separate blocks with a blank line: # headings, > quotes, and ``` fenced code (with a language, e.g. ```python) become their own blocks; everything else becomes paragraphs.",
+    v: "Studio → Drafts → Import markdown. Paste text or load a .md file. Separate blocks with a blank line: # headings, > quotes, and ``` fenced code (with a language, e.g. ```python) become their own blocks; everything else becomes paragraphs. Bold, italic, inline code and links keep their formatting, and a --- or *** line becomes a * * * scene break. Images aren't imported from Markdown; add them afterwards with /image.",
   },
   {
     k: "Substack · Medium",
