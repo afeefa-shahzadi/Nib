@@ -188,8 +188,8 @@ export default async function Landing() {
 
         {/* WRITERS */}
         <section className="hairline-t">
-          <div className="container-wide grid gap-10 py-16 md:py-24 lg:grid-cols-2 lg:gap-16">
-            <div>
+          <div className="container-wide grid gap-10 py-16 md:py-24 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-5">
               <h2 className="font-display text-3xl md:text-4xl">For writers</h2>
               <p className="mt-4 max-w-[34rem] text-lg leading-relaxed text-muted-foreground">
                 Write in an editor that feels normal. Choose what each mode
@@ -205,7 +205,7 @@ export default async function Landing() {
                 </Button>
               </div>
             </div>
-            <ol>
+            <ol className="lg:col-span-7">
               {STEPS.map((s) => (
                 <li key={s.n} className="hairline-t flex gap-6 py-5 last:hairline-b">
                   <span className="w-6 shrink-0 font-display text-xl text-muted-foreground">{s.n}</span>
@@ -221,23 +221,23 @@ export default async function Landing() {
 
         {/* FAQ */}
         <section className="hairline-t">
-          <div className="container-wide py-16 md:py-24">
-            <div className="max-w-[42.5rem]">
+          <div className="container-wide grid gap-8 py-16 md:py-24 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-5">
               <h2 className="font-display text-3xl md:text-4xl">Questions</h2>
-              <div className="mt-8">
-                {FAQ.map((f) => (
-                  <details key={f.q} className="group hairline-t last:hairline-b">
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-display text-xl [&::-webkit-details-marker]:hidden">
-                      {f.q}
-                      <span aria-hidden className="text-muted-foreground transition-transform group-open:rotate-45 motion-reduce:transition-none">+</span>
-                    </summary>
-                    <p className="pb-5 leading-relaxed text-muted-foreground">{f.a}</p>
-                  </details>
-                ))}
-              </div>
-              <Link href="/docs" className="mt-6 inline-block text-sm text-muted-foreground hover:text-foreground">
+              <Link href="/docs" className="mt-4 inline-block text-sm text-muted-foreground hover:text-foreground">
                 Full documentation →
               </Link>
+            </div>
+            <div className="lg:col-span-7">
+              {FAQ.map((f) => (
+                <details key={f.q} className="group hairline-t last:hairline-b">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-5 font-display text-xl [&::-webkit-details-marker]:hidden">
+                    {f.q}
+                    <span aria-hidden className="text-muted-foreground transition-transform group-open:rotate-45 motion-reduce:transition-none">+</span>
+                  </summary>
+                  <p className="max-w-[42.5rem] pb-5 leading-relaxed text-muted-foreground">{f.a}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>
