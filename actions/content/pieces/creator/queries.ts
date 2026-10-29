@@ -157,7 +157,8 @@ export async function getStudioStats(args: { data?: any } = {}) {
       context.supabase
         .from("content_objects")
         .select("*", { count: "exact", head: true })
-        .eq("status", "draft")
+        // Scheduled pieces are unpublished drafts with a release date.
+        .in("status", ["draft", "scheduled"])
         .or(
           data.org_id
             ? `org_id.eq.${data.org_id}`
