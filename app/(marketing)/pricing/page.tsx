@@ -14,9 +14,9 @@ function PriceCell({ v }: { v: boolean | string }) {
   return (
     <td className="py-4 px-3 text-center">
       {v ? (
-        <Check className="mx-auto size-4 text-primary" />
+        <Check aria-label="Included" className="mx-auto size-4 text-primary" />
       ) : (
-        <X className="mx-auto size-4 text-muted-foreground/40" />
+        <X aria-label="Not included" className="mx-auto size-4 text-muted-foreground/40" />
       )}
     </td>
   )
@@ -27,17 +27,12 @@ export default function Pricing() {
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1">
         <section className="container-wide pt-16 pb-8 text-center md:pt-24">
-          <p className="text-xs tracking-[0.22em] text-primary uppercase">
-            Pricing
-          </p>
-          <h1 className="mt-4 font-display text-4xl leading-[1.05] sm:text-5xl md:text-7xl">
-            Free to write.
-            <br />
-            Paid only when you scale.
+          <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl md:text-6xl">
+            Free to read and write.
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl px-4 text-base text-muted-foreground md:text-lg">
-            No ads. Ever. We earn when you earn — and we don&apos;t even take a
-            cut on Studio.
+          <p className="mx-auto mt-6 max-w-2xl text-base text-muted-foreground md:text-lg">
+            No ads. Pay only if you want more: a Reader Pass to fund the
+            writers you read, or Studio to keep 100% of your tips.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
             <span>Showing prices in</span>
@@ -50,9 +45,6 @@ export default function Pricing() {
 
         <section className="hairline-t">
           <div className="container-wide py-14 md:py-20">
-            <p className="mb-3 text-xs tracking-[0.22em] text-primary uppercase">
-              Compare
-            </p>
             <h2 className="mb-3 font-display text-2xl md:text-4xl">
               Feature by feature.
             </h2>
@@ -63,11 +55,11 @@ export default function Pricing() {
               <table className="w-full min-w-225 text-sm">
                 <thead>
                   <tr className="hairline-b">
-                    <th className="py-4 pr-3 text-left font-normal text-muted-foreground">
+                    <th className="sticky left-0 bg-background py-4 pr-3 text-left font-normal text-muted-foreground">
                       Feature
                     </th>
                     <th className="py-4 px-3 font-display text-base md:text-lg">
-                      Anon
+                      No account
                     </th>
                     <th className="py-4 px-3 font-display text-base md:text-lg">
                       Free
@@ -92,7 +84,7 @@ export default function Pricing() {
                 <tbody>
                   {COMPARE.map(([feat, ...vals]) => (
                     <tr key={feat as string} className="hairline-t hover:bg-muted/30">
-                      <td className="py-4 pr-4 text-foreground/90 font-medium">
+                      <td className="sticky left-0 bg-background py-4 pr-4 font-medium text-foreground/90">
                         {feat as string}
                       </td>
                       {(vals as (boolean | string)[]).map((v, i) => (
@@ -104,9 +96,6 @@ export default function Pricing() {
               </table>
             </div>
             <p className="mt-6 text-xs text-muted-foreground">
-              <strong className="text-foreground">
-                10,000 Insight Points = <MarketAmount inr={100} />.
-              </strong>{" "}
               Payouts start at{" "}
               <strong className="text-foreground">
                 <MarketAmount inr={PAYOUT_MIN_INR} />
@@ -117,29 +106,26 @@ export default function Pricing() {
         </section>
 
         <section className="hairline-t">
-          <div className="container-wide grid gap-10 py-20 md:grid-cols-12">
-            <div className="md:col-span-4">
-              <p className="mb-3 text-xs tracking-[0.22em] text-primary uppercase">
-                FAQ
-              </p>
+          <div className="container-wide grid gap-10 py-16 md:py-24 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-5">
               <h2 className="font-display text-4xl leading-tight">
                 Money, fairly explained.
               </h2>
             </div>
-            <dl className="space-y-px md:col-span-8">
+            <dl className="lg:col-span-7">
               <FaqList />
             </dl>
           </div>
         </section>
 
         <section className="hairline-t">
-          <div className="container-wide py-24 text-center">
+          <div className="container-wide py-16 text-center md:py-24">
             <h2 className="font-display text-4xl md:text-5xl">
               Start writing in two minutes.
             </h2>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">
-                <Link href="/signup">Open your studio</Link>
+                <Link href="/signup">Start writing free</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <Link href="/docs">Read the docs</Link>

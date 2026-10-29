@@ -35,11 +35,10 @@ export function getTiers(): Tier[] {
       discountBadge: "Save 17%",
       blurb: "For avid readers. 85% of your pass is shared monthly with the creators you clap for.",
       features: [
-        "Includes all Free tier features",
+        "Everything in Free",
         "85% of your pass funds creators you read",
         "2,500 bonus points monthly for quests & perks",
         "Transparent monthly pool statement",
-        "Support your favorite creators",
       ],
       cta: "Get Reader Pass",
       ctaTo: "/signup?role=reader",
@@ -55,7 +54,7 @@ export function getTiers(): Tier[] {
       blurb: "For professional creators and independent studios. Sell at scale and cap your platform fees.",
       features: [
         "Everything in Free",
-        "0% platform fee (up to ₹50k/mo GMV, then 5%)",
+        "Keep 100% of tips up to ₹50,000 a month, then a 5% fee",
         "Advanced analytics & cohorts",
         "Block-level paid gating",
         "Full export (Markdown + JSON)",
@@ -162,11 +161,11 @@ export function getFAQ(code: CurrencyCode = "INR") {
   return [
     {
     q: "Are there ads, anywhere?",
-    a: "No. Nib will never run display ads. We earn only through Studio subscriptions, Org seats, and a small platform fee on tips/sponsorships for Free accounts.",
+    a: "No. Nib will never run display ads. We earn from Reader Pass, Studio and Org plans, and a platform fee on tips and sponsorships for Free accounts.",
   },
   {
     q: "How does the platform make money on Free accounts?",
-    a: "10% fee on tips and sponsored pieces. Free accounts keep 90%. Studio accounts keep 100% up to ₹50,000 in monthly GMV, after which a 5% fee applies.",
+    a: "Free accounts keep 90% of tips and 80% of sponsorships. Studio accounts keep 100% of tips up to ₹50,000 a month, then pay a 5% fee.",
   },
     {
       q: "What are Insight Points for?",

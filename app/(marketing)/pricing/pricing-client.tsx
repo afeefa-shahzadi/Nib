@@ -121,7 +121,7 @@ export function PricingPlans() {
                         {t.name}
                       </h2>
                       {showYearly && t.discountBadge && (
-                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-semibold text-primary uppercase tracking-wide">
+                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
                           {t.discountBadge}
                         </span>
                       )}
