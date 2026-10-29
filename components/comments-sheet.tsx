@@ -20,8 +20,21 @@ import type { CommentEditorRef } from "./composer/comment-editor"
 const CommentEditor = dynamic(() => import("./composer/comment-editor").then((m) => m.CommentEditor), { ssr: false })
 import { BookOpen } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
+import { COMMENTS_PAGE } from "@/lib/comments"
 
 import { CommentActions, type CommentData } from "./comment-actions"
+
+// Oldest unpinned comment loaded so far: the cursor for "Load older".
+const oldestUnpinned = (list: CommentData[]) =>
+  list.filter((c) => !c.is_pinned).reduce<string | undefined>((min, c) => (!min || c.created_at < min ? c.created_at : min), undefined)
+
+// A refresh returns page 1 only. Keep older pages already loaded (those past
+// page 1's oldest unpinned comment) instead of dropping them.
+const withFirstPage = (fresh: CommentData[]) => (prev: CommentData[]) => {
+  if (fresh.length < COMMENTS_PAGE) return fresh
+  const cutoff = oldestUnpinned(fresh)!
+  return [...fresh, ...prev.filter((c) => !c.is_pinned && c.created_at < cutoff)]
+}
 
 export function CommentsSheet({
   pieceId,
@@ -46,7 +59,26 @@ export function CommentsSheet({
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({})
   
+  const [hasOlder, setHasOlder] = useState(false)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+
   const editorRef = useRef<CommentEditorRef>(null)
+
+  async function loadOlder() {
+    const before = oldestUnpinned(comments)
+    if (!before) return
+    setLoadingOlder(true)
+    try {
+      const older = (await listComments({ data: { piece_id: pieceId, before } })) as any as CommentData[]
+      const ids = new Set(comments.map((c) => c.id))
+      setComments((prev) => [...prev, ...older.filter((c) => !ids.has(c.id))])
+      setHasOlder(older.length >= COMMENTS_PAGE)
+    } catch {
+      toast.error("Couldn't load older responses")
+    } finally {
+      setLoadingOlder(false)
+    }
+  }
 
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -61,7 +93,9 @@ export function CommentsSheet({
     if (open) {
       listComments({ data: { piece_id: pieceId } })
         .then((data) => {
-          if (active) setComments(data as any as CommentData[])
+          if (!active) return
+          setComments(data as any as CommentData[])
+          setHasOlder(data.length >= COMMENTS_PAGE)
         })
         .catch(() => {})
         .finally(() => {
@@ -85,7 +119,7 @@ export function CommentsSheet({
             refetch = setTimeout(() => {
               refetch = undefined
               listComments({ data: { piece_id: pieceId } }).then((data) => {
-                if (active) setComments(data as any as CommentData[])
+                if (active) setComments(withFirstPage(data as any as CommentData[]))
               })
             }, 1500 + Math.random() * 1500)
           }
@@ -109,7 +143,7 @@ export function CommentsSheet({
       setBody("")
       setReplyingTo(null)
       const refreshed = await listComments({ data: { piece_id: pieceId } }) as any as CommentData[]
-      setComments(refreshed)
+      setComments(withFirstPage(refreshed))
     } catch (e: any) {
       toast.error(e instanceof Error ? e.message : "Error posting comment")
     } finally {
@@ -192,7 +226,7 @@ export function CommentsSheet({
           }}
           onRefresh={() => {
             listComments({ data: { piece_id: pieceId } }).then((data) => {
-              setComments(data as any as CommentData[])
+              setComments(withFirstPage(data as any as CommentData[]))
             })
           }}
           onReply={authed ? () => {
@@ -249,6 +283,13 @@ export function CommentsSheet({
             <p className="text-sm text-muted-foreground text-center">No responses yet. Be the first!</p>
           ) : (
             rootComments.map(c => renderComment(c, 0))
+          )}
+          {!loading && hasOlder && (
+            <div className="text-center">
+              <Button variant="outline" size="sm" onClick={loadOlder} disabled={loadingOlder}>
+                {loadingOlder ? "Loading..." : "Load older responses"}
+              </Button>
+            </div>
           )}
         </div>
 

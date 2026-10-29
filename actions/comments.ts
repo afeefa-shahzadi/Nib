@@ -4,25 +4,27 @@ import { createAdminClient, createClient } from "@/lib/supabase/server"
 import DOMPurify from "isomorphic-dompurify"
 import { getViewablePiece } from "@/actions/content/helpers"
 import { checkRateLimit } from "@/lib/rate-limit.server"
-
-// Pinned plus the newest MAX_COMMENTS; a reply whose parent falls outside is hidden.
-// ponytail: hard cap, no "load older"; add cursor pagination when a piece nears it.
-const MAX_COMMENTS = 300
+import { COMMENTS_PAGE } from "@/lib/comments"
 
 export async function listComments(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
   const { data: authData } = await (await createClient()).auth.getUser()
   const viewerId = authData?.user?.id ?? null
 
-  const __handler = async ({ data }: { data: { piece_id: string } }) => {
+  // Page 1: pinned plus the newest COMMENTS_PAGE. Older pages pass `before`
+  // (the oldest unpinned created_at the client has) and skip pinned ones.
+  const __handler = async ({ data }: { data: { piece_id: string; before?: string } }) => {
+    if (data.before && Number.isNaN(Date.parse(data.before))) return []
     if (!(await getViewablePiece(supabaseAdmin, data.piece_id, viewerId))) return []
-    const { data: rows, error } = await supabaseAdmin
+    let query = supabaseAdmin
       .from("piece_responses")
       .select("id, body, created_at, user_id, parent_id, sources, quoted_text, serialized_range, is_pinned")
       .eq("piece_id", data.piece_id)
       .order("is_pinned", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(MAX_COMMENTS)
+      .limit(COMMENTS_PAGE)
+    if (data.before) query = query.eq("is_pinned", false).lt("created_at", data.before)
+    const { data: rows, error } = await query
 
     if (error) {
       if (error.code !== "42P01") {
@@ -70,7 +72,7 @@ export async function listComments(args: { data?: any } = {}) {
       ...(votesMap.get(r.id) ?? { upvotes: 0, downvotes: 0, user_vote: 0 }),
     }))
   }
-  return await __handler({ data: args?.data as { piece_id: string } })
+  return await __handler({ data: args?.data as { piece_id: string; before?: string } })
 }
 
 export async function postComment(args: { data?: any } = {}) {
