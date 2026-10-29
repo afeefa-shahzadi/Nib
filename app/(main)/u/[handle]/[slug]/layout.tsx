@@ -24,6 +24,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: data.piece.summary ?? undefined,
         type: "article",
         url: `/u/${handle}/${slug}`,
+        images: [`/api/og/${handle}/${slug}`],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: data.piece.title,
+        description: data.piece.summary ?? undefined,
+        images: [`/api/og/${handle}/${slug}`],
       },
       alternates: {
         // Imported pieces point canonical at the original source so it keeps its

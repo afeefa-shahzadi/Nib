@@ -36,6 +36,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }))
 
+  // One profile page per author with a public piece.
+  const profileEntries = [...new Set(pieceEntries.map((p) => p.url.split("/")[4]))].map((handle) => ({
+    url: `${baseUrl}/u/${handle}`,
+    changeFrequency: "weekly" as const,
+    priority: 0.6,
+  }))
+
+  const staticPages = ["/product", "/pricing", "/docs", "/leaderboard", "/terms", "/privacy"].map((path) => ({
+    url: `${baseUrl}${path}`,
+    changeFrequency: "monthly" as const,
+    priority: 0.5,
+  }))
+
   return [
     {
       url: baseUrl,
@@ -55,6 +68,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.8,
     },
+    ...staticPages,
+    ...profileEntries,
     ...pieceEntries,
   ]
 }

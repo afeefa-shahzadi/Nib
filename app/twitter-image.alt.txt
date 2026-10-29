@@ -1,0 +1,1 @@
+Nib: Write once. Readers choose the shape.
