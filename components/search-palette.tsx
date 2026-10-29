@@ -80,7 +80,7 @@ export function SearchPalette({ open, onOpenChange }: { open: boolean; onOpenCha
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="top-0 h-[100dvh] max-w-none translate-y-0 gap-0 overflow-hidden rounded-none p-0 sm:top-[15vh] sm:h-auto sm:max-w-xl sm:rounded-xl sm:[&>button]:hidden">
+      <DialogContent className="top-0 h-[100dvh] max-w-none translate-y-0 gap-0 overflow-hidden rounded-none p-0 sm:top-[15vh] sm:h-auto sm:max-w-xl sm:rounded-xl [&>button]:top-1.5 [&>button]:right-1.5 [&>button]:inline-flex [&>button]:size-11 [&>button]:items-center [&>button]:justify-center sm:[&>button]:hidden">
         <DialogTitle className="sr-only">Search Nib</DialogTitle>
         <Command shouldFilter={false} className="[&_[cmdk-input-wrapper]]:pr-12 sm:[&_[cmdk-input-wrapper]]:pr-3 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:text-muted-foreground">
           <CommandInput
