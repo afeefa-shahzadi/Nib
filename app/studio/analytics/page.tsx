@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect, useRef, type ReactNode } from "react"
 import { TrendingUp, Eye, IndianRupee, Activity, Lock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,24 @@ const ReaderFunnelChart = dynamic(() => import("./components/analytics-charts").
 const TopPiecesBarChart = dynamic(() => import("./components/analytics-charts").then((m) => m.TopPiecesBarChart), { ssr: false, loading: skeleton(332) })
 const CompletionRadialChart = dynamic(() => import("./components/analytics-charts").then((m) => m.CompletionRadialChart), { ssr: false, loading: skeleton(332) })
 const CohortMatrixChart = dynamic(() => import("./components/analytics-charts").then((m) => m.CohortMatrixChart), { ssr: false, loading: skeleton(192) })
+
+// Below-the-fold charts mount only when near the viewport; the skeleton keeps their exact height (CLS).
+function InView({ height, className, children }: { height: number; className?: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [seen, setSeen] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || seen) return
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect() } }, { rootMargin: "200px" })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [seen])
+  return (
+    <div ref={ref} className={className}>
+      {seen ? children : <div className="surface rounded-md" style={{ height }} aria-hidden />}
+    </div>
+  )
+}
 
 function rupees(paise: number) {
   return `₹${(paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
@@ -64,7 +82,7 @@ export default function AnalyticsPage() {
   const revenueDelta = sQ.data?.revenueDelta ?? 0
 
   const tel = tQ.data
-  const totals = tel?.totals ?? {
+  const totals = useMemo(() => tel?.totals ?? {
     views: 0,
     uniqueViews: 0,
     fullReads: 0,
@@ -73,7 +91,7 @@ export default function AnalyticsPage() {
     depth100: 0,
     modeSwitches: 0,
     shares: 0,
-  }
+  }, [tel])
   const series = useMemo(() => tel?.series ?? [], [tel])
   const completionPct = totals.views
     ? Math.min(100, Math.round((totals.depth100 / totals.views) * 100))
@@ -105,20 +123,20 @@ export default function AnalyticsPage() {
     })
   }, [series, revenue30d])
 
-  const modeDist = (tel?.modes ?? []).map((m) => ({
+  const modeDist = useMemo(() => (tel?.modes ?? []).map((m) => ({
     name: m.name[0].toUpperCase() + m.name.slice(1),
     value: m.value,
     fill: MODE_COLOR[m.name] ?? "var(--primary)",
-  }))
+  })), [tel])
   const modeDistHasData = modeDist.some((m) => m.value > 0)
 
-  const topPieces = (tel?.topPieces ?? []).map((p) => ({
+  const topPieces = useMemo(() => (tel?.topPieces ?? []).map((p) => ({
     title: p.title.length > 26 ? p.title.slice(0, 24) + "…" : p.title,
     views: p.views,
     reads: p.reads,
-  }))
+  })), [tel])
 
-  const funnel = [
+  const funnel = useMemo(() => [
     { stage: "Views", value: totals.views },
     { stage: "Unique Views", value: totals.uniqueViews ?? 0 },
     {
@@ -130,7 +148,7 @@ export default function AnalyticsPage() {
     { stage: "Full Read", value: totals.fullReads ?? 0 },
     { stage: "Shared", value: totals.shares },
     { stage: "Supported", value: supporters },
-  ]
+  ], [totals, supporters])
 
   const liveSignal = sQ.data || aQ.data || tQ.data ? "live" : "loading"
 
@@ -247,22 +265,24 @@ export default function AnalyticsPage() {
 
       {/* Row 2: revenue line + funnel bar */}
       <div className="mb-6 grid gap-6 lg:grid-cols-2">
-        <RevenueLineChart seriesRich={seriesRich} days={days} />
-        <ReaderFunnelChart funnel={funnel} />
+        <InView height={312}><RevenueLineChart seriesRich={seriesRich} days={days} /></InView>
+        <InView height={312}><ReaderFunnelChart funnel={funnel} /></InView>
       </div>
 
       {/* Row 3: top pieces + engagement radial */}
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
-        <TopPiecesBarChart topPieces={topPieces} />
-        <CompletionRadialChart
-          completionPct={completionPct}
-          supporters={supporters}
-        />
+        <InView height={332} className="lg:col-span-2"><TopPiecesBarChart topPieces={topPieces} /></InView>
+        <InView height={332}>
+          <CompletionRadialChart
+            completionPct={completionPct}
+            supporters={supporters}
+          />
+        </InView>
       </div>
 
       {/* Row 4: Cohort Matrix */}
       <div className="grid gap-6">
-        <CohortMatrixChart cohorts={cQ.data?.cohorts ?? []} />
+        <InView height={192}><CohortMatrixChart cohorts={cQ.data?.cohorts ?? []} /></InView>
       </div>
     </div>
   )

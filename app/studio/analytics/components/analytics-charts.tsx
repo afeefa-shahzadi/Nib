@@ -94,14 +94,14 @@ export function ViewsAreaChart({
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Area
+          <Area isAnimationActive={false}
             type="monotone"
             dataKey="views"
             stroke="var(--primary)"
             fill="url(#gViews)"
             strokeWidth={2}
           />
-          <Area
+          <Area isAnimationActive={false}
             type="monotone"
             dataKey="depth100"
             name="finishes"
@@ -131,7 +131,7 @@ export function ModePieChart({
       {hasData ? (
         <ResponsiveContainer width="100%" height={260}>
           <PieChart>
-            <Pie
+            <Pie isAnimationActive={false}
               data={modeDist}
               dataKey="value"
               nameKey="name"
@@ -201,7 +201,7 @@ export function RevenueLineChart({
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Line
+          <Line isAnimationActive={false}
             type="monotone"
             dataKey="revenue"
             stroke="var(--primary)"
@@ -209,7 +209,7 @@ export function RevenueLineChart({
             dot={false}
             name="Daily ₹"
           />
-          <Line
+          <Line isAnimationActive={false}
             type="monotone"
             dataKey="cumRevenue"
             stroke="var(--note)"
@@ -256,7 +256,7 @@ export function ReaderFunnelChart({ funnel }: { funnel: FunnelItem[] }) {
               fontSize: 12,
             }}
           />
-          <Bar dataKey="value" fill="var(--primary)" radius={[0, 4, 4, 0]} />
+          <Bar isAnimationActive={false} dataKey="value" fill="var(--primary)" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -311,8 +311,8 @@ export function TopPiecesBarChart({
               }}
             />
             <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="views" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="reads" fill="var(--success)" radius={[4, 4, 0, 0]} />
+            <Bar isAnimationActive={false} dataKey="views" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+            <Bar isAnimationActive={false} dataKey="reads" fill="var(--success)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       )}
@@ -346,7 +346,7 @@ export function CompletionRadialChart({
           startAngle={90}
           endAngle={-270}
         >
-          <RadialBar background dataKey="value" cornerRadius={8} />
+          <RadialBar isAnimationActive={false} background dataKey="value" cornerRadius={8} />
           <Tooltip
             contentStyle={{
               background: "var(--popover)",
