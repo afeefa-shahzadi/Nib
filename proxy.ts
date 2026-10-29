@@ -94,9 +94,6 @@ export async function proxy(request: NextRequest) {
     ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host
     : "localhost:3000" 
 
-  const isLocalhost =
-    hostname.startsWith("localhost:") || hostname.endsWith(".localhost:3000") || hostname.endsWith(".devtunnels.ms")
-
   // 1. Rewrite for app/studio
   if (
     hostname === `studio.${rootDomain}` ||
@@ -120,54 +117,10 @@ export async function proxy(request: NextRequest) {
     return rewriteResponse
   }
 
-  if (
-    hostname !== rootDomain &&
-    !hostname.includes("vercel.app") &&
-    !isLocalhost
-  ) {
-    const { data: org } = await supabase
-      .from("organizations")
-      .select("slug")
-      .eq("custom_domain", hostname)
-      .single()
+  // Custom domains (org/profile hosts) used to be resolved here, but neither
+  // organizations nor profiles has a custom_domain column in prod, so those two
+  // lookups failed on every request to a non-root host. Re-add with the column.
 
-    if (org) {
-      const rewriteUrl = new URL(`/org/${org.slug}${pathname}`, request.url)
-      const rewriteResponse = NextResponse.rewrite(rewriteUrl)
-      // Copy cookies from supabaseResponse
-      supabaseResponse.cookies.getAll().forEach((c) => {
-        rewriteResponse.cookies.set(
-          c.name,
-          c.value,
-          c as any as NonNullable<
-            Parameters<typeof rewriteResponse.cookies.set>[2]
-          >
-        )
-      })
-      return rewriteResponse
-    }
-
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("handle")
-      .eq("custom_domain", hostname)
-      .single()
-
-    if (profile) {
-      const rewriteUrl = new URL(`/u/${profile.handle}${pathname}`, request.url)
-      const rewriteResponse = NextResponse.rewrite(rewriteUrl)
-      supabaseResponse.cookies.getAll().forEach((c) => {
-        rewriteResponse.cookies.set(
-          c.name,
-          c.value,
-          c as any as NonNullable<
-            Parameters<typeof rewriteResponse.cookies.set>[2]
-          >
-        )
-      })
-      return rewriteResponse
-    }
-  }
   // --- END CUSTOM DOMAIN LOGIC ---
 
   return supabaseResponse

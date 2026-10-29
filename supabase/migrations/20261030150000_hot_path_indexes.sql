@@ -25,6 +25,3 @@ create index if not exists idx_notifications_user_created
 create index if not exists idx_notifications_user_unread
   on public.notifications (user_id) where read_at is null;
 
--- proxy.ts resolves custom domains on every request to a non-root host.
-create index if not exists idx_profiles_custom_domain
-  on public.profiles (custom_domain) where custom_domain is not null;
