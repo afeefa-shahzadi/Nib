@@ -8,7 +8,6 @@ import { useState, useEffect } from "react"
 import { useMyPlan } from "@/hooks/use-my-plan"
 import { WaitlistButton } from "@/components/waitlist-button"
 import { LaunchPaymentsNotice } from "@/components/launch-payments-notice"
-import { supabase } from "@/lib/supabase/client"
 import {
   useCurrency,
   formatINRMarket,
@@ -47,7 +46,9 @@ export default function Pricing() {
   const [isYearly, setIsYearly] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+    import("@/lib/supabase/client").then(({ supabase }) =>
+      supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
+    )
   }, [])
 
   return (

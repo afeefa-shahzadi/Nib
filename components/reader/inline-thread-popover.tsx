@@ -4,7 +4,10 @@ import { useState, useEffect, useRef } from "react"
 import { createPortal } from "react-dom"
 import { X, Send, Pin } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CommentEditor, type CommentEditorRef } from "../composer/comment-editor"
+import dynamic from "next/dynamic"
+import type { CommentEditorRef } from "../composer/comment-editor"
+// Lazy: tiptap/prosemirror only loads when a thread popover opens.
+const CommentEditor = dynamic(() => import("../composer/comment-editor").then((m) => m.CommentEditor), { ssr: false })
 import { postComment } from "@/actions/comments"
 import { sanitize } from "../block-renderer"
 import { formatRelativeTime } from "@/lib/utils"

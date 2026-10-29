@@ -2,7 +2,6 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import dynamic from "next/dynamic"
 import {
@@ -79,16 +78,27 @@ export function SiteHeader() {
   const router = useRouter()
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((_e, s) =>
-      setUserId(s?.user?.id ?? null)
-    )
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => setUserId(session?.user?.id ?? null))
-    return () => data.subscription.unsubscribe()
+    // supabase-js (~220KB) is loaded after hydration, off the critical path.
+    let unsub: (() => void) | undefined
+    let cancelled = false
+    import("@/lib/supabase/client").then(({ supabase }) => {
+      if (cancelled) return
+      const { data } = supabase.auth.onAuthStateChange((_e, s) =>
+        setUserId(s?.user?.id ?? null)
+      )
+      unsub = () => data.subscription.unsubscribe()
+      supabase.auth
+        .getSession()
+        .then(({ data: { session } }) => setUserId(session?.user?.id ?? null))
+    })
+    return () => {
+      cancelled = true
+      unsub?.()
+    }
   }, [])
 
   const signOut = async () => {
+    const { supabase } = await import("@/lib/supabase/client")
     await supabase.auth.signOut()
     router.push("/")
   }

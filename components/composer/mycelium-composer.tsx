@@ -15,8 +15,10 @@ import { CanvasArea } from "./canvas-area"
 import { InspectorAside } from "./inspector-aside"
 import { EmbeddedRepost } from "@/components/reader/embedded-repost"
 import { MetaDialog } from "./meta-dialog"
-import { ScheduleDialog } from "./schedule-dialog"
-import { MinimapDialog } from "./minimap-dialog"
+import dynamic from "next/dynamic"
+// Dialog-only: keep @xyflow/dagre and react-day-picker/date-fns out of the editor's initial bundle.
+const ScheduleDialog = dynamic(() => import("./schedule-dialog").then((m) => m.ScheduleDialog), { ssr: false })
+const MinimapDialog = dynamic(() => import("./minimap-dialog").then((m) => m.MinimapDialog), { ssr: false })
 import { VoiceDictation } from "./voice-dictation"
 import { createSaveQueue } from "./save-queue"
 import { lastTextEditor } from "./rich-block-editor"

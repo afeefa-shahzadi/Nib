@@ -2,7 +2,9 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
-const PROTECTED_PREFIXES = ["/studio", "/me", "/notifications"]
+// /org pages redirect anonymous users too; doing it here (HTTP 307) instead of
+// in the streamed page avoids a client-side swap to /login (CLS 0.31).
+const PROTECTED_PREFIXES = ["/studio", "/me", "/notifications", "/org"]
 // While a TOTP challenge is pending only the challenge page renders; API
 // routes answer 401 instead of a redirect.
 const MFA_PAGE = "/login/mfa"

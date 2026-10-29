@@ -14,7 +14,10 @@ import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import Link from "next/link"
 import { sanitize } from "./block-renderer"
-import { CommentEditor, type CommentEditorRef } from "./composer/comment-editor"
+import dynamic from "next/dynamic"
+import type { CommentEditorRef } from "./composer/comment-editor"
+// Lazy: tiptap/prosemirror (~390KB) only loads when the comments sheet opens.
+const CommentEditor = dynamic(() => import("./composer/comment-editor").then((m) => m.CommentEditor), { ssr: false })
 import { BookOpen } from "lucide-react"
 import { formatRelativeTime } from "@/lib/utils"
 

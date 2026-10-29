@@ -228,15 +228,16 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
+      {/* KPIs */}
+      <KpiGrid kpis={kpis} />
+
+      {/* Below the KPIs so its late arrival does not shift them (CLS). */}
       {tQ.isSuccess && totals.views === 0 && (
         <div className="surface mb-6 rounded-md p-5 text-sm text-muted-foreground">
           No reader events yet in this window. Publish a piece and share it —
           view, mode-switch and read-depth events will appear here in real time.
         </div>
       )}
-
-      {/* KPIs */}
-      <KpiGrid kpis={kpis} />
 
       {/* Row 1: views area + mode pie */}
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
