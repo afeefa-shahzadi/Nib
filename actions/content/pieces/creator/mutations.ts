@@ -125,6 +125,12 @@ export async function importMarkdown(args: { data?: any } = {}) {
       const text = buf.join("\n").trim()
       buf = []
       if (!text) return
+      // Scene break (---, ***, ___): no divider block exists, so keep it as a
+      // plain "* * *" paragraph instead of a literal row of dashes.
+      if (/^(-{3,}|\*{3,}|_{3,})$/.test(text)) {
+        rows.push({ type: "paragraph", content: { text: "* * *" } })
+        return
+      }
       const h = /^(#{1,6})\s+(.*)$/.exec(text)
       if (h) {
         rows.push({
