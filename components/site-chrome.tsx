@@ -60,9 +60,10 @@ function ThemeToggle() {
 
 type Me = { handle: string | null; name: string; avatar: string | null }
 
-const NAV = [
+// Visitors get "How it works"; writing starts from "Get started". Signed-in users get "Write".
+const navFor = (signedIn: boolean) => [
   { href: "/feed", label: "Read" },
-  { href: "/studio", label: "Write" },
+  signedIn ? { href: "/studio", label: "Write" } : { href: "/product", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
   { href: "/docs", label: "Docs" },
 ]
@@ -147,6 +148,7 @@ export function SiteHeader() {
     : []
 
   const close = () => setMenuOpen(false)
+  const NAV = navFor(!!me)
 
   return (
     <header className="hairline-b sticky top-0 z-30 bg-background/80 backdrop-blur-md">
