@@ -18,7 +18,5 @@ export function checkEnv(env: Record<string, string | undefined> = process.env):
   const out = REQUIRED.filter(([k]) => !env[k]).map(
     ([k, why]) => `${k} is not set: ${why}`
   )
-  if (!env.PISTON_API_URL)
-    out.push("PISTON_API_URL is not set (info): code Run buttons are hidden")
   return out
 }

@@ -145,6 +145,8 @@ and **fails closed** (500) — correct. It also HMAC-verifies the signature
 
 ### A6. Code execution (Piston) is a separate service — not bundleable into Next
 
+> Superseded: code blocks now run in the reader's browser with `@browserrun/sandrun` (`lib/run-code.ts`). The Piston notes below apply only if the server path is revived.
+
 `actions/code.ts` runs user-submitted code by POSTing to a **Piston** engine
 (`piston-engine/`, a Docker container). Piston sandboxes untrusted code with Linux
 isolation (namespaces, cgroups, seccomp, chroot) and holds multi-GB of installed

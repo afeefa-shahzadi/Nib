@@ -26,11 +26,8 @@ test("checkEnv flags missing BYOK and CRON", () => {
     assert.match(w, new RegExp(k))
 })
 
-test("checkEnv: full env only has the Piston info line, which goes away when set", () => {
-  const w = checkEnv(full)
-  assert.equal(w.length, 1)
-  assert.match(w[0], /PISTON_API_URL/)
-  assert.deepEqual(checkEnv({ ...full, PISTON_API_URL: "x" }), [])
+test("checkEnv: full env has no warnings", () => {
+  assert.deepEqual(checkEnv(full), [])
 })
 
 const env = process.env as Record<string, string | undefined>

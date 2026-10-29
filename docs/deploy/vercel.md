@@ -30,7 +30,6 @@ Never commit real values. Generate keys with `openssl rand -hex 32`.
 | `MISTRAL_API_KEY` | yes | Platform-funded AI unavailable |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | yes | No email is sent; in production there is no test-mailbox fallback, sends are skipped with a warning |
 | `LAUNCH_FREE` | no | Unset = free launch ON. Only the exact value `0` turns it off |
-| `PISTON_API_URL`, `PISTON_AUTH_TOKEN` | no | Code execution off; Run buttons hidden |
 | `CONTACT_EMAIL` | no | Contact form recipient, legal/DMCA contact and default email sender (`lib/brand.ts`). Defaults to `writeson.nib@gmail.com` |
 | `NEXT_PUBLIC_SOCIAL_X`, `NEXT_PUBLIC_SOCIAL_GITHUB`, `NEXT_PUBLIC_SOCIAL_LINKEDIN`, `NEXT_PUBLIC_SOCIAL_INSTAGRAM`, `NEXT_PUBLIC_SOCIAL_YOUTUBE` | no | Full profile URL each; the footer shows an icon only for those set |
 | `SMTP_SECURE` | no | Set `true` for implicit TLS on port 465; default is STARTTLS on 587 |
@@ -42,7 +41,7 @@ Never commit real values. Generate keys with `openssl rand -hex 32`.
 On boot in production, `instrumentation.ts` logs a `[env]` warning for each
 missing var that `lib/env-check.ts` checks (the Supabase vars, site/app URLs,
 `BYOK_ENCRYPTION_KEY`, SMTP, `CRON_SECRET`, `MISTRAL_API_KEY`,
-`EMAIL_TOKEN_SECRET`, plus an info line for `PISTON_API_URL`).
+`EMAIL_TOKEN_SECRET`).
 
 ## 3. Crons
 
@@ -74,13 +73,18 @@ One-time setup in the Supabase dashboard:
 - Set a hard monthly spend limit at the AI provider. Platform-funded AI is
   free to users during launch.
 
-## 5. Code execution (optional)
+## 5. Code execution
 
-Off unless `PISTON_API_URL` is set. Leaving it unset is supported: code
-blocks are display-only and Run buttons are hidden. Most free VM hosts
-require a card. If you do host Piston, it needs Docker with `--privileged`
-and should sit behind an authenticated reverse proxy; then set
-`PISTON_API_URL` and `PISTON_AUTH_TOKEN`.
+Nothing to deploy. Code blocks run in the reader's browser with
+`@browserrun/sandrun` (`lib/run-code.ts`): each runtime is WebAssembly loaded
+from jsDelivr into a sandboxed iframe, so it works for signed-out readers and
+costs nothing to scale. Python, JavaScript, TypeScript, SQL, C, C++, Go, Java
+and Ruby run; Rust does not. The first run of a language downloads its
+runtime (C++ is the largest, about 14 MB), so blocks start loading it when
+they scroll into view.
+
+The old Piston server action (`actions/code.ts`) and `piston-engine/` are kept
+but unused.
 
 ## 6. Official blog (later)
 

@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useEffect, useState } from "react"
+import { useRef, useState } from "react"
 import { Highlight, themes } from "prism-react-renderer"
 import { Block, getText, getStr } from "../block-renderer"
-import { executeCode, codeRunEnabled } from "@/actions/code"
+import { useCodeRun } from "@/lib/run-code"
 import { isRunnableLang } from "@/lib/code-languages"
 import { CodePreview, isWebBlock } from "@/components/code-preview"
 import { Play, Loader2, FileCode2, X, Copy, Check, Eye } from "lucide-react"
@@ -19,14 +19,16 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
   const [activeTab, setActiveTab] = useState(0)
   const activeFile = files[activeTab] || files[0]
 
-  const [isRunning, setIsRunning] = useState(false)
   const [output, setOutput] = useState<{ stdout: string; stderr: string; code?: number | null; signal?: string | null } | null>(null)
   const [outputTab, setOutputTab] = useState<"output" | "console">("output")
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const [runEnabled, setRunEnabled] = useState(false)
-  useEffect(() => { codeRunEnabled().then(setRunEnabled).catch(() => {}) }, [])
   const web = isWebBlock(files)
+  const executionLang = files.find(f => f.name.startsWith("main"))?.lang || files[0]?.lang || fallbackLang
+  const isRunnable = isRunnableLang(executionLang)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const runFiles = files.map(f => ({ name: f.name, content: f.content }))
+  const { run, running: isRunning, loadedMb } = useCodeRun(rootRef, executionLang, runFiles, !isPreview && isRunnable && !web)
 
   const handleCopy = () => {
     const textToCopy = files[activeTab]?.content || ""
@@ -36,11 +38,9 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
   }
 
   const handleRun = async () => {
-    setIsRunning(true)
     setOutput(null)
     try {
-      const executionLang = files.find(f => f.name.startsWith("main"))?.lang || files[0]?.lang || fallbackLang
-      const res = await executeCode(executionLang, files.map(f => ({ name: f.name, content: f.content })))
+      const res = await run()
       if (res.success) {
         setOutput({ stdout: res.output || "", stderr: res.error || "", code: res.code, signal: res.signal })
         if (!res.output && res.error) {
@@ -55,16 +55,11 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
     } catch (e: any) {
       setOutput({ stdout: "", stderr: e instanceof Error ? e.message : "Execution error" })
       setOutputTab("console")
-    } finally {
-      setIsRunning(false)
     }
   }
 
-  const executionLang = files.find(f => f.name.startsWith("main"))?.lang || files[0]?.lang || fallbackLang
-  const isRunnable = isRunnableLang(executionLang)
-
   return (
-    <div className="group relative my-5 flex flex-col gap-0 rounded-md border border-border shadow-sm max-h-125 overflow-y-auto">
+    <div ref={rootRef} className="group relative my-5 flex flex-col gap-0 rounded-md border border-border shadow-sm max-h-125 overflow-y-auto">
       {/* Tab Header */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-[#1e1e1e]/95 backdrop-blur-md px-2 py-1.5 text-[#d4d4d4]">
         <div className="flex items-center gap-1 overflow-x-auto">
@@ -98,14 +93,14 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
             </button>
           )}
 
-          {!isPreview && isRunnable && !web && runEnabled && (
+          {!isPreview && isRunnable && !web && (
             <button
               onClick={handleRun}
               disabled={isRunning || !activeFile?.content.trim()}
               className="flex h-6 items-center gap-1.5 rounded bg-[#4fc1ff]/10 px-2 text-[10px] font-medium text-[#4fc1ff] transition-colors hover:bg-[#4fc1ff]/20 disabled:opacity-50"
             >
               {isRunning ? <Loader2 className="size-3 animate-spin" /> : <Play className="size-3" />}
-              {isRunning ? "Running" : "Run"}
+              {isRunning ? (loadedMb ? `Loading ${loadedMb.toFixed(1)} MB` : "Running") : "Run"}
             </button>
           )}
           {!isPreview && web && (

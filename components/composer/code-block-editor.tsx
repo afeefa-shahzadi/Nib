@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import { useEffect, useState } from "react"
+import { useRef, useState } from "react"
 import { Play, Loader2, Plus, X, FileCode2, Copy, Check, Eye } from "lucide-react"
-import { executeCode, codeRunEnabled } from "@/actions/code"
 import { CodePreview, isWebBlock } from "@/components/code-preview"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import Editor from "react-simple-code-editor"
 import { Highlight, themes } from "prism-react-renderer"
 import { isRunnableLang } from "@/lib/code-languages"
+import { useCodeRun } from "@/lib/run-code"
 
 export interface CodeFile {
   name: string
@@ -35,13 +35,10 @@ const langShortNames: Record<string, string> = {
 }
 
 export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: CodeBlockEditorProps) {
-  const [isRunning, setIsRunning] = useState(false)
   const [output, setOutput] = useState<{ stdout: string; stderr: string; code?: number | null; signal?: string | null } | null>(null)
   const [outputTab, setOutputTab] = useState<"output" | "console">("output")
   const [copied, setCopied] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const [runEnabled, setRunEnabled] = useState(false)
-  useEffect(() => { codeRunEnabled().then(setRunEnabled).catch(() => {}) }, [])
 
   // Manage files locally, syncing up on change. If no files prop, start with a default file.
   const [files, setFiles] = useState<CodeFile[]>(() => {
@@ -172,12 +169,9 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
   }
 
   const handleRun = async () => {
-    setIsRunning(true)
     setOutput(null)
     try {
-      // Find main language (either from the active tab or the first file's lang, or fallback)
-      const executionLang = files.find(f => f.name.startsWith("main"))?.lang || files[0]?.lang || lang || "typescript"
-      const res = await executeCode(executionLang, files.map(f => ({ name: f.name, content: f.content })))
+      const res = await run()
       if (res.success) {
         setOutput({ stdout: res.output || "", stderr: res.error || "", code: res.code, signal: res.signal })
         if (!res.output && res.error) {
@@ -192,8 +186,6 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
     } catch (e: any) {
       setOutput({ stdout: "", stderr: e instanceof Error ? e.message : "Execution error" })
       setOutputTab("console")
-    } finally {
-      setIsRunning(false)
     }
   }
 
@@ -201,6 +193,13 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
   const executionLang = files.find(f => f.name.startsWith("main"))?.lang || files[0]?.lang || lang || "typescript"
   const isRunnable = isRunnableLang(executionLang)
   const web = isWebBlock(files)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const { run, running: isRunning, loadedMb } = useCodeRun(
+    rootRef,
+    executionLang,
+    files.map(f => ({ name: f.name, content: f.content })),
+    isRunnable && !web,
+  )
 
   const updateActiveFile = (patch: Partial<CodeFile>) => {
     const newFiles = [...files]
@@ -275,7 +274,7 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
   }
 
   return (
-    <div className="space-y-0 overflow-y-auto max-h-125 relative rounded-md border border-border">
+    <div ref={rootRef} className="space-y-0 overflow-y-auto max-h-125 relative rounded-md border border-border">
       {/* Header Tabs */}
       <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-muted/90 backdrop-blur-md px-1 sm:px-2 py-1.5 overflow-hidden">
         <div className="flex flex-1 min-w-0 items-center gap-1 overflow-x-auto no-scrollbar">
@@ -352,7 +351,7 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
             {copied ? <Check className="size-3" /> : <Copy className="size-3" />}
           </Button>
 
-          {isRunnable && !web && runEnabled && (
+          {isRunnable && !web && (
             <Button
               size="sm"
               variant="secondary"
@@ -361,7 +360,7 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
               disabled={isRunning || !activeFile?.content.trim()}
             >
               {isRunning ? <Loader2 className="sm:mr-1 size-3 animate-spin" /> : <Play className="sm:mr-1 size-3" />}
-              <span className="hidden sm:inline">{isRunning ? "Running" : "Run"}</span>
+              <span className="hidden sm:inline">{isRunning ? (loadedMb ? `Loading ${loadedMb.toFixed(1)} MB` : "Running") : "Run"}</span>
             </Button>
           )}
           {web && (
