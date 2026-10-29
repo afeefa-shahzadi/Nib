@@ -165,26 +165,13 @@ export function ReaderClient({
   }, [inlineComments])
 
 
-  // One-time follow dialog
-  useEffect(() => {
-    if (!author || viewerId === piece.author_id) return
-    const key = `has_seen_follow_dialog_${piece.author_id}`
-    if (localStorage.getItem(key)) return
-
-    const timer = setTimeout(() => {
-      setShowFollowDialog(true)
-      localStorage.setItem(key, "true")
-    }, 15000)
-
-    return () => clearTimeout(timer)
-  }, [author, piece.author_id, viewerId])
-
   const [hasAccess] = useState(viewerHasAccess)
   const [rooms] = useState<DebateRoomItem[]>(initialRooms)
   const [related] = useState<RelatedPiece[]>(initialRelated)
   const [boosts] = useState<Record<string, unknown>[]>(initialBoosts)
 
   const [progress, setProgress] = useState(0)
+
   const [moreOpen, setMoreOpen] = useState(false)
 
   const tipRef = useRef<HTMLDivElement | null>(null)
@@ -225,15 +212,26 @@ export function ReaderClient({
     articleRef,
   })
   useEffect(() => {
+    let canPromptFollow = !!author && viewerId !== piece.author_id
     const onScroll = () => {
       const el = articleRef.current
       if (!el) return
       const rect = el.getBoundingClientRect()
       const total = el.scrollHeight - window.innerHeight
       const scrolled = Math.max(0, -rect.top)
+      const p = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0
+      // One-time follow dialog, once the reader is well into the piece.
+      if (p >= 60 && canPromptFollow) {
+        canPromptFollow = false
+        const key = `has_seen_follow_dialog_${piece.author_id}`
+        try {
+          if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, "true")
+            setShowFollowDialog(true)
+          }
+        } catch {}
+      }
       setProgress((prev) => {
-        const p = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0
-
         // Synchronize aside scroll with article scroll
         if (asideRef.current) {
           const scrollableHeight =
@@ -249,7 +247,7 @@ export function ReaderClient({
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
-  }, [])
+  }, [author, viewerId, piece.author_id])
 
   const setMode = useCallback(
     (m: ReadingMode) => {

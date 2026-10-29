@@ -185,7 +185,8 @@ export default async function ReaderPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
-      <Suspense>
+      {/* Reserve the reader's space so the footer doesn't flash up before it hydrates (CLS). */}
+      <Suspense fallback={<div className="min-h-screen" />}>
         <ReaderClient
           piece={res.piece}
           blocks={res.blocks}
