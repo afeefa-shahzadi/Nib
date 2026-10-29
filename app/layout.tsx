@@ -2,7 +2,6 @@ import type { Metadata } from "next"
 import { Fraunces, Inter, JetBrains_Mono, Source_Serif_4 } from "next/font/google"
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "./providers"
-import { CookieConsentLazy } from "@/components/cookie-consent-lazy"
 import { ACCENT_SCRIPT } from "@/lib/accent"
 import "./globals.css"
 
@@ -67,7 +66,6 @@ export default function RootLayout({
       </head>
       <body>
         <Providers>{children}</Providers>
-        <CookieConsentLazy />
         <Toaster richColors closeButton />
       </body>
     </html>

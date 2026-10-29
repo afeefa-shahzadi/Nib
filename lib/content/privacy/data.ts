@@ -34,19 +34,23 @@ export const SECTIONS = [
     b: "We use encryption in transit, row-level security in the database, and least-privilege access for our team. No system is perfect — please report suspected vulnerabilities responsibly.",
   },
   {
-    h: "9. International transfers",
+    h: "9. Cookies and local storage",
+    b: "We only store what the site needs to work. Cookies: your sign-in session (sb-…-auth-token) and the studio sidebar's open or closed state. Browser storage: your theme, accent colour, currency, editor drafts and exercise progress. We use no analytics, advertising or tracking cookies, so there is nothing to opt in or out of. If we ever add optional cookies, we will ask first.",
+  },
+  {
+    h: "10. International transfers",
     b: "Nib operates on global infrastructure. Your data may be processed in countries other than your own under standard contractual clauses or equivalent safeguards.",
   },
   {
-    h: "10. Children",
+    h: "11. Children",
     b: "Nib is not directed at children under 13 (or 16 in the EU). We do not knowingly collect data from them.",
   },
   {
-    h: "11. Changes",
+    h: "12. Changes",
     b: "We may update this policy as the product evolves. Material changes will be announced in-product or by email before they take effect.",
   },
   {
-    h: "12. Contact",
+    h: "13. Contact",
     b: `Questions or requests about your data: ${CONTACT_EMAIL}.`,
   },
 ]
