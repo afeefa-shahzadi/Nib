@@ -1,5 +1,6 @@
 "use client"
 
+import { StudioSkeleton } from "@/components/studio/studio-skeleton"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { DraftPiece } from "@/lib/types/content"
@@ -556,9 +557,7 @@ export default function DraftsPage() {
 
       {/* Pieces list */}
       {q.isLoading ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Loading…
-        </p>
+        <StudioSkeleton header={false} />
       ) : filtered.length === 0 ? (
         <div className="surface rounded-md py-16 text-center">
           <FileText className="mx-auto mb-3 size-8 text-muted-foreground/40" />

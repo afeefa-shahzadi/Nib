@@ -1,5 +1,6 @@
 "use client"
 
+import { StudioSkeleton } from "@/components/studio/studio-skeleton"
 import { useCallback, useEffect, useState } from "react"
 import {
   getMyEarnings,
@@ -94,7 +95,7 @@ export default function EarningsPage() {
   }
 
   if (!data)
-    return <div className="p-8 text-sm text-muted-foreground">Loading…</div>
+    return <StudioSkeleton />
 
   return (
     <div className="mx-auto w-full max-w-350 space-y-6 p-6 md:p-8">

@@ -1,5 +1,6 @@
  
 "use client"
+import { StudioSkeleton } from "@/components/studio/studio-skeleton"
 import { useQuery } from "@tanstack/react-query"
 import { listMyMemberships, cancelMyMembership } from "@/actions/memberships"
 import { Button } from "@/components/ui/button"
@@ -25,7 +26,7 @@ export default function MembershipsPage() {
   }
 
   if (q.isLoading)
-    return <div className="p-8 text-sm text-muted-foreground">Loading…</div>
+    return <StudioSkeleton />
   const memberships = q.data?.memberships ?? []
   const subs = q.data?.subscriptions ?? []
   const subByMembership = new Map(

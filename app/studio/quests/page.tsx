@@ -1,5 +1,6 @@
 "use client"
 
+import { StudioSkeleton } from "@/components/studio/studio-skeleton"
 import Link from "next/link"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
@@ -56,9 +57,7 @@ export default function GamificationPage() {
 
   if (isLoading || !s)
     return (
-      <div className="inline-flex items-center gap-2 p-8 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Loading…
-      </div>
+      <StudioSkeleton />
     )
 
   const dailyQuests = s.quests.filter(q => q.quest_type === "daily")

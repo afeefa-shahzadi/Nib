@@ -1,5 +1,6 @@
 "use client"
 
+import { StudioSkeleton } from "@/components/studio/studio-skeleton"
 import { useQuery } from "@tanstack/react-query"
 import { getMyAuthorGraph } from "@/actions/debate"
 import { getMyProfile } from "@/actions/content"
@@ -36,9 +37,7 @@ export default function GraphPage() {
       {/* Only gate on the graph query; the profile is just for the handle label
           (has a fallback), so a slow/failed profile fetch must not block the graph. */}
       {graphQ.isLoading ? (
-        <div className="surface rounded-md p-8 text-center text-sm text-muted-foreground">
-          Loading graph data...
-        </div>
+        <StudioSkeleton header={false} rows={1} />
       ) : graphQ.data ? (
         <RelationshipGraph
           handle={handle}
