@@ -2,7 +2,7 @@
 "use server"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { CO_COLS, slugify, ensureUserWorkspace } from "../../helpers"
 import { assertNotRestricted } from "@/lib/restrictions"
 import { inlineMarkdownToHtml, stripInlineMarkdown } from "@/lib/import/inline-markdown"
@@ -312,10 +312,12 @@ export async function updatePiece(args: { data?: any } = {}) {
       }
     }
 
-    const { error } = await context.supabase
+    const { data: updated, error } = await context.supabase
       .from("content_objects")
       .update(patch)
       .eq("id", data.id)
+      .select("status")
+      .maybeSingle()
     if (error) {
       console.error("[server]", error)
       throw new Error("Request failed. Please try again.")
@@ -388,6 +390,9 @@ export async function updatePiece(args: { data?: any } = {}) {
       })()
     }
 
+    // Public caches (discover feed, author profile, related) hold published
+    // piece rows; draft autosaves leave them alone.
+    if (data.status || updated?.status === "published") updateTag("public")
     return { ok: true }
   }
   return await __handler({
@@ -434,6 +439,7 @@ export async function deletePiece(args: { data?: any } = {}) {
       throw new Error("Request failed. Please try again.")
     }
     revalidatePath("/", "layout")
+    updateTag("public")
     return { ok: true }
   }
   return await __handler({ data: args?.data as { id: string }, context })
@@ -494,6 +500,7 @@ export async function bulkUpdatePieces(args: { data?: any } = {}) {
       throw new Error("Request failed. Please try again.")
     }
     revalidatePath("/", "layout")
+    updateTag("public")
     return { ok: true }
   }
   return await __handler({
@@ -538,6 +545,7 @@ export async function bulkDeletePieces(args: { data?: any } = {}) {
       throw new Error("Request failed. Please try again.")
     }
     revalidatePath("/", "layout")
+    updateTag("public")
     return { ok: true }
   }
   return await __handler({ data: args?.data as { ids: string[] }, context })

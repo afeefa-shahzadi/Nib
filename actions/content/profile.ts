@@ -3,6 +3,7 @@
 import { createAdminClient, createServiceRoleClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { encryptSecret } from "@/lib/crypto"
+import { updateTag } from "next/cache"
 
 // ---------- AUTH: current user's app role(s) ----------
 export async function getMyRole() {
@@ -141,7 +142,7 @@ export async function updateMyProfile(args: { data?: any } = {}) {
     }
     return { ok: true }
   }
-  return await __handler({
+  const out = await __handler({
     data: args?.data as {
       display_name?: string
       handle?: string
@@ -158,6 +159,8 @@ export async function updateMyProfile(args: { data?: any } = {}) {
     },
     context,
   })
+  updateTag("public")
+  return out
 }
 
 // ---------- CREATOR: delete account (full wipe) ----------

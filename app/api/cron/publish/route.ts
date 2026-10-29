@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
+import { revalidateTag } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/server"
 import { sendPublishEmail } from "@/lib/email"
 
@@ -145,6 +146,8 @@ export async function GET(request: Request) {
         )
       }
     }
+
+    if (publishedIds.length) revalidateTag("public", "max")
 
     return NextResponse.json({
       success: true,
