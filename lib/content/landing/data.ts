@@ -2,96 +2,71 @@ import { BRAND_NAME as BRAND } from "@/lib/brand"
 
 export const FEATURE_BLOCKS = [
   {
-    label: "Block model",
-    title: "Every paragraph is a unit.",
-    body: "Paragraphs, evidence, counter-arguments, citations, gates — each is a typed block with its own role, visibility, and monetization rules. Edit once. Render anywhere.",
+    label: "Blocks",
+    title: "Every paragraph has a job.",
+    body: "Mark a paragraph as a claim, evidence, a counter-argument, a citation or a supporters-only section. Readers and search see the structure.",
   },
   {
     label: "Reading modes",
     title: "Five views of one piece.",
-    body: "Skim, Standard, Expert, Teach, Debate. Each block declares which modes it appears in. Readers switch on demand — no extra writing.",
+    body: "Skim, Standard, Expert, Teach and Debate. You choose which blocks appear in each, and readers switch whenever they like.",
   },
   {
     label: "Branches",
-    title: "Counter-arguments without dilution.",
-    body: "Branches are first-class siblings of the canonical piece. Translation, audio, expansion, response — all live next to the original without polluting it.",
+    title: "Follow-ups that stay attached.",
+    body: "Add a translation, an audio version, a deeper dive or a reply to a critic. Each one sits beside the original piece.",
   },
   {
     label: "Bundles",
-    title: "Outcome-shaped products.",
-    body: "Group pieces and branches into courses, dossiers, or playbooks. Sell, gift, or gate them. Bundles are nouns in the system, not folder names.",
+    title: "Sell a course or a reading list.",
+    body: "Group pieces into a bundle, then sell it, gift it or keep it for members.",
   },
   {
     label: "Debates",
-    title: "Structured disagreement.",
-    body: "Turn a contested claim into a thread. Invite responses. Surface the strongest counter — not the loudest one. Reputation flows from rigor.",
+    title: "Disagreement with structure.",
+    body: "Open a contested claim to responses. Readers vote up the strongest counter-argument, and the best replies rise.",
   },
   {
-    label: "Archive",
-    title: "Old ideas, alive.",
-    body: "Every block is addressable, taggable, citable. The composer surfaces related past work as you write. Your archive becomes intelligence, not storage.",
-  },
-  {
-    label: "Composer",
-    title: "A bespoke editor.",
-    body: "Slash menu summons typed blocks. Inspector shows mode visibility, semantic role, monetization eligibility. AI variants generate alongside, never overwriting.",
-  },
-  {
-    label: "Sovereignty",
-    title: "Your audience is yours.",
-    body: "Direct payments. No algorithm between you and the readers you earned.",
-  },
-  {
-    label: "BYOK AI",
-    title: "Bring Your Own Key.",
-    body: "Plug in your API keys for OpenAI, Anthropic, Google, Mistral, OpenRouter, Ollama, or NVIDIA. Bypass platform limits, pay only for what you generate, and retain total control.",
+    label: "Your own AI key",
+    title: "Optional, and yours.",
+    body: "Connect OpenAI, Anthropic, Google, Mistral, OpenRouter, Ollama or NVIDIA to draft summaries and teaching versions. You pay the provider directly.",
   },
 ]
 
 export const STEPS = [
   {
-    n: "01",
-    title: "Draft once in the composer.",
-    body: "Type prose, drop in evidence, mark a paragraph as a thesis or a gated block. Every keystroke autosaves.",
+    n: "1",
+    title: "Write in the composer.",
+    body: "It works like any editor. Everything autosaves.",
   },
   {
-    n: "02",
-    title: "Set per-block visibility.",
-    body: "Decide which blocks appear in Skim, which in Expert, which in Teach. The inspector makes it a checkbox, not a chore.",
+    n: "2",
+    title: "Choose what each mode shows.",
+    body: "Tick which blocks appear in Skim, Expert or Teach. Skip this and every mode shows the whole piece.",
   },
   {
-    n: "03",
-    title: "Generate or write variants.",
-    body: "Use the AI variant tray to draft a 60-word summary or a teaching reframe — stored as siblings, applied on approval.",
-  },
-  {
-    n: "04",
-    title: "Publish + branch.",
-    body: "Open it to readers. Add branches (audio version, response, deep-dive) as the conversation evolves.",
-  },
-  {
-    n: "05",
-    title: "Bundle + monetize.",
-    body: "Group pieces into a paid bundle, attach a membership tier, or open a tip jar. Get paid directly.",
+    n: "3",
+    title: "Publish, then keep going.",
+    body: "Add branches as readers respond, or bundle pieces and turn on tips and memberships.",
   },
 ]
 
 export const FAQ = [
   {
     q: "Is this a Substack alternative?",
-    a: "It overlaps — email, payments, audience — but Nib treats a piece as a structured object, not a newsletter issue. If you publish ideas (not just dispatches), the model fits.",
+    a: "Partly. Nib has email, payments and followers too. The difference is the piece itself: it's built from blocks, so readers can choose how much of it to read.",
   },
   {
     q: "Do I need to learn a new format?",
-    a: "No. The composer reads like a normal editor. Mode visibility and semantic roles are optional layers — turn them on per block when you want them.",
+    a: "No. The composer works like a normal editor. Modes and block roles are extras you can ignore.",
   },
   {
     q: "Can readers really tell the difference?",
-    a: "Yes. Switching modes changes which blocks render. A Skim view of a 4,000-word essay is genuinely 400 words — not collapsed, deleted.",
+    a: "Yes. A Skim view of a 4,000-word essay can be 400 words, because only the blocks you marked for Skim are shown.",
   },
   {
     q: "How does monetization work?",
-    a: "Bundles, membership tiers, gated blocks, and a tip jar. Direct payments. Platform fee on paid features only — free to write.",
+    a: "Bundles, memberships, supporters-only blocks and tips, paid to you directly. Writing and reading are free; a fee applies only to paid features.",
   },
 ]
 
@@ -104,6 +79,8 @@ export const EXCERPT = {
     "Readers then choose how they want to read it. Someone in a hurry can skim the headline claims. A specialist can switch to Expert for the precise detail and the evidence. A student can read the Teach version, with the scaffolding left in.",
   ],
   thesis: "One piece, several ways in.",
+  counter:
+    "Objection: writers already struggle to finish one version. Answer: you still write one. Modes choose which of your blocks to show; extra versions are optional.",
   skim: [
     "You write a piece once, as a sequence of blocks.",
     "Readers pick Skim, Standard, Expert, Teach or Debate.",

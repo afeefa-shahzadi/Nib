@@ -34,7 +34,7 @@ export default function Landing() {
                     Start writing <ArrowRight className="ml-2 size-4" />
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="ghost">
+                <Button asChild size="lg" variant="outline">
                   <Link href="/docs">Read the docs</Link>
                 </Button>
               </div>
@@ -53,8 +53,7 @@ export default function Landing() {
                 What a piece is made of.
               </h2>
               <p className="mt-5 leading-relaxed text-muted-foreground">
-                Typed blocks, branches, bundles, debates and a searchable
-                archive.
+                Blocks, reading modes, branches, bundles and debates.
               </p>
             </div>
             <dl className="space-y-px md:col-span-8">
@@ -74,7 +73,7 @@ export default function Landing() {
         <section className="hairline-t">
           <div className="container-wide py-24">
             <h2 className="max-w-3xl font-display text-4xl leading-tight md:text-5xl">
-              Five steps from blank canvas to bundled product.
+              From first draft to paid bundle.
             </h2>
             <ol className="mt-14 space-y-px">
               {STEPS.map((s) => (
@@ -82,10 +81,10 @@ export default function Landing() {
                   key={s.n}
                   className="hairline-t last:hairline-b grid gap-6 py-8 md:grid-cols-12"
                 >
-                  <div className="font-mono text-sm text-primary md:col-span-2">
+                  <div className="font-display text-2xl text-muted-foreground md:col-span-1">
                     {s.n}
                   </div>
-                  <h3 className="font-display text-2xl leading-tight md:col-span-4">
+                  <h3 className="font-display text-2xl leading-tight md:col-span-5">
                     {s.title}
                   </h3>
                   <p className="leading-relaxed text-muted-foreground md:col-span-6">
@@ -123,12 +122,12 @@ export default function Landing() {
 
         {/* FINAL CTA */}
         <section className="hairline-t">
-          <div className="container-wide py-28 text-center">
+          <div className="container-wide py-20 text-center md:py-24">
             <h2 className="mx-auto max-w-3xl font-display text-4xl leading-[1.05] md:text-6xl">
               The publishing surface for what you actually know.
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground">
-              Free to write. Paid when you sell. Sovereign by default.
+              Free to write. Paid when you sell.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-3">
               <Button asChild size="lg">

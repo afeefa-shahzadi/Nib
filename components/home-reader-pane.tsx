@@ -6,13 +6,14 @@ import type { Block } from "@/components/block-renderer"
 import { ParagraphBlock, QuestionBlock } from "@/components/reader/text-blocks"
 import { EXCERPT } from "@/lib/content/landing/data"
 
-const MODES = ["skim", "standard", "expert", "teach"] as const
+const MODES = ["skim", "standard", "expert", "teach", "debate"] as const
 type Mode = (typeof MODES)[number]
 const LABEL: Record<Mode, string> = {
   skim: "Skim",
   standard: "Standard",
   expert: "Expert",
   teach: "Teach",
+  debate: "Debate",
 }
 const html = (h: string, extra: Partial<Block> = {}): Block => ({
   type: "paragraph",
@@ -54,10 +55,19 @@ function Body({ mode }: { mode: Mode }) {
         ))}
       </>
     )
+  if (mode === "debate")
+    return (
+      <>
+        <ParagraphBlock block={p(EXCERPT.thesis, { semantic_role: "thesis" })} />
+        <ParagraphBlock block={p(EXCERPT.counter, { semantic_role: "counter" })} />
+      </>
+    )
   if (mode === "teach")
     return (
       <>
-        <ParagraphBlock block={p(EXCERPT.paragraphs[1])} />
+        {EXCERPT.paragraphs.map((t) => (
+          <ParagraphBlock key={t} block={p(t)} />
+        ))}
         {/* Sentence-case label here so the hero keeps a single eyebrow. */}
         <QuestionBlock
           block={{ type: "question", content: { text: EXCERPT.question } }}
@@ -94,13 +104,13 @@ export function HomeReaderPane() {
   return (
     <article
       data-testid="home-excerpt"
-      className="surface min-w-0 rounded-lg border border-border/60 p-5 md:p-8"
+      className="surface min-w-0 rounded-lg border border-border/60 p-4 sm:p-5 md:p-8"
     >
       <div
         role="tablist"
         aria-label="Reading mode"
         onKeyDown={onKey}
-        className="mb-6 inline-flex max-w-full flex-wrap gap-1 rounded-md border border-border/60 p-1"
+        className="mb-6 inline-flex max-w-full gap-0.5 overflow-x-auto rounded-md border border-border/60 p-1 [scrollbar-width:none]"
       >
         {MODES.map((m, i) => (
           <button
@@ -114,7 +124,7 @@ export function HomeReaderPane() {
             aria-controls="hero-panel"
             tabIndex={mode === m ? 0 : -1}
             onClick={() => setMode(m)}
-            className={`rounded px-2.5 py-1.5 text-sm sm:px-3 ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`shrink-0 rounded px-1.5 py-1.5 text-[13px] sm:px-3 sm:text-sm ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             {LABEL[m]}
           </button>
@@ -133,6 +143,8 @@ export function HomeReaderPane() {
         id="hero-panel"
         aria-labelledby={`hero-tab-${mode}`}
         data-mode={mode}
+        key={mode}
+        className="animate-in fade-in duration-300 motion-reduce:animate-none"
       >
         <Body mode={mode} />
       </div>
