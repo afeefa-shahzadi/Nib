@@ -389,7 +389,7 @@ export function SiteFooter() {
                 <ul className="text-sm text-muted-foreground">
                   {col.links.map((l) => (
                     <li key={l.href}>
-                      <Link prefetch={false} href={l.href} className="inline-block py-2 hover:text-foreground lg:py-1">
+                      <Link prefetch={false} href={l.href} className="inline-block py-3 hover:text-foreground lg:py-1">
                         {l.label}
                       </Link>
                     </li>

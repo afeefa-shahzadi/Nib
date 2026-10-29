@@ -17,7 +17,7 @@ export function CurrencySelector({ className = "" }: { className?: string }) {
     >
       <span className="hidden sm:inline">Currency</span>
       <Select value={code} onValueChange={(val) => set(val as CurrencyCode)}>
-        <SelectTrigger aria-label="Currency" className="h-7 w-22.5 text-xs focus:ring-1">
+        <SelectTrigger aria-label="Currency" className="h-11 w-24 text-sm focus:ring-1 lg:h-8">
           <SelectValue placeholder="Currency" />
         </SelectTrigger>
         <SelectContent>

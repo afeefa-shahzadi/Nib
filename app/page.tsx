@@ -101,7 +101,7 @@ export default async function Landing() {
             <div className="container-wide py-16 md:py-24">
               <div className="mb-8 flex items-baseline justify-between gap-4">
                 <h2 className="font-display text-3xl md:text-4xl">Reading now</h2>
-                <Link href="/feed" className="shrink-0 text-sm font-medium text-primary hover:underline hover:underline-offset-4">
+                <Link href="/feed" className="-my-3 shrink-0 py-3 text-sm font-medium text-primary hover:underline hover:underline-offset-4">
                   See the feed →
                 </Link>
               </div>
@@ -164,7 +164,7 @@ export default async function Landing() {
           <div className="container-wide py-16 md:py-24">
             <div className="mb-10 flex items-baseline justify-between gap-4">
               <h2 className="font-display text-3xl md:text-4xl">Built for ideas that grow</h2>
-              <Link href="/product" className="hidden shrink-0 text-sm font-medium text-primary hover:underline hover:underline-offset-4 sm:inline">
+              <Link href="/product" className="-my-3 hidden shrink-0 py-3 text-sm font-medium text-primary hover:underline hover:underline-offset-4 sm:inline">
                 Everything Nib does →
               </Link>
             </div>
@@ -172,7 +172,7 @@ export default async function Landing() {
               {FEATURE_BLOCKS.map((f) => (
                 <div key={f.label}>
                   <dt className="font-display text-xl">
-                    <Link href={`/product#${f.anchor}`} className="hover:underline hover:underline-offset-4">
+                    <Link href={`/product#${f.anchor}`} className="-my-2 inline-block py-2 hover:underline hover:underline-offset-4">
                       {f.label}
                     </Link>
                   </dt>
@@ -180,7 +180,7 @@ export default async function Landing() {
                 </div>
               ))}
             </dl>
-            <Link href="/product" className="mt-8 inline-block text-sm font-medium text-primary hover:underline hover:underline-offset-4 sm:hidden">
+            <Link href="/product" className="mt-8 -my-3 inline-block py-3 text-sm font-medium text-primary hover:underline hover:underline-offset-4 sm:hidden">
               Everything Nib does →
             </Link>
           </div>
@@ -224,7 +224,7 @@ export default async function Landing() {
           <div className="container-wide grid gap-8 py-16 md:py-24 lg:grid-cols-12 lg:gap-16">
             <div className="lg:col-span-5">
               <h2 className="font-display text-3xl md:text-4xl">Questions</h2>
-              <Link href="/docs" className="mt-4 inline-block text-sm font-medium text-primary hover:underline hover:underline-offset-4">
+              <Link href="/docs" className="mt-4 -my-3 inline-block py-3 text-sm font-medium text-primary hover:underline hover:underline-offset-4">
                 Full documentation →
               </Link>
             </div>

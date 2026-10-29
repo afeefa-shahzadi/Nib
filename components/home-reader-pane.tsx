@@ -124,7 +124,7 @@ export function HomeReaderPane() {
             aria-controls="hero-panel"
             tabIndex={mode === m ? 0 : -1}
             onClick={() => setMode(m)}
-            className={`shrink-0 rounded px-1.5 py-1.5 text-[13px] sm:px-3 sm:text-sm ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            className={`min-h-11 shrink-0 rounded px-1.5 py-1.5 text-sm sm:px-3 lg:min-h-8 ${mode === m ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
           >
             {LABEL[m]}
           </button>
@@ -150,7 +150,7 @@ export function HomeReaderPane() {
       </div>
       <Link
         href={EXCERPT.href}
-        className="mt-2 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
+        className="mt-1 inline-block py-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
       >
         Read the full piece →
       </Link>
