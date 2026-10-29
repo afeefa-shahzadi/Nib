@@ -5,6 +5,7 @@ import { ActionContext } from "@/lib/types/actions"
 import { revalidatePath } from "next/cache"
 import { CO_COLS, slugify, ensureUserWorkspace } from "../../helpers"
 import { assertNotRestricted } from "@/lib/restrictions"
+import { inlineMarkdownToHtml, stripInlineMarkdown } from "@/lib/import/inline-markdown"
 
 // ---------- CREATOR: create a new draft ----------
 export async function createPiece(args: { data?: any } = {}) {
@@ -116,6 +117,10 @@ export async function importMarkdown(args: { data?: any } = {}) {
     let buf: string[] = []
     let inCode = false
     let codeLang = ""
+    const textContent = (t: string) => {
+      const html = inlineMarkdownToHtml(t)
+      return html ? { text: stripInlineMarkdown(t), html } : { text: t }
+    }
     const flushPara = () => {
       const text = buf.join("\n").trim()
       buf = []
@@ -132,11 +137,11 @@ export async function importMarkdown(args: { data?: any } = {}) {
       if (text.startsWith("> ")) {
         rows.push({
           type: "quote",
-          content: { text: text.replace(/^>\s?/gm, "") },
+          content: textContent(text.replace(/^>\s?/gm, "")),
         })
         return
       }
-      rows.push({ type: "paragraph", content: { text } })
+      rows.push({ type: "paragraph", content: textContent(text) })
     }
     for (const raw of lines) {
       if (raw.startsWith("```")) {
