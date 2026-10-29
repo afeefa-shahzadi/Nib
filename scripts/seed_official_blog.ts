@@ -16,6 +16,7 @@ import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync } from "node:fs"
 import { createHash } from "node:crypto"
 import { join } from "node:path"
+import { guidePosts } from "./seed_blog_guides"
 
 // ── Brand: rename here and re-run. ──────────────────────────────────────────
 const BRAND = "Nib"
@@ -45,6 +46,8 @@ const MODES = { skim: true, standard: true, expert: true, teach: true, debate: t
 //   >expert text            (line inside a paragraph chunk) that mode's version of the paragraph
 //   @expert text            paragraph shown only in that mode (expert | teach | debate)
 //   ?teach text             question block shown only in Teach
+//   ~~~mermaid Caption      Mermaid diagram (source lines follow, closed by ~~~)
+//   ~~~block chart          any block type; JSON content follows, closed by ~~~
 // Skim keeps headings and the first paragraph of each section; images, callouts and
 // the supporting paragraphs after the first are hidden in Skim.
 type Block = { type: string; content: Record<string, unknown>; semantic_role: string | null; mode_visibility?: Record<string, boolean> }
@@ -100,6 +103,14 @@ function toBlocks(slug: string, md: string): Block[] {
         semantic_role: null,
         mode_visibility: NOT_SKIM,
       })
+    } else if (chunk.startsWith("~~~mermaid")) {
+      // ~~~mermaid Caption / diagram source / ~~~ : a rendered Mermaid block.
+      const m = chunk.match(/^~~~mermaid ?([^\n]*)\n([\s\S]*?)\n~~~$/)
+      if (m) out.push({ type: "mermaid", content: { mermaidCode: m[2], caption: m[1] || undefined, text: "" }, semantic_role: null, mode_visibility: NOT_SKIM })
+    } else if (chunk.startsWith("~~~block ")) {
+      // ~~~block <type> / JSON content / ~~~ : any other block (chart, flowchart, exercise…).
+      const m = chunk.match(/^~~~block (\w+)\n([\s\S]*?)\n~~~$/)
+      if (m) out.push({ type: m[1], content: { text: "", ...JSON.parse(m[2]) }, semantic_role: null, mode_visibility: NOT_SKIM })
     } else if (chunk.startsWith("```")) {
       // One code block; each fence is a file tab: ```lang name ... ```.
       // Example code must not contain blank lines (they split chunks).
@@ -1327,7 +1338,7 @@ async function ensureWorkspace(userId: string): Promise<string> {
 async function main() {
   const authorId = await ensureAccount()
   const workspaceId = await ensureWorkspace(authorId)
-  const list = posts()
+  const list = [...posts(), ...guidePosts()]
 
   // Stagger published_at so the feed shows the welcome post first.
   const base = Date.now()

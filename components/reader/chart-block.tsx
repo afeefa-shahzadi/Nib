@@ -157,7 +157,12 @@ function ChartInner({
         </RadarChart>
       ) : chartType === "scatter" ? (
         <ScatterChart margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-          {gridAndAxes}
+          {/* Scatter plots each point by its own data keys; the shared axes have no Y key, so nothing drew. */}
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
+          <XAxis dataKey="name" type="category" allowDuplicatedCategory={false} {...axisProps} />
+          <YAxis dataKey="value" type="number" {...axisProps} />
+          <Tooltip contentStyle={tooltipStyle} />
+          <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
           {series.map((s, j) => {
             const scatterData = labels.map((label, index) => ({
               name: label,
