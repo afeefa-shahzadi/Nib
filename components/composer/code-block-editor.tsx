@@ -2,13 +2,13 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Play, Loader2, Plus, X, FileCode2, Copy, Check, Eye } from "lucide-react"
+import { Play, Loader2, Plus, X, FileCode2, Copy, Check, Eye, Info } from "lucide-react"
 import { CodePreview, isWebBlock } from "@/components/code-preview"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import Editor from "react-simple-code-editor"
 import { Highlight, themes } from "prism-react-renderer"
-import { isRunnableLang } from "@/lib/code-languages"
+import { CODE_GUIDE_URL, isRunnableLang, prismLang } from "@/lib/code-languages"
 import { useCodeRun } from "@/lib/run-code"
 
 export interface CodeFile {
@@ -26,12 +26,12 @@ interface CodeBlockEditorProps {
 
 const langFullNames: Record<string, string> = {
   typescript: "TypeScript", javascript: "JavaScript", python: "Python", rust: "Rust", go: "Go",
-  c: "C", cpp: "C++", java: "Java", ruby: "Ruby", html: "HTML", css: "CSS", json: "JSON", sql: "SQL", bash: "Bash"
+  c: "C", cpp: "C++", java: "Java", ruby: "Ruby", html: "HTML", css: "CSS", json: "JSON", sql: "SQL", postgres: "PostgreSQL", bash: "Bash"
 }
 
 const langShortNames: Record<string, string> = {
   typescript: "TS", javascript: "JS", python: "Py", rust: "Rs", go: "Go",
-  c: "C", cpp: "C++", java: "Java", ruby: "Rb", html: "HTML", css: "CSS", json: "JSON", sql: "SQL", bash: "Bash"
+  c: "C", cpp: "C++", java: "Java", ruby: "Rb", html: "HTML", css: "CSS", json: "JSON", sql: "SQL", postgres: "PG", bash: "Bash"
 }
 
 export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: CodeBlockEditorProps) {
@@ -224,7 +224,8 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
 
     if (patch.name !== undefined) {
       const ext = patch.name.split(".").pop()?.toLowerCase()
-      if (ext && extMap[ext]) {
+      // .sql is shared by SQLite and PostgreSQL; keep whichever was picked.
+      if (ext && extMap[ext] && !(ext === "sql" && updatedFile.lang === "postgres")) {
         updatedFile.lang = extMap[ext]
       }
     }
@@ -233,7 +234,7 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
       const langToExt: Record<string, string> = {
         javascript: "js", typescript: "ts", python: "py",
         rust: "rs", go: "go", c: "c", cpp: "cpp", java: "java", ruby: "rb",
-        html: "html", css: "css", json: "json", sql: "sql", bash: "sh"
+        html: "html", css: "css", json: "json", sql: "sql", postgres: "sql", bash: "sh"
       }
       
       const newExt = langToExt[patch.lang.toLowerCase()]
@@ -336,10 +337,22 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
               <SelectItem value="html">HTML</SelectItem>
               <SelectItem value="css">CSS</SelectItem>
               <SelectItem value="json">JSON</SelectItem>
-              <SelectItem value="sql">SQL</SelectItem>
+              <SelectItem value="sql">SQL (SQLite)</SelectItem>
+              <SelectItem value="postgres">PostgreSQL</SelectItem>
               <SelectItem value="bash">Bash</SelectItem>
             </SelectContent>
           </Select>
+
+          <a
+            href={CODE_GUIDE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="How code blocks work (opens in a new tab)"
+            aria-label="How code blocks work (opens in a new tab)"
+          >
+            <Info className="size-3" />
+          </a>
 
           <Button
             size="icon"
@@ -393,7 +406,7 @@ export function CodeBlockEditor({ lang, text, files: initialFiles, onChange }: C
             <Highlight
               theme={themes.vsDark}
               code={code}
-              language={(activeFile?.lang || "text") as import("prism-react-renderer").Language}
+              language={prismLang(activeFile?.lang) as import("prism-react-renderer").Language}
             >
               {({ tokens, getLineProps, getTokenProps }) => (
                 <>

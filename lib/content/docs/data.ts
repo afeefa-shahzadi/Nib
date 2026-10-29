@@ -269,7 +269,7 @@ export const BLOCK_NOTES = [
   },
   {
     k: "Code",
-    v: "Tabs for multiple files, a language picker, and auto-format on blur. Python, JavaScript, TypeScript, Rust, Go, C, C++, Java, Ruby, and SQL (SQLite) get a Run button — readers can run them too once signed in.",
+    v: "Tabs for multiple files, a language picker, and auto-format on blur. Python, JavaScript, TypeScript, Go, C, C++, Java, Ruby, SQL (SQLite) and PostgreSQL get a Run button; HTML and CSS get a live Preview. Code runs in the reader's browser, so anyone can run it, and signed-in readers can edit their own copy without saving it. The ⓘ button on a block opens the code blocks guide (/u/nib/code-blocks).",
   },
   {
     k: "Mermaid",

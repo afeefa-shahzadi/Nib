@@ -16,6 +16,7 @@ export const RUNNABLE_LANGUAGES = [
   "java",
   "ruby",
   "sqlite3",
+  "postgres",
 ] as const
 
 export type RunnableLanguage = (typeof RUNNABLE_LANGUAGES)[number]
@@ -26,6 +27,8 @@ const ALIASES: Record<string, RunnableLanguage> = {
   py: "python",
   "c++": "cpp",
   sql: "sqlite3",
+  postgresql: "postgres",
+  pg: "postgres",
 }
 
 /** Normalize an editor/file-ext language spelling to its canonical id, or null if it can't run. */
@@ -39,3 +42,12 @@ export function canonicalRunLang(lang: string): RunnableLanguage | null {
 export function isRunnableLang(lang: string): boolean {
   return canonicalRunLang(lang) !== null
 }
+
+/** Prism grammar for a block language; PostgreSQL highlights as SQL. */
+export function prismLang(lang?: string): string {
+  const l = (lang || "text").toLowerCase()
+  return l === "postgres" ? "sql" : l
+}
+
+/** Nib's guide to code blocks: multi-file setups, web pages, SQL and PostgreSQL. */
+export const CODE_GUIDE_URL = "/u/nib/code-blocks"

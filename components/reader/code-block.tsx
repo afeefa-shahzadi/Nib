@@ -5,9 +5,9 @@ import { useRef, useState } from "react"
 import { Highlight, themes } from "prism-react-renderer"
 import { Block, getText, getStr } from "../block-renderer"
 import { useCodeRun } from "@/lib/run-code"
-import { isRunnableLang } from "@/lib/code-languages"
+import { CODE_GUIDE_URL, isRunnableLang, prismLang } from "@/lib/code-languages"
 import { CodePreview, isWebBlock } from "@/components/code-preview"
-import { Play, Loader2, FileCode2, X, Copy, Check, Eye, RotateCcw } from "lucide-react"
+import { Play, Loader2, FileCode2, X, Copy, Check, Eye, RotateCcw, Info } from "lucide-react"
 import Editor from "react-simple-code-editor"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -103,6 +103,18 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
             </button>
           )}
           {!isPreview && (
+            <a
+              href={CODE_GUIDE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex size-6 items-center justify-center rounded-sm text-[#858585] transition-colors hover:bg-[#333] hover:text-white"
+              title="How code blocks work (opens in a new tab)"
+              aria-label="How code blocks work (opens in a new tab)"
+            >
+              <Info className="size-3" />
+            </a>
+          )}
+          {!isPreview && (
             <button
               onClick={handleCopy}
               className="group flex size-6 cursor-pointer items-center justify-center rounded-sm text-[#858585] transition-colors hover:bg-[#333] hover:text-white"
@@ -146,7 +158,7 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
               <Highlight
                 theme={themes.vsDark}
                 code={code}
-                language={(activeFile.lang || "text") as import("prism-react-renderer").Language}
+                language={prismLang(activeFile.lang) as import("prism-react-renderer").Language}
               >
                 {({ tokens, getLineProps, getTokenProps }) => (
                   <>
@@ -170,7 +182,7 @@ export function CodeBlock({ block, isPreview }: { block: Block; isPreview?: bool
           <Highlight
             theme={themes.vsDark}
             code={activeFile.content || ""}
-            language={(activeFile.lang || "text") as import("prism-react-renderer").Language}
+            language={prismLang(activeFile.lang) as import("prism-react-renderer").Language}
           >
             {({ className, style, tokens, getLineProps, getTokenProps }) => (
               <pre

@@ -32,6 +32,7 @@ const EXTENSIONS: Record<string, string> = {
   java: "java",
   ruby: "rb",
   sqlite3: "sql",
+  postgres: "sql",
 }
 
 let runner: Runner | null = null

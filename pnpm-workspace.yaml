@@ -7,4 +7,4 @@ allowBuilds:
   esbuild: true
 
 minimumReleaseAgeExclude:
-  - '@browserrun/sandrun@0.3.0'
+  - '@browserrun/sandrun@0.3.0 || 0.4.0'

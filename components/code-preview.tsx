@@ -7,7 +7,7 @@ export type PreviewFile = { name: string; content: string; lang?: string }
 const langOf = (f: PreviewFile) => (f.lang || f.name || "").toLowerCase()
 
 // A block is a web page when it has HTML or CSS: it renders in a sandboxed
-// iframe (its JS runs there as page code) instead of through Piston. JS alone is
+// iframe (its JS runs there as page code) instead of through the runner. JS alone is
 // a program, so it keeps Run.
 export function isWebBlock(files: PreviewFile[]): boolean {
   return files.some((f) => /(^|\.)(html|css)$/.test(langOf(f)))

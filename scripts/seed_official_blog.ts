@@ -100,6 +100,16 @@ function toBlocks(slug: string, md: string): Block[] {
         semantic_role: null,
         mode_visibility: NOT_SKIM,
       })
+    } else if (chunk.startsWith("```")) {
+      // One code block; each fence is a file tab: ```lang name ... ```.
+      // Example code must not contain blank lines (they split chunks).
+      const files = [...chunk.matchAll(/```(\w+) ([^\n]+)\n([\s\S]*?)\n```/g)].map(([, lang, name, content]) => ({ name, lang, content }))
+      out.push({
+        type: "code",
+        content: { files, text: files[0]?.content ?? "", lang: files[0]?.lang ?? "text" },
+        semantic_role: null,
+        mode_visibility: NOT_SKIM,
+      })
     } else if (chunk.startsWith("!note ")) {
       const t = chunk.slice(6)
       out.push({ type: "callout", content: para(t), semantic_role: null, mode_visibility: NOT_SKIM })
@@ -465,12 +475,13 @@ A highlighted note set apart from the text, labelled "Note" for readers. Useful 
 
 A small code editor with syntax highlighting.
 
-- **Language**: TypeScript, JavaScript, Python, Rust, Go, C, C++, Java, Ruby, HTML, CSS, JSON, SQL or Bash.
-- **Multiple files**: click **+** to add a file tab. Rename a tab by editing its name; changing the extension (\`.py\`, \`.rs\`) changes the language too.
-- **Run**: for Python, JavaScript, TypeScript, Rust, Go, C, C++, Java, Ruby and SQL (SQLite), the code runs in a sandbox and the output appears below. Readers can run it too.
+- **Language**: TypeScript, JavaScript, Python, Rust, Go, C, C++, Java, Ruby, HTML, CSS, JSON, SQL (SQLite), PostgreSQL or Bash.
+- **Multiple files**: click **+** to add a file tab. Rename a tab by editing its name; changing the extension (\`.py\`, \`.cpp\`) changes the language too.
+- **Run**: for Python, JavaScript, TypeScript, Go, C, C++, Java, Ruby, SQL (SQLite) and PostgreSQL, the code runs in the reader's browser and the output appears below. Anyone can run it, with or without an account; signed-in readers can also edit their own copy, which is never saved.
 - **Preview**: if the files include HTML, CSS or JavaScript, a live preview renders under the editor.
 - **Copy Code** copies the current file.
 - Code is formatted automatically when you click away from it.
+- The **ⓘ** button opens the [code blocks guide](/u/${HANDLE}/code-blocks): multi-file programs, web pages, SQL and PostgreSQL, with examples you can run.
 
 ![The code block](code-editor.png) A code block with two files.
 
@@ -1133,6 +1144,140 @@ A quick reference. On a Mac, use **Cmd** wherever it says **Ctrl**.
 - In the link and citation dialogs, **Enter** inserts.
 
 The header's undo and redo arrows handle block changes (adding, moving, deleting, converting); they don't have keyboard shortcuts yet.
+`,
+    },
+    {
+      slug: "code-blocks",
+      title: "Code blocks: running code, several files, web pages and SQL",
+      summary: "How to write code blocks readers can run: multi-file programs in every language, live web pages, SQLite and PostgreSQL.",
+      tags: ["guide", "composer", "code"],
+      body: `
+A code block can hold one file or several, and most languages get a **Run** button. The code runs in the reader's own browser, in a sandbox, so anyone can run it, with or without an account. Every example on this page is a real code block: press Run and try it.
+
+## The basics
+
+- Type **/code** to add a code block. Pick the language from the menu, or name the file with an extension (\`main.py\`, \`index.html\`) and the language follows.
+- Click **+** to add a file tab. The **first tab** is the one that runs; the others are there to be imported or included.
+- **Run** works for Python, JavaScript, TypeScript, SQL (SQLite), PostgreSQL, C, C++, Go, Java and Ruby. HTML and CSS get **Preview** instead.
+- Signed-in readers can edit the code and run their version. Their changes stay in their browser and are never saved, so your piece always shows what you wrote. The reset button brings your version back.
+- The first run of a language downloads it once (C++ is the biggest, about 14 MB). Blocks start that download as they scroll into view, so it's usually done by the time someone presses Run.
+
+## Python
+
+Other tabs are modules. A tab named \`helper.py\` is loaded with \`import helper\` or \`from helper import ...\`. numpy, pandas and other scientific packages work too.
+
+\`\`\`python main.py
+from helper import greet
+print(greet("reader"))
+\`\`\`
+\`\`\`python helper.py
+def greet(name):
+    return "Hello, " + name
+\`\`\`
+
+## JavaScript and TypeScript
+
+Import another tab by its name, with or without the extension: \`import { add } from "./math"\`. \`require("./math")\` works as well. Output from \`console.log\` appears under the block.
+
+\`\`\`javascript main.js
+import { add, square } from "./math"
+console.log(add(2, 3), square(4))
+\`\`\`
+\`\`\`javascript math.js
+export const add = (a, b) => a + b
+export const square = (n) => n * n
+\`\`\`
+
+## Web pages (HTML, CSS and JavaScript)
+
+Add an \`index.html\` tab, then \`style.css\` and \`script.js\` tabs, and press **Preview**. The CSS and JavaScript tabs are put into the page for you, so you don't need \`<link>\` or \`<script src>\` tags. Several JavaScript tabs are joined in order into one script. Anything the page logs with \`console.log\` shows under the preview.
+
+\`\`\`html index.html
+<h1>Hello</h1>
+<button id="b">Clicked 0 times</button>
+\`\`\`
+\`\`\`css style.css
+h1 { color: #e85d04; }
+button { padding: 8px 14px; border-radius: 6px; }
+\`\`\`
+\`\`\`javascript script.js
+let n = 0
+document.getElementById("b").onclick = (e) => { e.target.textContent = "Clicked " + ++n + " times"; console.log("click", n) }
+\`\`\`
+
+## SQL (SQLite)
+
+Choose **SQL (SQLite)** for standard SQL. You get the whole of SQLite: several tables, keys and constraints, joins, views, triggers, common table expressions (recursive ones too), window functions, JSON and date functions, and transactions.
+
+Split a lesson into tabs such as \`schema.sql\`, \`seed.sql\` and \`queries.sql\`. They run top to bottom as one script, and every query that returns rows prints a table. Each run starts from an empty database, so readers can't break anything.
+
+\`\`\`sql schema.sql
+CREATE TABLE authors (id INTEGER PRIMARY KEY, name TEXT NOT NULL);
+CREATE TABLE posts (id INTEGER PRIMARY KEY, author_id INTEGER REFERENCES authors(id), title TEXT, views INTEGER);
+CREATE VIEW popular AS SELECT * FROM posts WHERE views > 100;
+\`\`\`
+\`\`\`sql seed.sql
+INSERT INTO authors (name) VALUES ('Ada'), ('Linus');
+INSERT INTO posts (author_id, title, views) VALUES (1, 'Engines', 340), (1, 'Notes', 80), (2, 'Kernels', 510);
+\`\`\`
+\`\`\`sql queries.sql
+SELECT a.name, p.title, p.views, RANK() OVER (ORDER BY p.views DESC) AS rank
+FROM popular p JOIN authors a ON a.id = p.author_id;
+\`\`\`
+
+SQLite has no stored procedures and its own spelling for a few things (\`INTEGER PRIMARY KEY\` instead of \`SERIAL\`, for example). For those, use PostgreSQL.
+
+## PostgreSQL
+
+Choose **PostgreSQL** for real PostgreSQL 18, running in the browser: \`SERIAL\` and identity columns, enums, schemas, PL/pgSQL functions and \`DO\` blocks, \`RAISE NOTICE\`, \`generate_series\`, JSONB and the rest. Tabs run in order just like SQLite, queries print tables and notices print as \`NOTICE:\` lines. Each run starts from an empty database. The first run downloads about 5 MB.
+
+\`\`\`postgres schema.sql
+CREATE TYPE status AS ENUM ('draft', 'published');
+CREATE TABLE pieces (id SERIAL PRIMARY KEY, title TEXT, state status DEFAULT 'draft');
+CREATE FUNCTION publish(p INT) RETURNS TEXT LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE pieces SET state = 'published' WHERE id = p;
+  RAISE NOTICE 'published piece %', p;
+  RETURN 'ok';
+END $$;
+\`\`\`
+\`\`\`postgres queries.sql
+INSERT INTO pieces (title) VALUES ('First'), ('Second');
+SELECT publish(2);
+SELECT id, title, state FROM pieces ORDER BY id;
+\`\`\`
+
+## C and C++
+
+The first tab has \`main()\`. Put declarations in a header tab and \`#include "math.h"\`; every \`.c\` or \`.cpp\` tab is compiled and linked together. C++ uses C++20 with the standard library.
+
+\`\`\`cpp main.cpp
+#include <iostream>
+#include "math.h"
+int main() { std::cout << "6 x 7 = " << multiply(6, 7) << std::endl; }
+\`\`\`
+\`\`\`cpp math.h
+#pragma once
+int multiply(int a, int b);
+\`\`\`
+\`\`\`cpp math.cpp
+#include "math.h"
+int multiply(int a, int b) { return a * b; }
+\`\`\`
+
+## Go, Java and Ruby
+
+- **Go**: every tab is part of one \`package main\`, so a function in one tab can be called from another.
+- **Java**: one public class per tab, with the tab named after the class (\`Main.java\`, \`Greeter.java\`). The class with \`main\` runs.
+- **Ruby**: load another tab with \`require_relative "greeter"\` for a tab named \`greeter.rb\`.
+
+## Limits worth knowing
+
+- Programs get about 10 seconds and 64 KB of output.
+- There's no keyboard input while a program runs, and no network access.
+- Rust isn't supported for now.
+
+!note Code blocks show an ⓘ button that opens this guide, in the composer and in published pieces.
 `,
     },
   ]
