@@ -27,7 +27,14 @@ export function ogCard({ title, subtitle, footer }: { title: string; subtitle?: 
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "#f8f4ec", padding: "72px 80px", borderLeft: "12px solid #2f5196" }}>
-        <div style={{ display: "flex", fontSize: 30, color: "#2f5196", letterSpacing: 2 }}>nib</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 30, color: "#2f5196", letterSpacing: 2 }}>
+          {/* E1 mark, same paths as app/icon.svg */}
+          <svg width="34" height="34" viewBox="0 0 24 24">
+            <path d="M4 1.5h6.5L12 22.5Z" fill="#2c4c94" />
+            <path d="M13.5 1.5H20L12 22.5Z" fill="#2c4c94" />
+          </svg>
+          nib
+        </div>
         <div style={{ display: "flex", flexDirection: "column", marginTop: 56, flexGrow: 1 }}>
           {titleLines.map((l, i) => (
             <div key={i} style={{ display: "flex", fontSize: 68, fontWeight: 700, color: "#1c1a17", lineHeight: 1.12 }}>{l}</div>
