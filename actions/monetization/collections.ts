@@ -333,7 +333,10 @@ export async function getCollection(args: { data?: any } = {}) {
     const handleOf = new Map((authors ?? []).map((a: { id: string; handle: string }) => [a.id, a.handle]))
     return {
       collection: col,
-      pieces: (pieces ?? []).map((p) => ({
+      // .in() returns rows in arbitrary order; restore the curated item order.
+      pieces: (pieces ?? [])
+        .sort((a: { id: string }, b: { id: string }) => ids.indexOf(a.id) - ids.indexOf(b.id))
+        .map((p) => ({
         ...p,
         author_handle: (handleOf.get(p.author_id) as string | undefined) ?? null,
       })),
@@ -343,6 +346,17 @@ export async function getCollection(args: { data?: any } = {}) {
   return await __handler({
     data: args?.data as { id: string },
   })
+}
+
+export async function listCollectionsByCurator(curatorId: string) {
+  const supabaseAdmin = await createAdminClient()
+  const { data } = await supabaseAdmin
+    .from("collections")
+    .select("id, title, description, created_at")
+    .eq("curator_id", curatorId)
+    .eq("is_public", true)
+    .order("created_at")
+  return data ?? []
 }
 
 export async function myCollections() {

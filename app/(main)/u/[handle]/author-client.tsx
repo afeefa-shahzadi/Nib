@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useEffect, useMemo, useState } from "react"
-import { Search, FileText, Crown, Network, X, UserPlus, Share } from "lucide-react"
+import { Search, FileText, Crown, Network, X, UserPlus, Share, Library } from "lucide-react"
 import Link from "next/link"
 import { Piece, TierItem } from "@/lib/types/content"
 import Image from "next/image"
@@ -24,6 +24,7 @@ export default function AuthorClient({
   author,
   pieces,
   tiers,
+  collections = [],
   recommendations,
 }: {
   author: {
@@ -36,6 +37,7 @@ export default function AuthorClient({
   }
   pieces: Piece[]
   tiers: TierItem[]
+  collections?: Array<{ id: string; title: string; description: string | null }>
   recommendations: Array<{
     id: string
     blurb: string | null
@@ -203,6 +205,11 @@ export default function AuthorClient({
                 <Crown className="mr-1 size-3.5" /> Memberships
               </TabsTrigger>
             )}
+            {collections.length > 0 && (
+              <TabsTrigger value="collections">
+                <Library className="mr-1 size-3.5" /> Collections
+              </TabsTrigger>
+            )}
             {graph && graph.pieces.length > 0 && (
               <TabsTrigger value="graph">
                 <Network className="mr-1 size-3.5" /> Graph
@@ -337,6 +344,25 @@ export default function AuthorClient({
           {tiers.length > 0 && (
             <TabsContent value="tiers" className="mt-2">
               <MembershipTiers tiers={tiers} authorName={author.display_name} />
+            </TabsContent>
+          )}
+
+          {collections.length > 0 && (
+            <TabsContent value="collections" className="mt-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                {collections.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/collections/${c.id}`}
+                    className="rounded-xl border bg-background p-4 shadow-sm transition-colors hover:bg-accent/40"
+                  >
+                    <div className="font-semibold text-foreground">{c.title}</div>
+                    {c.description && (
+                      <div className="mt-1 text-sm text-muted-foreground">{c.description}</div>
+                    )}
+                  </Link>
+                ))}
+              </div>
             </TabsContent>
           )}
 
