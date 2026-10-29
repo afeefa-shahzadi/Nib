@@ -224,6 +224,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       sponsorship_enabled?: boolean
       repost_credits_required?: number
       is_nsfw?: boolean
+      is_ai_generated?: boolean
       cover_image_url?: string | null
       allow_inline_comments?: boolean
     }
@@ -242,6 +243,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       "sponsorship_enabled",
       "repost_credits_required",
       "is_nsfw",
+      "is_ai_generated",
       "cover_image_url",
       "allow_inline_comments",
     ] as const) {

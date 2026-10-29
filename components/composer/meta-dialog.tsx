@@ -39,6 +39,8 @@ interface MetaDialogProps {
   setRepostCreditsRequired: (value: boolean) => void
   isNsfw: boolean
   setIsNsfw: (value: boolean) => void
+  isAiGenerated: boolean
+  setIsAiGenerated: (value: boolean) => void
   allowInlineComments: boolean
   setAllowInlineComments: (value: boolean) => void
   onSuggestMeta: () => Promise<void>
@@ -70,6 +72,8 @@ export function MetaDialog({
   setRepostCreditsRequired,
   isNsfw,
   setIsNsfw,
+  isAiGenerated,
+  setIsAiGenerated,
   allowInlineComments,
   setAllowInlineComments,
   onSuggestMeta,
@@ -277,6 +281,19 @@ export function MetaDialog({
                   id="nsfw"
                   checked={isNsfw}
                   onCheckedChange={setIsNsfw}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <div>
+                  <Label htmlFor="ai-generated">Made with AI</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Show readers an AI content label on this piece.
+                  </p>
+                </div>
+                <Switch
+                  id="ai-generated"
+                  checked={isAiGenerated}
+                  onCheckedChange={setIsAiGenerated}
                 />
               </div>
               <div className="flex items-center justify-between mt-4">

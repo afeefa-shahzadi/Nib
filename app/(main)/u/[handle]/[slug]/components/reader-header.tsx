@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Clock } from "lucide-react"
+import { Clock, Sparkles } from "lucide-react"
 import { PieceData, AuthorData } from "@/lib/types/content"
 import { ReadingMode } from "@/components/block-renderer"
 
@@ -28,6 +28,14 @@ export function ReaderHeader({
         <span className="inline-flex items-center gap-1 text-muted-foreground">
           <Clock className="size-3" aria-hidden /> {minutes} min · {mode}
         </span>
+        {piece.is_ai_generated && (
+          <>
+            <span className="mx-2 text-muted-foreground/60">·</span>
+            <span className="inline-flex items-center gap-1 text-muted-foreground">
+              <Sparkles className="size-3" aria-hidden /> Made with AI
+            </span>
+          </>
+        )}
       </p>
       <h1 className="mt-3 font-display text-5xl leading-[1.05] text-foreground md:text-6xl">
         {piece.title}

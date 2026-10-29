@@ -62,6 +62,7 @@ interface PieceMeta {
   sponsorshipEnabled: boolean
   repostCreditsRequired: boolean
   isNsfw: boolean
+  isAiGenerated: boolean
   allowInlineComments: boolean
   coverImageUrl: string | null
 }
@@ -75,6 +76,7 @@ const DEFAULT_META: PieceMeta = {
   sponsorshipEnabled: false,
   repostCreditsRequired: true,
   isNsfw: false,
+  isAiGenerated: false,
   allowInlineComments: true,
   coverImageUrl: null,
 }
@@ -126,6 +128,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const sponsorshipEnabled = meta.sponsorshipEnabled
   const repostCreditsRequired = meta.repostCreditsRequired
   const isNsfw = meta.isNsfw
+  const isAiGenerated = meta.isAiGenerated
   const allowInlineComments = meta.allowInlineComments
   const coverImageUrl = meta.coverImageUrl
 
@@ -137,6 +140,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const setSponsorshipEnabled = (v: boolean) => setMeta((m) => ({ ...m, sponsorshipEnabled: v }))
   const setRepostCreditsRequired = (v: boolean) => setMeta((m) => ({ ...m, repostCreditsRequired: v }))
   const setIsNsfw = (v: boolean) => setMeta((m) => ({ ...m, isNsfw: v }))
+  const setIsAiGenerated = (v: boolean) => setMeta((m) => ({ ...m, isAiGenerated: v }))
   const setAllowInlineComments = (v: boolean) => setMeta((m) => ({ ...m, allowInlineComments: v }))
 
   const [blocks, setBlocks] = useState<BlockDraft[]>([])
@@ -315,6 +319,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       sponsorshipEnabled: piece.sponsorship_enabled ?? false,
       repostCreditsRequired: piece.repost_credits_required ?? true,
       isNsfw: piece.is_nsfw ?? false,
+      isAiGenerated: piece.is_ai_generated ?? false,
       allowInlineComments: piece.allow_inline_comments ?? true,
       coverImageUrl: piece.cover_image_url ?? null,
     })
@@ -702,6 +707,7 @@ export function MyceliumComposer({ pieceId }: Props) {
             sponsorship_enabled: sponsorshipEnabled,
             repost_credits_required: repostCreditsRequired,
             is_nsfw: isNsfw,
+            is_ai_generated: isAiGenerated,
             allow_inline_comments: allowInlineComments,
             cover_image_url: coverImageUrl,
             ...extra,
@@ -727,6 +733,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       sponsorshipEnabled,
       repostCreditsRequired,
       isNsfw,
+      isAiGenerated,
       allowInlineComments,
       coverImageUrl,
     ]
@@ -1254,6 +1261,8 @@ export function MyceliumComposer({ pieceId }: Props) {
         setRepostCreditsRequired={setRepostCreditsRequired}
         isNsfw={isNsfw}
         setIsNsfw={setIsNsfw}
+        isAiGenerated={isAiGenerated}
+        setIsAiGenerated={setIsAiGenerated}
         allowInlineComments={allowInlineComments}
         setAllowInlineComments={setAllowInlineComments}
         onSuggestMeta={suggestMeta}

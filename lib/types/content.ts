@@ -34,6 +34,7 @@ export interface PieceData {
   sponsorship_enabled?: boolean | null
   cover_image_url?: string | null
   is_nsfw?: boolean | null
+  is_ai_generated?: boolean | null
   sources?: SourceCitation[] | null
   source_url?: string | null
 }
