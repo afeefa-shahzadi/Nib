@@ -1,138 +1,121 @@
 "use client"
 
 import { useState } from "react"
-import {
-  MODES,
-  BLOCK_BUILDER_KINDS,
-  BLOCK_BUILDER_DEFAULTS,
-} from "@/lib/content/docs/data"
+import { Eye, EyeOff, Lock } from "lucide-react"
+import { MODES, BLOCK_BUILDER_KINDS, BLOCK_BUILDER_DEFAULTS } from "@/lib/content/docs/data"
 import type { ModeId } from "@/lib/types/marketing"
+import type { Block } from "@/components/block-renderer"
+import { CalloutBlock, CitationBlock, ParagraphBlock, QuestionBlock, QuoteBlock } from "@/components/reader/text-blocks"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DemoToolbar } from "./demo-toolbar"
 
+type Kind = (typeof BLOCK_BUILDER_KINDS)[number]
+const LABEL: Record<Kind, string> = {
+  paragraph: "Paragraph",
+  thesis: "Thesis",
+  evidence: "Evidence",
+  counter: "Counter",
+  footnote: "Footnote",
+  quote: "Quote",
+  citation: "Citation",
+  callout: "Callout",
+  question: "Question",
+  gated: "Gated",
+}
+
+// Preview with the reader's own block components, so it matches a published piece.
+function Preview({ kind, text }: { kind: Kind; text: string }) {
+  const content = { text: text || " " }
+  if (kind === "quote") return <QuoteBlock block={{ type: "quote", content } as Block} />
+  if (kind === "citation") return <CitationBlock block={{ type: "citation", content } as Block} />
+  if (kind === "callout") return <CalloutBlock block={{ type: "callout", content } as Block} />
+  if (kind === "question") return <QuestionBlock block={{ type: "question", content } as Block} />
+  if (kind === "gated")
+    return (
+      <div className="relative">
+        <div className="pointer-events-none blur-xs opacity-40 select-none">
+          <ParagraphBlock block={{ type: "paragraph", content } as Block} />
+        </div>
+        <div className="absolute inset-0 flex items-center justify-center gap-2 text-sm font-medium">
+          <Lock className="size-4 text-muted-foreground" aria-hidden /> Premium content
+        </div>
+      </div>
+    )
+  const role = kind === "paragraph" ? null : kind
+  return <ParagraphBlock block={{ type: "paragraph", content, semantic_role: role } as Block} />
+}
+
 export function BlockBuilderDemo() {
-  const [kind, setKind] = useState<(typeof BLOCK_BUILDER_KINDS)[number]>(
-    BLOCK_BUILDER_DEFAULTS.kind
-  )
+  const [kind, setKind] = useState<Kind>(BLOCK_BUILDER_DEFAULTS.kind)
   const [text, setText] = useState(BLOCK_BUILDER_DEFAULTS.text)
-  const [modes, setModes] = useState<Record<ModeId, boolean>>(
-    BLOCK_BUILDER_DEFAULTS.modes
-  )
-  const toggleMode = (m: ModeId) => setModes((s) => ({ ...s, [m]: !s[m] }))
+  const [modes, setModes] = useState<Record<ModeId, boolean>>(BLOCK_BUILDER_DEFAULTS.modes)
   const reset = () => {
     setKind(BLOCK_BUILDER_DEFAULTS.kind)
     setText(BLOCK_BUILDER_DEFAULTS.text)
     setModes(BLOCK_BUILDER_DEFAULTS.modes)
   }
+  const item = "h-11 rounded-md border px-3 text-sm data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary lg:h-8"
 
   return (
     <div>
       <div className="mb-2 flex justify-end">
         <DemoToolbar label="Block builder" onReset={reset} />
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="surface space-y-4 rounded-xl border border-border/60 p-5">
-          <div>
-            <label
-              htmlFor="bb-kind"
-              className="text-xs tracking-wider text-muted-foreground uppercase"
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="surface space-y-5 rounded-xl border border-border/60 p-4 sm:p-6">
+          <div className="space-y-2">
+            <Label id="bb-kind">Block type</Label>
+            <ToggleGroup
+              type="single"
+              aria-labelledby="bb-kind"
+              value={kind}
+              onValueChange={(v) => v && setKind(v as Kind)}
+              className="flex flex-wrap justify-start gap-2"
             >
-              Block type
-            </label>
-            <div id="bb-kind" className="mt-2 flex flex-wrap gap-1.5">
               {BLOCK_BUILDER_KINDS.map((k) => (
-                <button
-                  key={k}
-                  onClick={() => setKind(k)}
-                  aria-pressed={kind === k}
-                  className={`min-h-11 rounded-md border px-3 py-1 text-sm lg:min-h-8 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
-                    kind === k
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {k}
-                </button>
+                <ToggleGroupItem key={k} value={k} className={item}>
+                  {LABEL[k]}
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           </div>
-          <div>
-            <label
-              htmlFor="bb-text"
-              className="text-xs tracking-wider text-muted-foreground uppercase"
+          <div className="space-y-2">
+            <Label htmlFor="bb-text">Content</Label>
+            <Textarea id="bb-text" value={text} onChange={(e) => setText(e.target.value)} rows={3} />
+          </div>
+          <div className="space-y-2">
+            <Label id="bb-modes">Shown in</Label>
+            <ToggleGroup
+              type="multiple"
+              aria-labelledby="bb-modes"
+              value={MODES.filter((m) => modes[m.id]).map((m) => m.id)}
+              onValueChange={(v) => setModes(Object.fromEntries(MODES.map((m) => [m.id, v.includes(m.id)])) as Record<ModeId, boolean>)}
+              className="flex flex-wrap justify-start gap-2"
             >
-              Content
-            </label>
-            <textarea
-              id="bb-text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={3}
-              className="mt-2 w-full rounded-md border border-border bg-background p-3 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-            />
-            {!text.trim() && (
-              <p className="mt-1 text-xs text-note" role="status">
-                Empty content — the block will render as a placeholder.
-              </p>
-            )}
-          </div>
-          <div>
-            <span className="text-xs tracking-wider text-muted-foreground uppercase">
-              Visible in modes
-            </span>
-            <div className="mt-2 grid grid-cols-5 gap-1.5">
               {MODES.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => toggleMode(m.id)}
-                  aria-pressed={modes[m.id]}
-                  className={`min-h-11 rounded-md border px-3 py-1.5 text-sm lg:min-h-8 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
-                    modes[m.id]
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground"
-                  }`}
-                >
+                <ToggleGroupItem key={m.id} value={m.id} className={item}>
                   {m.name}
-                </button>
+                </ToggleGroupItem>
               ))}
-            </div>
+            </ToggleGroup>
           </div>
         </div>
-        <div className="surface-elevated rounded-xl border border-border/60 p-5">
-          <p className="mb-3 text-xs tracking-wider text-primary uppercase">
-            Live preview
-          </p>
-          <div className="space-y-3">
-            {MODES.map((m) => (
-              <div
-                key={m.id}
-                className={`rounded-md border p-3 ${
-                  modes[m.id]
-                    ? "border-border bg-background/40"
-                    : "border-dashed border-border"
-                }`}
-              >
-                <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">
-                  {m.name}
-                </p>
-                {modes[m.id] ? (
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5 rounded bg-primary/15 px-2 py-0.5 text-xs tracking-wider text-primary uppercase">
-                      {kind}
-                    </span>
-                    <p className="text-sm text-foreground/90">
-                      {text || (
-                        <em className="text-muted-foreground">Empty block</em>
-                      )}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-xs text-muted-foreground italic">
-                    — hidden in this mode —
-                  </p>
-                )}
-              </div>
-            ))}
+        <div className="surface-elevated rounded-xl border border-border/60 p-4 sm:p-6">
+          <p className="mb-4 text-sm font-medium text-muted-foreground">How readers see it</p>
+          <div className="font-reading text-[1.0625rem] leading-relaxed" aria-live="polite">
+            <Preview kind={kind} text={text} />
           </div>
+          <ul className="hairline-t mt-6 grid grid-cols-2 gap-x-4 gap-y-2 pt-4 text-sm sm:grid-cols-3">
+            {MODES.map((m) => (
+              <li key={m.id} className={`flex items-center gap-2 ${modes[m.id] ? "text-foreground" : "text-muted-foreground line-through"}`}>
+                {modes[m.id] ? <Eye className="size-4 text-primary" aria-hidden /> : <EyeOff className="size-4" aria-hidden />}
+                {m.name}
+                <span className="sr-only">{modes[m.id] ? "shown" : "hidden"}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </div>

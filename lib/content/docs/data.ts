@@ -412,19 +412,17 @@ export const BLOCK_BUILDER_KINDS = [
   "thesis",
   "evidence",
   "counter",
+  "footnote",
+  "quote",
   "citation",
   "callout",
-  "gated",
-  "code",
   "question",
-  "footnote",
-  "image",
-  "embed",
+  "gated",
 ] as const
 
 export const BLOCK_BUILDER_DEFAULTS = {
   kind: "paragraph" as (typeof BLOCK_BUILDER_KINDS)[number],
-  text: "AI is rewriting publishing — adaptive blocks are the new primitive.",
+  text: "Readers who skim keep the claims; readers who study want the evidence too.",
   modes: {
     skim: true,
     standard: true,

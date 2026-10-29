@@ -5,6 +5,7 @@ import { PAYOUT_MIN_INR } from "@/lib/currency-data"
 import Link from "next/link"
 import { COMPARE } from "@/lib/content/pricing/data"
 import { CurrencyBar, FaqList, MarketAmount, PricingPlans } from "./pricing-client"
+import { CompareMobile } from "./compare-mobile"
 
 function PriceCell({ v }: { v: boolean | string }) {
   if (typeof v === "string")
@@ -48,11 +49,11 @@ export default function Pricing() {
             <h2 className="mb-3 font-display text-2xl md:text-4xl">
               Feature by feature.
             </h2>
-            <p className="mb-8 text-xs text-muted-foreground md:mb-10 lg:hidden">
-              Scroll horizontally to compare all plans →
-            </p>
-            <div className="-mx-4 overflow-x-auto px-4 pb-6">
-              <table className="w-full min-w-225 text-sm">
+            <div className="mt-8">
+              <CompareMobile plans={["No account", "Free", "Reader Pass", "Studio", "Org", "Enterprise", "Edu"]} />
+            </div>
+            <div className="hidden pb-6 lg:block">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="hairline-b">
                     <th className="sticky left-0 bg-background py-4 pr-3 text-left font-normal text-muted-foreground">

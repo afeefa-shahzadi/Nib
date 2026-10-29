@@ -449,4 +449,4 @@
 }
 
 /* Docs: keep paragraphs to a readable line length. */
-.docs-measure p { max-width: 60ch; }
+.docs-measure p { max-width: 60ch; overflow-wrap: anywhere; }

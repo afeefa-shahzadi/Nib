@@ -87,7 +87,7 @@ export default function DocsPage() {
       />
       <main className="flex-1">
         <section className="container-wide max-w-4xl pt-16 md:pt-24 pb-10">
-          <h1 className="font-display text-5xl leading-[1.05] md:text-6xl">
+          <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl md:text-6xl">
             Documentation
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
@@ -149,7 +149,7 @@ export default function DocsPage() {
                       key={s.id}
                       href={`#${s.id}`}
                       aria-current={active === s.id ? "location" : undefined}
-                      className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground aria-[current=location]:bg-accent aria-[current=location]:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md md:whitespace-normal px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground aria-[current=location]:bg-accent aria-[current=location]:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Icon className="size-3.5" aria-hidden />
                       {s.label}
@@ -203,10 +203,10 @@ export default function DocsPage() {
                   {CONCEPTS.map((x) => (
                     <li
                       key={x.k}
-                      className="hairline-t last:hairline-b grid grid-cols-12 gap-4 py-4"
+                      className="hairline-t last:hairline-b grid gap-1 py-4 sm:grid-cols-12 sm:gap-4"
                     >
-                      <p className="col-span-3 font-display text-xl">{x.k}</p>
-                      <p className="col-span-9 leading-relaxed text-muted-foreground">
+                      <p className="sm:col-span-3 font-display text-xl">{x.k}</p>
+                      <p className="sm:col-span-9 leading-relaxed text-muted-foreground">
                         {x.v}
                       </p>
                     </li>
@@ -302,14 +302,14 @@ export default function DocsPage() {
                   {INLINE_TRIGGERS.map((x) => (
                     <li
                       key={x.k}
-                      className="hairline-t last:hairline-b grid grid-cols-12 gap-4 py-3"
+                      className="hairline-t last:hairline-b grid gap-1 py-3 sm:grid-cols-12 sm:gap-4"
                     >
                       <p className="col-span-3">
                         <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
                           {x.k}
                         </kbd>
                       </p>
-                      <p className="col-span-9 text-sm leading-relaxed text-muted-foreground">
+                      <p className="sm:col-span-9 text-sm leading-relaxed text-muted-foreground">
                         {x.v}
                       </p>
                     </li>
@@ -364,10 +364,10 @@ export default function DocsPage() {
                   {BLOCK_NOTES.map((x) => (
                     <li
                       key={x.k}
-                      className="hairline-t last:hairline-b grid grid-cols-12 gap-4 py-3"
+                      className="hairline-t last:hairline-b grid gap-1 py-3 sm:grid-cols-12 sm:gap-4"
                     >
-                      <p className="col-span-3 font-display text-lg">{x.k}</p>
-                      <p className="col-span-9 text-sm leading-relaxed text-muted-foreground">
+                      <p className="sm:col-span-3 font-display text-lg">{x.k}</p>
+                      <p className="sm:col-span-9 text-sm leading-relaxed text-muted-foreground">
                         {x.v}
                       </p>
                     </li>
@@ -381,10 +381,10 @@ export default function DocsPage() {
                   {COMPOSER_TOOLS.map((x) => (
                     <li
                       key={x.k}
-                      className="hairline-t last:hairline-b grid grid-cols-12 gap-4 py-3"
+                      className="hairline-t last:hairline-b grid gap-1 py-3 sm:grid-cols-12 sm:gap-4"
                     >
-                      <p className="col-span-3 font-display text-lg">{x.k}</p>
-                      <p className="col-span-9 text-sm leading-relaxed text-muted-foreground">
+                      <p className="sm:col-span-3 font-display text-lg">{x.k}</p>
+                      <p className="sm:col-span-9 text-sm leading-relaxed text-muted-foreground">
                         {x.v}
                       </p>
                     </li>
@@ -514,7 +514,7 @@ export default function DocsPage() {
                 <div className="surface mt-6 rounded-xl border border-border/60 p-6">
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <p className="mb-2 text-xs tracking-wider text-muted-foreground uppercase">
+                      <p className="mb-2 text-sm font-medium text-muted-foreground">
                         Original (Standard)
                       </p>
                       <p className="text-sm leading-relaxed text-foreground/90">
@@ -524,7 +524,7 @@ export default function DocsPage() {
                       </p>
                     </div>
                     <div>
-                      <p className="mb-2 flex items-center gap-1 text-xs tracking-wider text-primary uppercase">
+                      <p className="mb-2 flex items-center gap-1 text-sm font-medium text-primary">
                         <Sparkles className="size-3" aria-hidden /> AI variant
                         (Skim)
                       </p>
@@ -595,13 +595,13 @@ export default function DocsPage() {
                 </p>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="mb-2 text-xs tracking-wider text-muted-foreground uppercase">
+                    <p className="mb-2 text-sm font-medium text-muted-foreground">
                       Gated block demo
                     </p>
                     <GatedDemo />
                   </div>
                   <div>
-                    <p className="mb-2 text-xs tracking-wider text-muted-foreground uppercase">
+                    <p className="mb-2 text-sm font-medium text-muted-foreground">
                       Tip jar demo
                     </p>
                     <TipJarDemo />
@@ -632,10 +632,10 @@ export default function DocsPage() {
                   {IMPORT_EXPORT.map((x) => (
                     <li
                       key={x.k}
-                      className="hairline-t last:hairline-b grid grid-cols-12 gap-4 py-3"
+                      className="hairline-t last:hairline-b grid gap-1 py-3 sm:grid-cols-12 sm:gap-4"
                     >
-                      <p className="col-span-3 font-mono text-sm">{x.k}</p>
-                      <p className="col-span-9 text-sm leading-relaxed text-muted-foreground">
+                      <p className="sm:col-span-3 font-mono text-sm">{x.k}</p>
+                      <p className="sm:col-span-9 text-sm leading-relaxed text-muted-foreground">
                         {x.v}
                       </p>
                     </li>

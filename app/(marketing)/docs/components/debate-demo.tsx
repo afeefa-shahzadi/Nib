@@ -32,7 +32,7 @@ export function DebateDemo() {
     <div className="surface overflow-hidden rounded-xl border border-border/60">
       <div className="hairline-b flex items-start justify-between gap-3 p-5">
         <div>
-          <p className="mb-1 text-xs tracking-wider text-primary uppercase">
+          <p className="mb-1 text-sm font-medium text-primary">
             Debate room prompt
           </p>
           <p className="font-display text-lg">
