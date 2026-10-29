@@ -35,7 +35,7 @@ export const SECTIONS = [
   },
   {
     h: "9. Cookies and local storage",
-    b: "We only store what the site needs to work. Cookies: your sign-in session (sb-…-auth-token) and the studio sidebar's open or closed state. Browser storage: your theme, accent colour, currency, editor drafts and exercise progress. We use no analytics, advertising or tracking cookies, so there is nothing to opt in or out of. If we ever add optional cookies, we will ask first.",
+    b: "We only store what the site needs to work. Cookies: your sign-in session (sb-…-auth-token) and the studio sidebar's open or closed state. Browser storage: your theme, accent colour, currency, editor drafts and exercise progress. We use no analytics, advertising or tracking cookies, so there is nothing to opt in or out of. Videos that writers embed load from YouTube's privacy-enhanced domain and Vimeo with do-not-track on, so they don't set tracking cookies before you press play. If we ever add optional cookies, we will ask first.",
   },
   {
     h: "10. International transfers",

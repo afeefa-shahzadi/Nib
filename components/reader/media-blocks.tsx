@@ -16,10 +16,10 @@ export function EmbedBlock({ block }: { block: Block }) {
       urlObj.pathname === "/watch"
     ) {
       const v = urlObj.searchParams.get("v")
-      if (v) url = `https://www.youtube.com/embed/${v}`
+      if (v) url = `https://www.youtube-nocookie.com/embed/${v}`
     } else if (urlObj.hostname === "youtu.be") {
       const v = urlObj.pathname.slice(1)
-      if (v) url = `https://www.youtube.com/embed/${v}`
+      if (v) url = `https://www.youtube-nocookie.com/embed/${v}`
     } else if (
       urlObj.hostname.includes("loom.com") &&
       urlObj.pathname.startsWith("/share/")
@@ -31,7 +31,7 @@ export function EmbedBlock({ block }: { block: Block }) {
       !urlObj.hostname.includes("player.vimeo.com")
     ) {
       const id = urlObj.pathname.split("/").pop()
-      if (id && !isNaN(Number(id))) url = `https://player.vimeo.com/video/${id}`
+      if (id && !isNaN(Number(id))) url = `https://player.vimeo.com/video/${id}?dnt=1`
     }
   } catch {
     // ignore invalid URL
