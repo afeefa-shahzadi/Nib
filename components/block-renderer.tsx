@@ -240,7 +240,7 @@ export function ReaderBody({
                 </p>
                 <div className="mt-4">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href="/settings">
+                    <Link href="/studio/settings">
                       Contact Support / Update DoB
                     </Link>
                   </Button>

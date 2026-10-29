@@ -171,7 +171,7 @@ export default async function ReaderPage({
               : " Please set your Date of Birth in your profile settings to confirm your age."}
           </p>
           <Button asChild variant="default">
-            <Link href="/settings">Update Settings</Link>
+            <Link href="/studio/settings">Update Settings</Link>
           </Button>
         </div>
       </div>

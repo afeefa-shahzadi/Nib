@@ -447,3 +447,6 @@
 @media (prefers-reduced-motion: reduce) {
   .ink-stroke path { animation: none; stroke-dashoffset: 0; }
 }
+
+/* Docs: keep paragraphs to a readable line length. */
+.docs-measure p { max-width: 60ch; }

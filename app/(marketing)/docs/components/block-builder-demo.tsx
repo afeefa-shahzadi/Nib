@@ -44,7 +44,7 @@ export function BlockBuilderDemo() {
                   key={k}
                   onClick={() => setKind(k)}
                   aria-pressed={kind === k}
-                  className={`rounded border px-2.5 py-1 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
+                  className={`min-h-11 rounded-md border px-3 py-1 text-sm lg:min-h-8 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
                     kind === k
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-muted-foreground hover:text-foreground"
@@ -85,7 +85,7 @@ export function BlockBuilderDemo() {
                   key={m.id}
                   onClick={() => toggleMode(m.id)}
                   aria-pressed={modes[m.id]}
-                  className={`rounded border px-2 py-1.5 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
+                  className={`min-h-11 rounded-md border px-3 py-1.5 text-sm lg:min-h-8 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
                     modes[m.id]
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border text-muted-foreground"
@@ -111,12 +111,12 @@ export function BlockBuilderDemo() {
                     : "border-dashed border-border"
                 }`}
               >
-                <p className="mb-1 text-[10px] tracking-wider text-muted-foreground uppercase">
+                <p className="mb-1 text-xs tracking-wider text-muted-foreground uppercase">
                   {m.name}
                 </p>
                 {modes[m.id] ? (
                   <div className="flex items-start gap-2">
-                    <span className="mt-0.5 rounded bg-primary/15 px-2 py-0.5 text-[10px] tracking-wider text-primary uppercase">
+                    <span className="mt-0.5 rounded bg-primary/15 px-2 py-0.5 text-xs tracking-wider text-primary uppercase">
                       {kind}
                     </span>
                     <p className="text-sm text-foreground/90">

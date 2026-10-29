@@ -14,26 +14,25 @@ export function GatedDemo() {
         </p>
       </div>
       <div className="hairline-t relative">
+        {/* Same lock overlay and blur the reader uses on gated blocks (components/block-renderer.tsx). */}
         {!unlocked && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-linear-to-b from-background/0 via-background/80 to-background p-6 text-center backdrop-blur-[2px]">
-            <Lock className="mb-3 size-5 text-primary" aria-hidden />
-            <p className="mb-2 font-display text-xl">Members only</p>
-            <p className="mb-4 max-w-xs text-sm text-muted-foreground">
-              This block unlocks for the author&apos;s members. Try unlocking
-              the demo.
-            </p>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+            <Lock className="h-5 w-5 text-muted-foreground" aria-hidden />
+            <p className="mt-2 text-sm font-medium text-foreground">Premium content</p>
             <Button
+              variant="outline"
               size="sm"
+              className="mt-3"
               onClick={() => {
                 setUnlocked(true)
                 toast.success("Unlocked (demo)")
               }}
             >
-              Unlock (demo)
+              Unlock
             </Button>
           </div>
         )}
-        <div className="space-y-3 p-6">
+        <div className={`space-y-3 p-6 ${unlocked ? "" : "pointer-events-none blur-xs opacity-40 select-none"} transition-all duration-500`}>
           <p className="text-foreground/90">
             Premium paragraph — only members see this. It contains the
             proprietary framework, internal data, or methodology that&apos;s

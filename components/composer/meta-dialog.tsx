@@ -206,8 +206,10 @@ export function MetaDialog({
                 rows={2}
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
-                placeholder="Summary (≤160 chars)"
+                maxLength={160}
+                placeholder="One or two sentences for cards and search"
               />
+              <p className="mt-1 text-right text-xs text-muted-foreground">{summary.length}/160</p>
             </div>
             <div>
               <p className="mb-1 text-[10px] tracking-wider text-muted-foreground uppercase">

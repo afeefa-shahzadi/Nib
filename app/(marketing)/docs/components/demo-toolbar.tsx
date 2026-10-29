@@ -17,7 +17,7 @@ export function DemoToolbar({
         toast.success(`${label} reset`)
       }}
       aria-label={`Reset ${label} demo`}
-      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
+      className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 py-1 text-sm text-muted-foreground lg:min-h-8 hover:bg-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
     >
       <RotateCcw className="size-3" /> Reset
     </button>

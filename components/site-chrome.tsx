@@ -49,7 +49,7 @@ function ThemeToggle() {
       size="icon"
       variant="ghost"
       aria-label="Toggle theme"
-      className="size-11 sm:size-9"
+      className="size-11 lg:size-9"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
     >
       <Sun className="hidden size-4 dark:block" />
@@ -153,7 +153,7 @@ export function SiteHeader() {
   return (
     <header className="hairline-b sticky top-0 z-30 bg-background/80 backdrop-blur-md">
       <div className="container-wide flex h-16 items-center justify-between gap-2">
-        <Link prefetch={false} href="/" aria-label="Nib home" className="group flex items-center gap-1.5">
+        <Link prefetch={false} href="/" aria-label="Nib home" className="group -my-2 flex items-center gap-1.5 py-3">
           <NibLogo />
         </Link>
         <nav aria-label="Main" className="hidden items-center gap-6 text-sm lg:flex">
@@ -174,7 +174,7 @@ export function SiteHeader() {
             variant="ghost"
             aria-label="Search (Ctrl K)"
             title="Search (Ctrl K)"
-            className="size-11 sm:size-9"
+            className="size-11 lg:size-9"
             onClick={openSearch}
           >
             <Search className="size-4" />
@@ -358,7 +358,7 @@ export function SiteFooter() {
       <div className="container-wide py-12">
         <div className="grid gap-10 md:grid-cols-12">
           <div className="space-y-4 md:col-span-4">
-            <Link prefetch={false} href="/" aria-label="Nib home" className="group flex items-center gap-1.5">
+            <Link prefetch={false} href="/" aria-label="Nib home" className="group -my-2 flex items-center gap-1.5 py-3">
               <NibLogo />
             </Link>
             <p className="max-w-xs text-sm text-muted-foreground">
@@ -373,7 +373,7 @@ export function SiteFooter() {
                     aria-label={label}
                     target={href.startsWith("http") ? "_blank" : undefined}
                     rel={href.startsWith("http") ? "noreferrer noopener" : undefined}
-                    className="inline-flex size-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground md:size-9"
+                    className="inline-flex size-11 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground lg:size-9"
                   >
                     <Icon className="size-4" />
                   </Link>
@@ -389,7 +389,7 @@ export function SiteFooter() {
                 <ul className="text-sm text-muted-foreground">
                   {col.links.map((l) => (
                     <li key={l.href}>
-                      <Link prefetch={false} href={l.href} className="inline-block py-2 hover:text-foreground md:py-1">
+                      <Link prefetch={false} href={l.href} className="inline-block py-2 hover:text-foreground lg:py-1">
                         {l.label}
                       </Link>
                     </li>

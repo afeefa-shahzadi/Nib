@@ -166,7 +166,7 @@ export default function DocsPage() {
           </aside>
 
           {/* CONTENT */}
-          <article className="prose-invert max-w-none min-w-0 space-y-20 md:col-span-9 [&_section>p]:max-w-[68ch]">
+          <article className="prose-invert max-w-none min-w-0 space-y-20 md:col-span-9 docs-measure">
             {show("intro") && (
               <section id="intro" className="scroll-mt-20">
                 <SectionHeader id="intro" title="Introduction" />

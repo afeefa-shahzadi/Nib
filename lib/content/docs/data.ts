@@ -54,7 +54,7 @@ export const DEMO_PIECE: DemoBlock[] = [
   {
     id: "5",
     kind: "callout",
-    text: "💡 Try it yourself: open any past essay and ask — which sentences would a skimmer keep?",
+    text: "Try it yourself: open any past essay and ask which sentences a skimmer would keep.",
     modes: ["teach"],
   },
   {
@@ -70,18 +70,6 @@ export const DEMO_PIECE: DemoBlock[] = [
     modes: ["skim", "standard", "expert", "teach", "debate"],
   },
 ]
-
-export const KIND_BADGE: Record<
-  DemoBlock["kind"],
-  { label: string; tone: string }
-> = {
-  thesis: { label: "Thesis", tone: "bg-primary/15 text-primary" },
-  para: { label: "Paragraph", tone: "bg-muted text-muted-foreground" },
-  evidence: { label: "Evidence", tone: "bg-note/15 text-note" },
-  counter: { label: "Counter", tone: "bg-destructive/15 text-destructive" },
-  citation: { label: "Citation", tone: "bg-info/15 text-info" },
-  callout: { label: "Callout", tone: "bg-success/15 text-success" },
-}
 
 export const SECTIONS = [
   {
@@ -300,7 +288,7 @@ export const COMPOSER_TOOLS = [
   },
   {
     k: "Meta",
-    v: "Summary (≤160 chars), thesis, tags, tips, sponsors, repost credit, NSFW, Made with AI, Prose only, inline comments. The AI button drafts summary, thesis, and tags for you to edit.",
+    v: "Summary (up to 160 characters), thesis, tags, tips, sponsors, repost credit, NSFW, Made with AI, Prose only, inline comments. The AI button drafts summary, thesis, and tags for you to edit.",
   },
   {
     k: "Schedule",

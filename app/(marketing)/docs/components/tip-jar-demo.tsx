@@ -39,8 +39,9 @@ export function TipJarDemo() {
         />
         <p className="font-display text-xl">Demo tip of ₹{amount} sent.</p>
         <p className="mt-2 text-sm text-muted-foreground">
-          For real, Razorpay takes the payment and it&apos;s credited to the
-          author&apos;s earnings balance.
+          Tipping opens after launch. Then Razorpay takes the payment and
+          it&apos;s credited to the author&apos;s earnings balance. Until then,
+          pieces show a waitlist button instead.
         </p>
         <Button
           size="sm"
@@ -55,8 +56,8 @@ export function TipJarDemo() {
   }
   return (
     <div className="surface-elevated rounded-xl border border-border/60 p-6">
-      <p className="mb-2 text-xs tracking-wider text-primary uppercase">
-        Tip jar
+      <p className="mb-2 text-sm font-medium text-muted-foreground">
+        Tip jar · after launch
       </p>
       <p className="mb-4 font-display text-xl">Liked this? Send a tip.</p>
       <div className="mb-4 flex gap-2" role="group" aria-label="Quick amounts">
@@ -65,7 +66,7 @@ export function TipJarDemo() {
             key={v}
             onClick={() => setAmount(v)}
             aria-pressed={amount === v}
-            className={`flex-1 rounded-md border py-2 text-sm transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
+            className={`min-h-11 flex-1 rounded-md border py-2 text-sm lg:min-h-9 transition-colors focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none ${
               amount === v
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-border text-muted-foreground hover:text-foreground"

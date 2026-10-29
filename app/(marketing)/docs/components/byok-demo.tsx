@@ -17,12 +17,14 @@ export function ByokDemo() {
     { id: "anthropic", name: "Anthropic", limits: "No Nib limit (your key)" },
     { id: "google", name: "Google Gemini", limits: "No Nib limit (your key)" },
     { id: "openrouter", name: "OpenRouter", limits: "No Nib limit (your key)" },
+    { id: "ollama", name: "Ollama (self-hosted)", limits: "No Nib limit (your server)" },
+    { id: "nvidia", name: "NVIDIA", limits: "No Nib limit (your key)" },
   ]
 
   return (
     <div className="overflow-hidden rounded-xl border bg-background shadow-sm">
       <div className="flex items-center justify-between border-b px-6 py-3">
-        <h3 className="font-semibold">BYOK Configuration Demo</h3>
+        <h3 className="font-semibold">Your own AI key (demo)</h3>
         <DemoToolbar
           label="BYOK"
           onReset={() => {
@@ -87,7 +89,7 @@ export function ByokDemo() {
                     onChange={(e) => setApiKey(e.target.value)}
                     className="h-8 bg-background text-xs"
                   />
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Stored encrypted on Nib&apos;s server and never shown
                     again. This demo doesn&apos;t send it anywhere.
                   </p>
