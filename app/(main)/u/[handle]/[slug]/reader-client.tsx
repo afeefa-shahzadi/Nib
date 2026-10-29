@@ -829,8 +829,8 @@ export function ReaderClient({
                 Subscribe to {author.display_name}&apos;s newsletter to get notified when they publish new pieces.
               </DialogDescription>
             </DialogHeader>
-            <div className="mt-4 flex justify-end gap-3">
-              <Button variant="ghost" onClick={() => setShowFollowDialog(false)}>
+            <div className="mt-4 flex items-center justify-end gap-3">
+              <Button variant="ghost" size="sm" onClick={() => setShowFollowDialog(false)}>
                 Maybe later
               </Button>
               <div onClick={() => setShowFollowDialog(false)}>
