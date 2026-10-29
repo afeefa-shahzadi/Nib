@@ -59,7 +59,7 @@ export function ImageBlockEditor({
           .replace(/[^a-z0-9]/g, "") || "jpg"
       const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
       const { error } = await supabase.storage
-        .from("post-images")
+        .from("post-media")
         .upload(path, file, {
           cacheControl: "3600",
           upsert: false,
@@ -67,7 +67,7 @@ export function ImageBlockEditor({
         })
       if (error) throw error
       const { data: pub } = supabase.storage
-        .from("post-images")
+        .from("post-media")
         .getPublicUrl(path)
       onChange({ imageUrl: pub.publicUrl })
       toast.success("Image uploaded")
