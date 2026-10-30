@@ -6,6 +6,7 @@ import { getDiscoverFeed } from "@/actions/social"
 import { listActiveBoosts } from "@/actions/monetization/payments"
 import { getProfileRecommendations } from "@/actions/network"
 import { listCollectionsByCurator } from "@/actions/monetization/collections"
+import { listClappedPieces } from "@/actions/claps"
 
 // Viewer-independent reads (service-role client, no cookies) shared by every
 // visitor of a public page. Pages stay dynamic for per-viewer state; these
@@ -18,6 +19,7 @@ export const cachedAuthorByHandle = unstable_cache((handle: string) => getAuthor
 export const cachedRelatedPieces = unstable_cache((piece_id: string) => getRelatedPieces({ data: { piece_id } }), ["related-pieces"], opts)
 export const cachedActiveBoosts = unstable_cache(() => listActiveBoosts(), ["active-boosts"], opts)
 export const cachedProfileRecommendations = unstable_cache((handle: string) => getProfileRecommendations(handle), ["profile-recs"], opts)
+export const cachedClappedPieces = unstable_cache((id: string) => listClappedPieces(id), ["clapped-pieces"], opts)
 export const cachedCollectionsByCurator = unstable_cache((id: string) => listCollectionsByCurator(id), ["collections-by-curator"], opts)
 
 // Per-request dedupe (viewer-dependent, so not cross-request): the reader's

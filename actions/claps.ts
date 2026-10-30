@@ -64,3 +64,23 @@ export async function setMyClaps(args: { data?: any } = {}) {
   await checkClapThreshold(userId)
   return { ok: true, count }
 }
+
+// Public pieces a reader clapped, newest clap first, for their profile. Empty when
+// they turned off "Show pieces I clapped" in Settings > Privacy.
+export async function listClappedPieces(userId: string) {
+  if (!UUID.test(userId)) return []
+  const db = await createAdminClient()
+  const { data: p } = await db.from("profiles").select("show_claps").eq("id", userId).maybeSingle()
+  if (!p?.show_claps) return []
+  const { data } = await db
+    .from("piece_claps")
+    .select(
+      "count, piece:content_objects!inner(id, title, slug, summary, tags, cover_image_url, published_at, status, visibility, author:profiles!author_id(handle, display_name, avatar_url))"
+    )
+    .eq("user_id", userId)
+    .eq("piece.status", "published")
+    .eq("piece.visibility", "public")
+    .order("updated_at", { ascending: false })
+    .limit(100)
+  return (data ?? []).map((r: any) => ({ ...r.piece, claps: r.count }))
+}

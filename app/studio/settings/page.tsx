@@ -928,6 +928,33 @@ function PlanSection() {
 }
 
 // ---------------- Privacy and data ----------------
+function ProfileSwitch({ field, title, help }: { field: "show_claps" | "hide_from_leaderboard"; title: string; help: string }) {
+  const q = useProfile()
+  const [local, setLocal] = useState<boolean | null>(null)
+  const on = local ?? Boolean((q.data as Record<string, unknown> | null | undefined)?.[field])
+  const id = `set-${field}`
+  return (
+    <Row title={title} htmlFor={id} help={help}>
+      <Switch
+        id={id}
+        checked={on}
+        disabled={!q.data}
+        onCheckedChange={async (v) => {
+          setLocal(v)
+          try {
+            await updateMyProfile({ data: { [field]: v } })
+            await q.refetch()
+            toast.success("Saved")
+          } catch (e) {
+            setLocal(!v)
+            toast.error((e as Error).message)
+          }
+        }}
+      />
+    </Row>
+  )
+}
+
 function DataSection() {
   const { plan } = useMyPlan()
   const hasStudio = hasStudioAccess(plan)
@@ -940,6 +967,16 @@ function DataSection() {
   )
   return (
     <Section title="Privacy and data">
+      <ProfileSwitch
+        field="show_claps"
+        title="Show pieces I clapped"
+        help="Adds a Clapped tab to your public profile."
+      />
+      <ProfileSwitch
+        field="hide_from_leaderboard"
+        title="Hide me from the readers leaderboard"
+        help="You still earn points; you just aren't listed."
+      />
       <Row title="Saved pieces" help="Your saved list is private. Only collections you make public appear on your profile.">
         <Button asChild variant="outline" className="min-h-11">
           <Link href="/studio/collections">Manage collections</Link>

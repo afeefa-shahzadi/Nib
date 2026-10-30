@@ -70,8 +70,13 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
   }) => {
     const start = rangeStart(data.timeframe)
 
-    const t = await totals(supabaseAdmin, "leaderboard_reader_totals", start)
-    const rows = t.map((x) => {
+    // Readers who left the board in Settings > Privacy.
+    const [t, { data: hidden }] = await Promise.all([
+      totals(supabaseAdmin, "leaderboard_reader_totals", start),
+      supabaseAdmin.from("profiles").select("id").eq("hide_from_leaderboard", true),
+    ])
+    const out = new Set((hidden ?? []).map((h: { id: string }) => h.id))
+    const rows = t.filter((x) => !out.has(x.id)).map((x) => {
       const pt = Number(x.points)
       return {
         userId: x.id as string,

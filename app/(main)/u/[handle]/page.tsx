@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { cachedAuthorByHandle, cachedProfileRecommendations, cachedCollectionsByCurator } from "@/lib/public-cache"
+import { cachedAuthorByHandle, cachedProfileRecommendations, cachedCollectionsByCurator, cachedClappedPieces } from "@/lib/public-cache"
 import AuthorClient from "./author-client"
 import { notFound } from "next/navigation"
 import { isLaunchFree } from "@/lib/plan"
@@ -15,9 +15,10 @@ export default async function AuthorPage({
   const data = await cachedAuthorByHandle(handle)
   if (!data) return notFound()
 
-  const [recommendations, collections] = await Promise.all([
+  const [recommendations, collections, clapped] = await Promise.all([
     cachedProfileRecommendations(handle),
     cachedCollectionsByCurator(data.author.id).catch(() => []),
+    cachedClappedPieces(data.author.id).catch(() => []),
   ])
 
   return (
@@ -29,6 +30,7 @@ export default async function AuthorPage({
       following={data.following ?? 0}
       paymentsOpen={!isLaunchFree()}
       collections={collections}
+      clapped={clapped as any as Piece[]}
       recommendations={
         recommendations as any as Array<{
           id: string

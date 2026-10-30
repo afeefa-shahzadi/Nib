@@ -58,6 +58,7 @@ export default function AuthorClient({
   following,
   paymentsOpen,
   collections = [],
+  clapped = [],
   recommendations,
 }: {
   author: {
@@ -78,6 +79,7 @@ export default function AuthorClient({
   following: number
   paymentsOpen: boolean
   collections?: Array<{ id: string; title: string; description: string | null }>
+  clapped?: Piece[]
   recommendations: Array<{
     id: string
     blurb: string | null
@@ -131,6 +133,7 @@ export default function AuthorClient({
   const [more, setMore] = useState({ key: pageKey, n: PAGE })
   const shown = more.key === pageKey ? more.n : PAGE
   const [shownCollections, setShownCollections] = useState(PAGE)
+  const [shownClapped, setShownClapped] = useState(PAGE)
 
   const initials = author.display_name.split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase()
   const joined = author.created_at
@@ -254,6 +257,7 @@ export default function AuthorClient({
               <TabsTrigger value="pieces">Pieces</TabsTrigger>
               {tiers.length > 0 && <TabsTrigger value="tiers">Memberships</TabsTrigger>}
               {collections.length > 0 && <TabsTrigger value="collections">Collections</TabsTrigger>}
+              {clapped.length > 0 && <TabsTrigger value="clapped">Clapped</TabsTrigger>}
               {graph && graph.pieces.length > 0 && <TabsTrigger value="graph">Graph</TabsTrigger>}
               {recommendations?.length > 0 && <TabsTrigger value="network">Recommends</TabsTrigger>}
             </TabsList>
@@ -334,6 +338,17 @@ export default function AuthorClient({
                 ))}
               </ul>
               <ShowMore total={collections.length} shown={shownCollections} onMore={() => setShownCollections(shownCollections + PAGE)} />
+            </TabsContent>
+          )}
+
+          {clapped.length > 0 && (
+            <TabsContent value="clapped" className="mt-6">
+              <ul>
+                {clapped.slice(0, shownClapped).map((p) => (
+                  <PieceRow key={p.id} p={p} />
+                ))}
+              </ul>
+              <ShowMore total={clapped.length} shown={shownClapped} onMore={() => setShownClapped(shownClapped + PAGE)} />
             </TabsContent>
           )}
 
