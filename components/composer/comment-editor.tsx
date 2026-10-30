@@ -100,19 +100,30 @@ const suggestion: Omit<SuggestionOptions, "editor"> = {
       ? await supabase.from("follows").select("author_id").eq("follower_id", me).limit(500)
       : { data: [] }
     const followed = new Set((follows ?? []).map((f) => f.author_id as string))
-    const cols = "id, handle, display_name, avatar_url"
+    const cols = "id, handle, display_name, avatar_url, mention_policy"
+    let found: (ProfileItem & { mention_policy?: string })[] = []
     if (!q) {
       if (!followed.size) return []
-      const { data } = await supabase.from("profiles").select(cols).in("id", [...followed].slice(0, 50)).limit(6)
-      return data ?? []
+      const { data } = await supabase.from("profiles").select(cols).in("id", [...followed].slice(0, 50)).limit(12)
+      found = data ?? []
+    } else {
+      const { data } = await supabase
+        .from("profiles")
+        .select(cols)
+        .or(`handle.ilike.${q}%,display_name.ilike.${q}%,display_name.ilike.% ${q}%`)
+        .neq("id", me ?? "")
+        .limit(20)
+      found = data ?? []
     }
-    const { data } = await supabase
-      .from("profiles")
-      .select(cols)
-      .or(`handle.ilike.${q}%,display_name.ilike.${q}%,display_name.ilike.% ${q}%`)
-      .neq("id", me ?? "")
-      .limit(20)
-    return (data ?? [])
+    // Respect each person's "who can mention you" setting.
+    const picky = found.filter((p) => p.mention_policy === "following").map((p) => p.id)
+    const { data: fans } =
+      me && picky.length
+        ? await supabase.from("follows").select("follower_id").eq("author_id", me).in("follower_id", picky)
+        : { data: [] }
+    const followsMe = new Set((fans ?? []).map((f) => f.follower_id as string))
+    return found
+      .filter((p) => p.mention_policy !== "none" && (p.mention_policy !== "following" || followsMe.has(p.id)))
       .sort((a, b) => Number(followed.has(b.id)) - Number(followed.has(a.id)))
       .slice(0, 6)
   },

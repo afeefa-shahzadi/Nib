@@ -3,6 +3,7 @@
 import { assertCanPost } from "@/lib/parental-consent"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
+import { enforceMentionPolicy } from "@/lib/mentions.server"
 import { SupabaseClient } from "@supabase/supabase-js"
 import { isLaunchFree } from "@/lib/plan"
 
@@ -349,7 +350,7 @@ export async function postMessage(args: { data?: any } = {}) {
       room_id: data.room_id,
       user_id: context.userId,
       stance: data.stance,
-      body: data.body,
+      body: await enforceMentionPolicy(context.supabase, data.body, context.userId!),
       block_id: blockId,
     })
     if (error) {

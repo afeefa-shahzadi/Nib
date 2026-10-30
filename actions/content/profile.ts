@@ -100,6 +100,7 @@ export async function updateMyProfile(args: { data?: any } = {}) {
       show_claps?: boolean
       show_birthday?: boolean
       hide_from_leaderboard?: boolean
+      mention_policy?: "everyone" | "following" | "none"
       disability_visual?: boolean
       disability_cognitive?: boolean
       disability_hearing?: boolean
@@ -137,6 +138,11 @@ export async function updateMyProfile(args: { data?: any } = {}) {
         if (!own) throw new Error("You can only pin one of your published pieces.")
       }
       patch.pinned_piece_id = data.pinned_piece_id || null
+    }
+    if (data.mention_policy !== undefined) {
+      if (!["everyone", "following", "none"].includes(data.mention_policy))
+        throw new Error("Choose who can mention you.")
+      patch.mention_policy = data.mention_policy
     }
     for (const k of [
       "display_name",

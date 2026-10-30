@@ -896,6 +896,46 @@ function ProfileSwitch({ field, title, help }: { field: "show_claps" | "show_bir
   )
 }
 
+function MentionPolicyRow() {
+  const q = useProfile()
+  const [local, setLocal] = useState<string | null>(null)
+  const value =
+    local ?? ((q.data as { mention_policy?: string } | null | undefined)?.mention_policy || "everyone")
+  return (
+    <Row
+      title="Who can mention you"
+      htmlFor="set-mention_policy"
+      help="Mentions from anyone else show as plain text, and you won't appear in their suggestions."
+    >
+      <Select
+        value={value}
+        disabled={!q.data}
+        onValueChange={async (v) => {
+          const before = value
+          setLocal(v)
+          try {
+            await updateMyProfile({ data: { mention_policy: v as "everyone" | "following" | "none" } })
+            await q.refetch()
+            toast.success("Saved")
+          } catch (e) {
+            setLocal(before)
+            toast.error((e as Error).message)
+          }
+        }}
+      >
+        <SelectTrigger id="set-mention_policy" className="min-h-11 w-full sm:w-56">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="everyone">Everyone</SelectItem>
+          <SelectItem value="following">People you follow</SelectItem>
+          <SelectItem value="none">No one</SelectItem>
+        </SelectContent>
+      </Select>
+    </Row>
+  )
+}
+
 function DataSection() {
   const { plan } = useMyPlan()
   const hasStudio = hasStudioAccess(plan)
@@ -923,6 +963,7 @@ function DataSection() {
         title="Hide me from the readers leaderboard"
         help="You still earn points; you just aren't listed."
       />
+      <MentionPolicyRow />
       <Row title="Saved pieces" help="Your saved list is private. Only collections you make public appear on your profile.">
         <Button asChild variant="outline" className="min-h-11">
           <Link href="/studio/collections">Manage collections</Link>

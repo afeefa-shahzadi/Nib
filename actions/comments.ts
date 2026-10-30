@@ -6,6 +6,7 @@ import DOMPurify from "isomorphic-dompurify"
 import { getViewablePiece } from "@/actions/content/helpers"
 import { checkRateLimit } from "@/lib/rate-limit.server"
 import { COMMENTS_PAGE } from "@/lib/comments"
+import { enforceMentionPolicy } from "@/lib/mentions.server"
 
 export async function listComments(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
@@ -114,7 +115,7 @@ export async function postComment(args: { data?: any } = {}) {
     const { data: newComment, error } = await supabaseAdmin.from("piece_responses").insert({
       piece_id: data.piece_id,
       user_id: userId,
-      body: sanitizedBody,
+      body: await enforceMentionPolicy(supabaseAdmin, sanitizedBody, userId),
       ...(data.parent_id ? { parent_id: data.parent_id } : {}),
       ...(data.quoted_text ? { quoted_text: data.quoted_text } : {}),
       ...(data.serialized_range ? { serialized_range: data.serialized_range } : {}),
