@@ -331,7 +331,7 @@ export function MinimapDialog({ open, onOpenChange, blocks }: MinimapDialogProps
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[95vw] md:max-w-[90vw] w-full h-[85vh] flex flex-col p-0 overflow-hidden gap-0 bg-background/95 backdrop-blur-md">
-        <DialogHeader className="p-4 border-b">
+        <DialogHeader className="p-4 pr-14 border-b">
           <DialogTitle className="font-display tracking-tight text-xl">Document Minimap</DialogTitle>
         </DialogHeader>
         <div className="flex-1 w-full h-full relative">
