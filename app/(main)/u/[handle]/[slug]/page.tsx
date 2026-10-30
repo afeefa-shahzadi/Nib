@@ -4,7 +4,7 @@ import { Suspense } from "react"
 import { notFound } from "next/navigation"
 import { listRoomsForPiece } from "@/actions/debate"
 import { isSaved } from "@/actions/content"
-import { cachedRelatedPieces, cachedActiveBoosts, pieceBySlug } from "@/lib/public-cache"
+import { cachedRelatedPieces, cachedActiveBoosts, cachedClapStats, pieceBySlug } from "@/lib/public-cache"
 import { getMyAccess } from "@/actions/payments"
 import { tryGetViewerId } from "@/actions/content/helpers"
 import { getMyProfile } from "@/actions/content"
@@ -97,7 +97,7 @@ export default async function ReaderPage({
   const isFree = !res.blocks.some((b: Record<string, unknown>) => b.monetization_eligible === true)
   const shouldFetchBoosts = isFree && !res.piece.sponsorship_enabled
 
-  const [rooms, related, boosts, accessData, savedData, profileData, highlights, allComments] = await Promise.all([
+  const [rooms, related, boosts, accessData, savedData, profileData, highlights, allComments, clapStats] = await Promise.all([
     listRoomsForPiece({ data: { content_object_id: res.piece.id } }).catch(
       () => []
     ),
@@ -119,7 +119,9 @@ export default async function ReaderPage({
     viewerId
       ? getMyHighlights(res.piece.id).catch(() => [])
       : Promise.resolve([]),
-    listComments({ data: { piece_id: res.piece.id } }).catch(() => [])
+    listComments({ data: { piece_id: res.piece.id } }).catch(() => []),
+    // Guests show this cached total; signed-in readers load live counts client-side.
+    viewerId ? Promise.resolve(null) : cachedClapStats(res.piece.id).catch(() => null),
   ])
 
   let isAdult = false
@@ -203,6 +205,7 @@ export default async function ReaderPage({
           initialSaved={savedData.saved}
           initialHighlights={highlights}
           initialComments={allComments as any[]}
+          guestClapTotal={clapStats?.total}
           originalPiece={res.originalPiece}
           originalAuthor={res.originalAuthor}
           originalBlocks={res.originalBlocks}

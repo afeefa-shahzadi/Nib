@@ -10,13 +10,17 @@ const HOLD_DELAY = 400
 const HOLD_EVERY = 110
 const SAVE_AFTER = 450
 
-type ProviderProps = { pieceId: string; authed: boolean; onSignInRequired?: () => void }
+type ProviderProps = { pieceId: string; authed: boolean; guestTotal?: number; onSignInRequired?: () => void }
 
 // One piece's clap state + persistence, shared by the bar button and the More menu's undo.
-function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
+function useClapState({ pieceId, authed, guestTotal, onSignInRequired }: ProviderProps) {
   // Shown total = everyone else's claps + yours, so it can't drift or go negative
   // whatever order the two loads finish in.
-  const [stats, setStats] = useState<{ total: number; mineAtLoad: number } | null>(null)
+  // Guests get the page's cached total and make no calls; signed-in readers
+  // load live so their own fresh claps never sit beside a stale total.
+  const [stats, setStats] = useState<{ total: number; mineAtLoad: number } | null>(
+    !authed && guestTotal !== undefined ? { total: guestTotal, mineAtLoad: 0 } : null
+  )
   const [mine, setMine] = useState(0)
   const [pulse, setPulse] = useState(0)
   const mineRef = useRef(0)
@@ -24,6 +28,7 @@ function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    if (!authed && guestTotal !== undefined) return
     let live = true
     Promise.all([
       getPieceClapStats({ data: { piece_id: pieceId } }),
@@ -39,7 +44,7 @@ function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
     return () => {
       live = false
     }
-  }, [pieceId, authed])
+  }, [pieceId, authed, guestTotal])
 
   // One save at a time, always for the latest count, so an older request can't land last.
   const inFlight = useRef(false)

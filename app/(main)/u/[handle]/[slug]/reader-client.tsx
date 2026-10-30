@@ -107,6 +107,7 @@ export function ReaderClient({
   commentSources = [],
   initialHighlights = NONE,
   initialComments = NONE,
+  guestClapTotal,
 }: {
   piece: PieceData
   blocks: any[]
@@ -128,6 +129,7 @@ export function ReaderClient({
   commentSources?: SourceCitation[]
   initialHighlights?: any[]
   initialComments?: any[]
+  guestClapTotal?: number
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -515,7 +517,7 @@ export function ReaderClient({
       />
 
       {/* One clap state for the bar and the aside Applause card. */}
-      <ClapProvider pieceId={piece.id} authed={authed} onSignInRequired={() => router.push("/login")}>
+      <ClapProvider pieceId={piece.id} authed={authed} guestTotal={guestClapTotal} onSignInRequired={() => router.push("/login")}>
       <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-[minmax(0,42rem)_minmax(18rem,1fr)] lg:gap-16 xl:gap-24">
         <article ref={articleRef} className="w-full max-w-[42rem] min-w-0">
           <SponsoredBanner contentObjectId={piece.id} />
