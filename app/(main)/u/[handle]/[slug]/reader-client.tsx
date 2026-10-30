@@ -466,8 +466,8 @@ export function ReaderClient({
 
       {/* One clap state for the bar and the aside Applause card. */}
       <ClapProvider pieceId={piece.id} authed={authed} onSignInRequired={() => router.push("/login")}>
-      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-12">
-        <article ref={articleRef} className="w-full max-w-[42rem] min-w-0 lg:col-span-8">
+      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-[minmax(0,42rem)_18rem] lg:justify-center xl:gap-16">
+        <article ref={articleRef} className="w-full max-w-[42rem] min-w-0">
           <SponsoredBanner contentObjectId={piece.id} />
 
           {piece.cover_image_url && (
@@ -769,7 +769,7 @@ export function ReaderClient({
         </div>
 
         <div
-          className="custom-scrollbar sticky top-24 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto pb-8 lg:col-span-4 lg:block"
+          className="custom-scrollbar sticky top-24 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto pb-8 lg:block"
         >
           <ReaderAside
             piece={piece}

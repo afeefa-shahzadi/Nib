@@ -51,8 +51,8 @@ export function ReaderAside({
     effectiveVariant === "desktop" || effectiveVariant === "mobile-sheet"
   const showBranches =
     effectiveVariant === "desktop" || effectiveVariant === "mobile-sheet"
-  const showAuthor =
-    effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
+  // Desktop already has the byline (with Follow) under the title.
+  const showAuthor = effectiveVariant === "mobile-footer"
   const showTipJar =
     effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
   const showRelated =
