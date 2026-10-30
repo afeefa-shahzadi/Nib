@@ -578,7 +578,9 @@ export async function requestPayout(args: { data?: unknown } = {}) {
 export async function settlePaidPurchase(
   supabaseAdmin: SupabaseClient,
   orderId: string,
-  paymentId: string
+  paymentId: string,
+  /** Razorpay's fee+tax for this payment (payment.fee); estimated when absent. */
+  gatewayFeePaise?: number | null
 ): Promise<boolean> {
   const { data: paid } = await supabaseAdmin
     .from("purchases")
@@ -598,7 +600,8 @@ export async function settlePaidPurchase(
     paid.amount_paise,
     feeType,
     curated,
-    supabaseAdmin
+    supabaseAdmin,
+    gatewayFeePaise
   )
   const net = split.author
   // Stamp the credited shares on the purchase so a later refund/dispute can
@@ -606,7 +609,11 @@ export async function settlePaidPurchase(
   // be recomputed later) — see reversePaidPurchase.
   await supabaseAdmin
     .from("purchases")
-    .update({ net_paise: net, curator_net_paise: curated ? split.curator : null })
+    .update({
+      net_paise: net,
+      curator_net_paise: curated ? split.curator : null,
+      processing_paise: split.processing,
+    })
     .eq("razorpay_order_id", orderId)
   await supabaseAdmin.from("earnings_ledger").insert({
     user_id: paid.author_id,
@@ -652,6 +659,63 @@ export async function settlePaidPurchase(
   return true
 }
 
+// Credit one monthly membership charge to the author exactly once. The webhook
+// calls this on subscription.charged; recording it as a purchase keyed by the
+// unique payment id makes replays no-ops and lets refunds reverse it through
+// reversePaidPurchase like any sale. Returns true if this call credited it.
+export async function settleMembershipCharge(
+  supabaseAdmin: SupabaseClient,
+  subscriptionId: string,
+  payment: { id: string; order_id?: string | null; amount: number; fee?: number | null }
+): Promise<boolean> {
+  const { data: sub } = await supabaseAdmin
+    .from("payment_subscriptions")
+    .select("author_id, user_id")
+    .eq("razorpay_subscription_id", subscriptionId)
+    .maybeSingle()
+  if (!sub?.author_id) return false
+
+  const split = await calculateSaleSplit(
+    sub.author_id,
+    payment.amount,
+    "purchase",
+    false,
+    supabaseAdmin,
+    payment.fee
+  )
+  const { error } = await supabaseAdmin.from("purchases").insert({
+    user_id: sub.user_id,
+    item_id: sub.author_id,
+    item_type: "membership",
+    kind: "membership",
+    author_id: sub.author_id,
+    amount_paise: payment.amount,
+    currency: "INR",
+    razorpay_order_id: payment.order_id ?? payment.id,
+    razorpay_payment_id: payment.id,
+    status: "paid",
+    net_paise: split.author,
+    processing_paise: split.processing,
+  })
+  if (error) {
+    if (error.code !== "23505") console.error("[payments] membership charge insert failed", error)
+    return false
+  }
+  await supabaseAdmin.from("earnings_ledger").insert({
+    user_id: sub.author_id,
+    source: "membership",
+    gross_paise: payment.amount,
+    net_paise: split.author,
+    status: "available",
+  })
+  await supabaseAdmin.from("notifications").insert({
+    user_id: sub.author_id,
+    type: "sale",
+    payload: { sender_id: sub.user_id, amount_paise: payment.amount, kind: "membership" },
+  })
+  return true
+}
+
 // Reverse a refunded/disputed purchase exactly once. The Razorpay webhook
 // (refund.processed / payment.dispute.created) calls this; the gated
 // paid->reversed transition makes replays no-ops. Writes a NEGATIVE
@@ -668,7 +732,7 @@ export async function reversePaidPurchase(
     .update({ status: "reversed" })
     .eq("razorpay_order_id", orderId)
     .eq("status", "paid")
-    .select("author_id, net_paise, amount_paise, curator_id, curator_net_paise")
+    .select("author_id, net_paise, processing_paise, amount_paise, curator_id, curator_net_paise")
     .maybeSingle()
   if (!reversed?.author_id) return false
 
@@ -691,11 +755,14 @@ export async function reversePaidPurchase(
     return false
   }
 
+  // Razorpay keeps its processing fee on a refund, so the author carries it
+  // (as on Substack/Gumroad) rather than Nib losing it on every refund.
+  const clawback = reversed.net_paise + (reversed.processing_paise ?? 0)
   await supabaseAdmin.from("earnings_ledger").insert({
     user_id: reversed.author_id,
     source: "chargeback",
-    gross_paise: -reversed.net_paise,
-    net_paise: -reversed.net_paise,
+    gross_paise: -clawback,
+    net_paise: -clawback,
     status: "available",
   })
 
@@ -804,7 +871,8 @@ export async function calculateSaleSplit(
   grossPaise: number,
   type: "tip" | "sponsorship" | "purchase",
   curated: boolean,
-  supabaseAdmin: SupabaseClient
+  supabaseAdmin: SupabaseClient,
+  processingPaise?: number | null
 ) {
   const { data: profile } = await supabaseAdmin
     .from("profiles")
@@ -837,7 +905,7 @@ export async function calculateSaleSplit(
       (ledger ?? []).reduce((s: number, l: { gross_paise: number }) => s + l.gross_paise, 0)
   }
 
-  return splitSale({ grossPaise, kind: type, isStudio, studioMonthGmvPaise, curated })
+  return splitSale({ grossPaise, kind: type, isStudio, studioMonthGmvPaise, curated, processingPaise })
 }
 
 // ============== Apply earnings to Studio (pay ₹499 from balance) ==============

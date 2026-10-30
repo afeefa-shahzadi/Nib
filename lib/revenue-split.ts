@@ -29,9 +29,14 @@ export function splitSale(args: {
   /** Studio author's gross sales so far this month, before this sale. */
   studioMonthGmvPaise: number
   curated: boolean
+  /** Razorpay's actual fee+tax for this payment, when known; else estimated. */
+  processingPaise?: number | null
 }): { processing: number; author: number; curator: number; platform: number } {
   const { grossPaise: gross, kind, isStudio, studioMonthGmvPaise, curated } = args
-  const processing = processingFeePaise(gross)
+  const processing =
+    args.processingPaise != null
+      ? Math.min(gross, Math.max(0, Math.round(args.processingPaise)))
+      : processingFeePaise(gross)
   const net = gross - processing
   const curator = curated ? Math.floor(net * CURATOR_SHARE) : 0
   let author: number

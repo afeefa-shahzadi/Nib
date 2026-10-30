@@ -23,6 +23,8 @@ export async function POST(request: NextRequest) {
         entity: {
           id: string
           order_id?: string
+          amount: number
+          fee?: number | null
           status: string
           notes?: Record<string, string>
         }
@@ -63,7 +65,7 @@ export async function POST(request: NextRequest) {
           const { settlePaidPurchase } = await import(
             "@/actions/monetization/payments"
           )
-          await settlePaidPurchase(supabaseAdmin, p.order_id, p.id)
+          await settlePaidPurchase(supabaseAdmin, p.order_id, p.id, p.fee)
 
           // Activate a boost if this order was for one (guarded so a webhook
           // retry can't re-stamp the boost window).
@@ -132,6 +134,16 @@ export async function POST(request: NextRequest) {
           .from("payment_subscriptions")
           .update({ status: newStatus, current_period_end: periodEnd })
           .eq("razorpay_subscription_id", s.id)
+
+        // Each successful membership charge pays the author (exactly once per
+        // payment id). A no-op for Studio/Reader/Org subscriptions.
+        const charge = payload.payload.payment?.entity
+        if (event === "subscription.charged" && charge?.id) {
+          const { settleMembershipCharge } = await import(
+            "@/actions/monetization/payments"
+          )
+          await settleMembershipCharge(supabaseAdmin, s.id, charge)
+        }
 
         const { data: studio } = await supabaseAdmin
           .from("studio_subscriptions")

@@ -17,6 +17,15 @@ export function tdsOnPayoutPaise(grossPaise: number): number {
   return Math.round(grossPaise * TDS_RATE)
 }
 
+// RazorpayX transfer fee (IMPS ≈ ₹5 + 18% GST), passed to the creator at cost
+// like the processing fee. PAYOUT_FEE_PAISE env overrides if the rate changes.
+export const PAYOUT_FEE_PAISE = Number(process.env.PAYOUT_FEE_PAISE) || 590
+
+// What actually lands in the creator's bank for a withdrawal of `grossPaise`.
+export function payoutNetPaise(grossPaise: number): number {
+  return Math.max(0, grossPaise - tdsOnPayoutPaise(grossPaise) - PAYOUT_FEE_PAISE)
+}
+
 // GST contained in a platform fee, treating the fee as GST-INCLUSIVE (the fee
 // we already take contains the tax, we don't bill extra on top). fee=118 -> 18.
 export function gstFromInclusiveFeePaise(feePaise: number): number {

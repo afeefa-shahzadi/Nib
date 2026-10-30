@@ -185,8 +185,8 @@ export default function EarnPage() {
                 </li>
                 <li className="flex gap-2">
                   <Check className="mt-1 size-4 shrink-0 text-primary" aria-hidden />
-                  Withdraw once your balance reaches {fmt(PAYOUT_MIN_INR)}, so
-                  Razorpay fees don&apos;t eat small amounts.
+                  Withdraw once your balance reaches {fmt(PAYOUT_MIN_INR)}. Each
+                  withdrawal has 1% TDS withheld and a ₹5.90 bank transfer fee.
                 </li>
                 <li className="flex gap-2">
                   <Check className="mt-1 size-4 shrink-0 text-primary" aria-hidden />

@@ -14,6 +14,8 @@ import {
 } from "@/lib/razorpayx/client"
 import {
   tdsOnPayoutPaise,
+  payoutNetPaise,
+  PAYOUT_FEE_PAISE,
   gstFromInclusiveFeePaise,
   indianFyQuarter,
   fyQuarterBounds,
@@ -136,14 +138,14 @@ export async function markPayoutPaid(
 
   const gross = row.amount_paise ?? 0
   const tds = tdsOnPayoutPaise(gross)
-  const netToCreator = gross - tds
+  const netToCreator = payoutNetPaise(gross)
   if (tds > 0) {
     const { error: tdsErr } = await svc.from("tds_withholdings").insert({
       user_id: row.user_id,
       payout_id: id,
       gross_paise: gross,
       tds_paise: tds,
-      net_paise: netToCreator,
+      net_paise: gross - tds,
       quarter: indianFyQuarter(new Date()),
     })
     if (tdsErr && tdsErr.code !== "23505")
@@ -156,7 +158,7 @@ export async function markPayoutPaid(
     `Your ${inr(netToCreator)} payout is on its way`,
     `<h1>Your payout is on its way</h1>` +
       `<p style="font-family:${NIB_EMAIL.serif};font-size:34px;line-height:1.1;margin:4px 0 18px;color:${NIB_EMAIL.success}">${inr(netToCreator)}</p>` +
-      `<div class="nib-note">${inr(gross)} gross, less <strong>${inr(tds)}</strong> withheld as 1% TDS (Sec 194-O). Claim it as a TDS credit in your return.</div>` +
+      `<div class="nib-note">${inr(gross)} gross, less <strong>${inr(tds)}</strong> withheld as 1% TDS (Sec 194-O) and ${inr(PAYOUT_FEE_PAISE)} bank transfer fee. Claim the TDS as a credit in your return.</div>` +
       `<p style="margin-top:16px;font-size:13px;color:${NIB_EMAIL.muted}">Reference: ${escapeHtml(reference.trim())}</p>` +
       nibButton("View earnings", `${SITE_URL}/studio/earnings`, "success")
   )
@@ -307,7 +309,7 @@ export async function disbursePayout(args: { data: { id: string } }) {
     // markPayoutPaid), and the creator's bank receives gross - TDS — the same
     // net the manual path pays by hand and the "payout on its way" email states.
     const gross = req.amount_paise ?? 0
-    const netPaise = gross - tdsOnPayoutPaise(gross)
+    const netPaise = payoutNetPaise(gross)
     const pout = await createPayout({
       fundAccountId: fundAccountId!,
       amountPaise: netPaise,

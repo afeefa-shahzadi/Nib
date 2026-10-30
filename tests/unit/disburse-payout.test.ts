@@ -70,7 +70,7 @@ test("disbursePayout creates beneficiary, calls payout with idempotency key, set
   assert.equal(upd.vals.reference, "pout_1")
 })
 
-test("disbursePayout sends NET (gross minus 1% TDS) and records processed_by", async () => {
+test("disbursePayout sends NET (gross minus 1% TDS and the transfer fee) and records processed_by", async () => {
   created = []
   currentFake = adminFake(({ table, op }: ResolveCtx): any => {
     if (table === "payout_requests" && op === "select")
@@ -82,7 +82,7 @@ test("disbursePayout sends NET (gross minus 1% TDS) and records processed_by", a
   })
   await adm.disbursePayout({ data: { id: "p1" } })
   const payoutCall = created.find((c) => c && c.idempotencyKey)
-  assert.equal(payoutCall.amountPaise, 49500, "RazorpayX receives net (50000 - 1% TDS)")
+  assert.equal(payoutCall.amountPaise, 48910, "RazorpayX receives net (50000 - 1% TDS - ₹5.90 transfer fee)")
   const upd = currentFake.calls.find(
     (c) => c.table === "payout_requests" && c.op === "update"
   ) as any

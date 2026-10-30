@@ -237,10 +237,16 @@ export async function verifyRazorpayPayment(args: { data?: any } = {}) {
     const { settlePaidPurchase } = await import(
       "@/actions/monetization/payments"
     )
+    // Split on Razorpay's actual fee (international cards cost more than the
+    // domestic estimate). If the lookup fails, settlement falls back to it.
+    const fee = await rzFetch(`/payments/${data.razorpay_payment_id}`)
+      .then((p) => (p as { fee?: number | null }).fee ?? null)
+      .catch(() => null)
     await settlePaidPurchase(
       svc,
       data.razorpay_order_id,
-      data.razorpay_payment_id
+      data.razorpay_payment_id,
+      fee
     )
 
     return { success: true }
