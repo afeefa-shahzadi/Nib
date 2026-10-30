@@ -17,7 +17,7 @@ export function TipJar(props: {
     <div className="surface rounded-md p-5">
       <div className="mb-3 flex items-center gap-2">
         <Heart className="size-4 text-primary" />
-        <p className="text-xs tracking-wider text-muted-foreground uppercase">
+        <p className="text-xs text-muted-foreground">
           Tip the author
         </p>
       </div>

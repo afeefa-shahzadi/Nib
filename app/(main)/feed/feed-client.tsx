@@ -39,16 +39,18 @@ export function FeedClient({
   initialFollowing,
   initialDiscover,
   signedIn,
+  initialTag,
 }: {
   initialFollowing: { pieces: Piece[]; empty: boolean } | null
   initialDiscover: Discover
   signedIn: boolean
+  initialTag?: string
 }) {
   const [tab, setTab] = useState<"following" | "discover">("discover")
   const [loginOpen, setLoginOpen] = useState(false)
   const [q, setQ] = useState("")
   const [debouncedQ, setDebouncedQ] = useState("")
-  const [tag, setTag] = useState<string | undefined>(undefined)
+  const [tag, setTag] = useState<string | undefined>(initialTag)
   const [sort, setSort] = useState<FeedSort>("newest")
   const [since, setSince] = useState<FeedSince>("any")
   const [tagged, setTagged] = useState<"all" | "tagged" | "untagged">("all")

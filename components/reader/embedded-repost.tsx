@@ -25,7 +25,7 @@ export function EmbeddedRepost({
                 src={author.avatar_url || ""}
                 alt={author.display_name}
               />
-              <AvatarFallback className="text-[10px]">
+              <AvatarFallback className="text-xs">
                 {author.display_name.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
@@ -36,7 +36,7 @@ export function EmbeddedRepost({
             <span className="truncate text-xs font-medium text-foreground">
               {author?.display_name ?? "Unknown Author"}
             </span>
-            <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
+            <span className="text-xs text-muted-foreground">
               Reposted
             </span>
           </div>

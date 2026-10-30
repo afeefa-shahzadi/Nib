@@ -202,7 +202,7 @@ export function InteractiveExercise({
   return (
     <div className="surface my-6 rounded-md border border-success/30 px-5 py-4 shadow-sm">
       <div className="mb-2 flex items-center gap-2">
-        <span className="text-[10px] tracking-[0.18em] text-success uppercase">
+        <span className="text-xs text-success">
           Exercise{" "}
           {exerciseType !== "short_answer" &&
             `· ${exerciseType.replace(/_/g, " ")}`}
@@ -254,7 +254,7 @@ export function InteractiveExercise({
               (options && options.some((o) => o.isCorrect || o.pairText))) &&
               exerciseType !== "poll" && (
                 <div className="rounded-md border border-success/20 bg-success/5 p-4">
-                  <p className="mb-2 text-[10px] font-bold tracking-[0.18em] text-success uppercase">
+                  <p className="mb-2 text-xs font-bold text-success">
                     Solution
                   </p>
                   {answer && (

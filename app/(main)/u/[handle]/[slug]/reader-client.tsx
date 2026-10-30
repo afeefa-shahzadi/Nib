@@ -195,7 +195,6 @@ export function ReaderClient({
 
   const tipRef = useRef<HTMLDivElement | null>(null)
   const articleRef = useRef<HTMLElement | null>(null)
-  const asideRef = useRef<HTMLDivElement | null>(null)
   const modeGroupRef = useRef<HTMLDivElement | null>(null)
 
   // Keep the active mode chip in view when the mode control scrolls (phones).
@@ -231,7 +230,8 @@ export function ReaderClient({
     articleRef,
   })
   useEffect(() => {
-    let canPromptFollow = !!author && viewerId !== piece.author_id
+    // One prompt per reader: signed-in readers get Follow here, guests get the email modal.
+    let canPromptFollow = !!author && !!viewerId && viewerId !== piece.author_id
     const promptFollow = () => {
       if (!canPromptFollow) return
       canPromptFollow = false
@@ -260,18 +260,7 @@ export function ReaderClient({
       const p = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0
       // One-time follow dialog, once the reader is well into the piece.
       if (p >= 60) promptFollow()
-      setProgress((prev) => {
-        // Synchronize aside scroll with article scroll
-        if (asideRef.current) {
-          const scrollableHeight =
-            asideRef.current.scrollHeight - asideRef.current.clientHeight
-          if (scrollableHeight > 0) {
-            asideRef.current.scrollTop = (p / 100) * scrollableHeight
-          }
-        }
-
-        return Math.abs(prev - p) > 0.5 ? p : prev
-      })
+      setProgress((prev) => (Math.abs(prev - p) > 0.5 ? p : prev))
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -349,10 +338,11 @@ export function ReaderClient({
     commentSources: commentSources || [],
   }), [piece.sources, bodyBlocks, commentSources])
 
-  const hasAnySources =
-    aggregatedSources.pieceSources.length > 0 ||
-    aggregatedSources.blockSources.length > 0 ||
-    aggregatedSources.commentSources.length > 0
+  const sourceCount =
+    aggregatedSources.pieceSources.length +
+    aggregatedSources.blockSources.length +
+    aggregatedSources.commentSources.length
+  const hasAnySources = sourceCount > 0
 
   const listenBlocks = useMemo(() => {
     let arr = [...bodyBlocks]
@@ -476,8 +466,8 @@ export function ReaderClient({
 
       {/* One clap state for the bar and the aside Applause card. */}
       <ClapProvider pieceId={piece.id} authed={authed} onSignInRequired={() => router.push("/login")}>
-      <main className="container-wide grid flex-1 gap-16 py-12 xl:grid-cols-[1fr_300px]">
-        <article ref={articleRef} className="w-full min-w-0">
+      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-12">
+        <article ref={articleRef} className="w-full max-w-[42rem] min-w-0 lg:col-span-8">
           <SponsoredBanner contentObjectId={piece.id} />
 
           {piece.cover_image_url && (
@@ -498,6 +488,7 @@ export function ReaderClient({
             author={author}
             minutes={minutes}
             mode={mode}
+            isAuthor={viewerId === piece.author_id}
           />
 
           {/* Sticky mode bar */}
@@ -511,9 +502,9 @@ export function ReaderClient({
                     <Button
                       variant="ghost"
                       aria-label={`Reading mode: ${mode}`}
-                      className="h-11 px-3 text-xs tracking-wider uppercase"
+                      className="h-11 px-3"
                     >
-                      {mode}
+                      {mode[0].toUpperCase() + mode.slice(1)} mode
                       <ChevronDown />
                     </Button>
                   </DropdownMenuTrigger>
@@ -546,7 +537,7 @@ export function ReaderClient({
                     key={m}
                     value={m}
                     title={`${MODE_HINT[m]} (press ${modes.indexOf(m) + 1})`}
-                    className="h-11 shrink-0 px-3 text-xs tracking-wider text-muted-foreground uppercase data-[state=on]:bg-primary data-[state=on]:text-primary-foreground lg:h-9"
+                    className="h-11 shrink-0 px-2.5 text-sm text-muted-foreground capitalize data-[state=on]:bg-primary data-[state=on]:text-primary-foreground lg:h-9"
                   >
                     {m}
                   </ToggleGroupItem>
@@ -586,6 +577,8 @@ export function ReaderClient({
                   isAuthor={viewerId === piece.author_id}
                   tipRef={tipRef}
                   onSignInRequired={() => router.push("/login")}
+            sourcesCount={sourceCount}
+            onShowSources={() => setSourcesOpen(true)}
                   variant="mobile-sheet"
                 />
               </div>
@@ -635,30 +628,21 @@ export function ReaderClient({
               <div className="my-8 flex justify-center">
                 <Button variant="outline" size="sm" onClick={() => setSourcesOpen(true)}>
                   <BookOpen className="mr-2 size-4" />
-                  View Sources & Citations
+                  View sources and citations
                 </Button>
               </div>
             )}
 
-            {/* End of article newsletter/follow card */}
-            {author && (
-              <div className="my-16 mx-auto max-w-xl rounded-xl border bg-surface-elevated p-8 text-center shadow-sm">
-                <h3 className="mb-2 font-display text-2xl text-foreground">
-                  Enjoying {author.display_name}&apos;s work?
-                </h3>
-                <p className="mb-6 text-muted-foreground">
-                  Follow {author.display_name} to get notified when they publish new pieces.
-                </p>
-                <div className="flex justify-center">
-                  <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" />
+            {/* One end-of-piece card: follow in the app, or get new pieces by email. */}
+            {author && author.handle && viewerId !== piece.author_id && (
+              <section className="mt-16 rounded-lg border border-border p-6" aria-labelledby="more-from">
+                <h2 id="more-from" className="font-display text-2xl">More from {author.display_name}</h2>
+                <p className="mt-2 text-muted-foreground">Follow to see new pieces in your feed, or get them by email.</p>
+                <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" className="mt-4" />
+                <div className="mt-6">
+                  <SubscribeCard compact authorId={piece.author_id} authorName={author.display_name ?? author.handle} />
                 </div>
-              </div>
-            )}
-            
-            {author && piece.author_id && author.handle && (
-              <div className="mt-12 max-w-[65ch] mx-auto">
-                <SubscribeCard authorId={piece.author_id} authorName={author.display_name ?? author.handle} />
-              </div>
+              </section>
             )}
 
             {boosts.length > 0 && <PlatformBoostAd boosts={boosts} />}
@@ -691,8 +675,8 @@ export function ReaderClient({
                   href={`/u/${author.handle}/${prev.slug}`}
                   className="surface group flex flex-col items-start rounded-md p-4 transition-colors hover:bg-accent/40"
                 >
-                  <p className="flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
-                    <ChevronLeft className="size-3" /> Older
+                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <ChevronLeft className="size-3.5" aria-hidden /> Older
                   </p>
                   <p className="mt-1 font-display text-base text-foreground group-hover:text-primary line-clamp-2" title={prev.title}>
                     {prev.title}
@@ -706,8 +690,8 @@ export function ReaderClient({
                   href={`/u/${author.handle}/${next.slug}`}
                   className="surface group flex flex-col items-start sm:items-end rounded-md p-4 transition-colors hover:bg-accent/40 sm:text-right"
                 >
-                  <p className="flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
-                    Newer <ChevronRight className="size-3" />
+                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                    Newer <ChevronRight className="size-3.5" aria-hidden />
                   </p>
                   <p className="mt-1 font-display text-base text-foreground group-hover:text-primary line-clamp-2" title={next.title}>
                     {next.title}
@@ -767,7 +751,7 @@ export function ReaderClient({
           <FootnotesSection footnotes={footnotes} />
         </article>
 
-        <div className="mt-12 xl:hidden">
+        <div className="mt-12 lg:hidden">
           <ReaderAside
             piece={piece}
             author={author}
@@ -778,13 +762,14 @@ export function ReaderClient({
             isAuthor={viewerId === piece.author_id}
             tipRef={tipRef}
             onSignInRequired={() => router.push("/login")}
+            sourcesCount={sourceCount}
+            onShowSources={() => setSourcesOpen(true)}
             variant="mobile-footer"
           />
         </div>
 
         <div
-          ref={asideRef}
-          className="custom-scrollbar sticky top-24 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto pb-8 xl:block"
+          className="custom-scrollbar sticky top-24 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto pb-8 lg:col-span-4 lg:block"
         >
           <ReaderAside
             piece={piece}
@@ -796,6 +781,8 @@ export function ReaderClient({
             isAuthor={viewerId === piece.author_id}
             tipRef={tipRef}
             onSignInRequired={() => router.push("/login")}
+            sourcesCount={sourceCount}
+            onShowSources={() => setSourcesOpen(true)}
           />
         </div>
       </main>
@@ -822,7 +809,7 @@ export function ReaderClient({
           <DialogContent className="sm:max-w-md">
             <DialogHeader className="gap-2">
               <DialogTitle className="font-display text-2xl">
-                Enjoying this piece?
+                Follow {author.display_name}?
               </DialogTitle>
               <div className="mt-2 flex items-center gap-3 rounded-xl border border-border p-3">
                 <Avatar className="size-12">
@@ -838,7 +825,7 @@ export function ReaderClient({
                 </div>
               </div>
               <DialogDescription className="mt-2">
-                Subscribe to {author.display_name}&apos;s newsletter to get notified when they publish new pieces.
+                New pieces from {author.display_name} will show up in your feed.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 flex items-center justify-end gap-3">

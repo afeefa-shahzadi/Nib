@@ -70,7 +70,7 @@ export function AudioNoteBlock({ block }: { block: Block }) {
 
   return (
     <figure className="surface my-6 rounded-md border border-info/30 px-5 py-4">
-      <p className="mb-2 text-[10px] tracking-[0.18em] text-info uppercase">
+      <p className="mb-2 text-xs text-info">
         {video ? "Video" : "Audio note"}
       </p>
       {audio ? (

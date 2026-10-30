@@ -71,7 +71,7 @@ export function SubscribeModal({ articleRef, authorId, authorHandle, authorName,
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim() || !email.includes("@")) {
-      toast.error("Please enter a valid email")
+      toast.error("Enter a valid email address.")
       return
     }
     setLoading(true)
@@ -99,10 +99,10 @@ export function SubscribeModal({ articleRef, authorId, authorHandle, authorName,
           
           <div className="space-y-2">
             <h2 className="font-display text-2xl tracking-tight">
-              Be the first to hear about new stories from {authorHandle}
+              Enjoying {authorName}&apos;s writing?
             </h2>
             <p className="text-sm text-muted-foreground">
-              Join Nib for free to get updates from {authorHandle} sent right to your inbox.
+              Get new pieces from {authorName} by email. Free, and you can unsubscribe any time.
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export function SubscribeModal({ articleRef, authorId, authorHandle, authorName,
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter your email address"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -124,7 +124,7 @@ export function SubscribeModal({ articleRef, authorId, authorHandle, authorName,
               className="w-full"
               disabled={loading}
             >
-              {loading ? "Subscribing..." : "Create account"}
+              {loading ? "Subscribing…" : "Subscribe"}
             </Button>
           </form>
 

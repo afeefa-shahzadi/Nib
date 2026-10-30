@@ -32,7 +32,7 @@ export function PlatformBoostAd({
         <Sparkles className="size-24 text-primary" />
       </div>
 
-      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-[0.2em] text-primary uppercase">
+      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-primary">
         <Sparkles className="size-3" /> Promoted
       </p>
 

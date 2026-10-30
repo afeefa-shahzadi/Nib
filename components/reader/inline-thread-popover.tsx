@@ -93,7 +93,7 @@ export function InlineThreadPopover({
       className="absolute z-50 flex w-[320px] flex-col rounded-lg border border-border bg-background shadow-xl animate-in zoom-in-95 duration-200 max-h-[calc(100vh-40px)] overflow-hidden"
     >
       <div className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-2">
-        <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
           {parentComment?.is_pinned && <Pin className="size-3 text-primary" />}
           Thread
         </span>
@@ -115,7 +115,7 @@ export function InlineThreadPopover({
               <span className="font-medium text-xs text-foreground">
                 {parentComment.author?.display_name || "Anonymous"}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {formatRelativeTime(parentComment.created_at)}
               </span>
             </div>
@@ -146,7 +146,7 @@ export function InlineThreadPopover({
               <span className="font-medium text-xs text-foreground">
                 {reply.author?.display_name || "Anonymous"}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {formatRelativeTime(reply.created_at)}
               </span>
             </div>

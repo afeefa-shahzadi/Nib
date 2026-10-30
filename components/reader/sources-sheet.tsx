@@ -53,7 +53,7 @@ export function SourcesSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md flex flex-col h-full bg-background">
         <SheetHeader className="pb-4 border-b border-border">
-          <SheetTitle className="font-display">Sources & Citations</SheetTitle>
+          <SheetTitle className="font-display">Sources and citations</SheetTitle>
         </SheetHeader>
         
         <ScrollArea className="flex-1 -mx-6 px-6 py-4">
@@ -61,8 +61,8 @@ export function SourcesSheet({
             <div className="space-y-8">
               {(sources as SegregatedSources).pieceSources.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Piece Sources
+                  <h3 className="text-xs font-semibold text-muted-foreground">
+                    From the author
                   </h3>
                   <div className="space-y-1">
                     {(sources as SegregatedSources).pieceSources.map(renderSourceItem)}
@@ -71,8 +71,8 @@ export function SourcesSheet({
               )}
               {(sources as SegregatedSources).blockSources.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Block Sources
+                  <h3 className="text-xs font-semibold text-muted-foreground">
+                    Cited in the text
                   </h3>
                   <div className="space-y-1">
                     {(sources as SegregatedSources).blockSources.map(renderSourceItem)}
@@ -81,8 +81,8 @@ export function SourcesSheet({
               )}
               {(sources as SegregatedSources).commentSources.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                    Comment Sources
+                  <h3 className="text-xs font-semibold text-muted-foreground">
+                    From comments
                   </h3>
                   <div className="space-y-1">
                     {(sources as SegregatedSources).commentSources.map(renderSourceItem)}

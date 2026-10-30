@@ -4,7 +4,8 @@ import { cachedDiscoverFeed } from "@/lib/public-cache"
 import { FeedClient } from "./feed-client"
 import { ComponentProps } from "react"
 
-export default async function FeedPage() {
+export default async function FeedPage({ searchParams }: { searchParams: Promise<{ tag?: string }> }) {
+  const tag = (await searchParams).tag?.slice(0, 50) || undefined
   const supabase = await createClient()
   const {
     data: { session },
@@ -30,6 +31,7 @@ export default async function FeedPage() {
 
         <FeedClient
           signedIn={signedIn}
+          initialTag={tag}
           initialFollowing={
             followingRes as ComponentProps<
               typeof FeedClient

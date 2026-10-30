@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { List, Link2, ArrowUpRight, ThumbsUp, ThumbsDown } from "lucide-react"
+import { List, Link2, ArrowUpRight, ThumbsUp, ThumbsDown, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TipJar } from "@/components/tip-jar"
 import { ClapButton } from "@/components/clap-button"
@@ -27,6 +27,8 @@ interface ReaderAsideProps {
   onSignInRequired: () => void
   isMobileSheet?: boolean
   variant?: "desktop" | "mobile-sheet" | "mobile-footer"
+  sourcesCount?: number
+  onShowSources?: () => void
 }
 
 export function ReaderAside({
@@ -41,6 +43,8 @@ export function ReaderAside({
   onSignInRequired,
   isMobileSheet,
   variant = "desktop",
+  sourcesCount = 0,
+  onShowSources,
 }: ReaderAsideProps) {
   const effectiveVariant = isMobileSheet ? "mobile-sheet" : variant
   const showOutline =
@@ -53,8 +57,8 @@ export function ReaderAside({
     effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
   const showRelated =
     effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
-  const showTipText =
-    effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
+  // Keyboard tips live in the "More" sheet, not as small print beside the piece.
+  const showTipText = effectiveVariant === "mobile-sheet"
   const showClap = effectiveVariant === "desktop"
 
   const [feedbackState, setFeedbackState] = useState<Record<string, boolean>>({})
@@ -86,7 +90,7 @@ export function ReaderAside({
       {/* Outline */}
       {showOutline && headings.length > 0 && (
         <div className="surface top-24 rounded-md p-5">
-          <p className="mb-3 flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
+          <p className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
             <List className="size-3" /> On this page
           </p>
           <nav aria-label="In-page outline" className="space-y-1.5">
@@ -94,7 +98,7 @@ export function ReaderAside({
               <Link
                 key={h.id}
                 href={`#${h.id}`}
-                className="block text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="flex min-h-11 items-center text-sm text-muted-foreground transition-colors hover:text-foreground lg:block lg:min-h-0"
               >
                 {h.text}
               </Link>
@@ -103,9 +107,21 @@ export function ReaderAside({
         </div>
       )}
 
+      {sourcesCount > 0 && onShowSources && (
+        <button
+          type="button"
+          onClick={onShowSources}
+          className="surface flex min-h-11 w-full items-center gap-2 rounded-md p-5 text-left text-sm hover:bg-accent/40"
+        >
+          <BookOpen className="size-4 text-muted-foreground" aria-hidden />
+          {sourcesCount} {sourcesCount === 1 ? "source" : "sources"}
+          <span className="ml-auto text-muted-foreground" aria-hidden>›</span>
+        </button>
+      )}
+
       {showAuthor && author && (
         <div className="surface rounded-md p-5">
-          <p className="text-xs tracking-wider text-muted-foreground uppercase">
+          <p className="text-xs text-muted-foreground">
             Author
           </p>
           <div className="mt-2 flex items-center gap-2">
@@ -165,7 +181,7 @@ export function ReaderAside({
 
       {showBranches && (
         <div id="branches" className="surface scroll-mt-24 rounded-md p-5">
-          <p className="mb-3 text-xs tracking-wider text-muted-foreground uppercase">
+          <p className="mb-3 text-xs text-muted-foreground">
             Branches
           </p>
           {branches.length === 0 && (
@@ -176,7 +192,7 @@ export function ReaderAside({
               const gated = b.visibility !== "public" && !authed
               return (
                 <li key={b.id}>
-                  <p className="text-xs tracking-wider text-primary uppercase">
+                  <p className="text-xs text-primary first-letter:uppercase">
                     {b.branch_type}
                   </p>
                   <p className="mt-1 text-sm text-foreground">
@@ -199,13 +215,13 @@ export function ReaderAside({
 
       {showRelated && related.length > 0 && (
         <div className="surface rounded-md p-5">
-          <p className="mb-3 inline-flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
+          <p className="mb-3 inline-flex items-center gap-1 text-xs text-muted-foreground">
             <Link2 className="size-3" /> Related
           </p>
           <ul className="space-y-3">
             {related.map((r) => (
               <li key={r.id}>
-                <p className="text-[10px] tracking-wider text-primary uppercase">
+                <p className="text-xs text-primary first-letter:uppercase">
                   {r.type}
                 </p>
                 <Link
@@ -235,18 +251,20 @@ export function ReaderAside({
                     <button
                       onClick={() => handleFeedback(r.id, true)}
                       disabled={feedbackLoading[r.id]}
-                      className={`inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/60 ${feedbackState[r.id] === true ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                      className={`inline-flex size-11 items-center justify-center rounded transition-colors lg:size-8 hover:bg-accent/60 ${feedbackState[r.id] === true ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
                         }`}
                       title="Show more like this"
+                      aria-label="Show more like this"
                     >
                       <ThumbsUp className="size-3" />
                     </button>
                     <button
                       onClick={() => handleFeedback(r.id, false)}
                       disabled={feedbackLoading[r.id]}
-                      className={`inline-flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/60 ${feedbackState[r.id] === false ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-foreground"
+                      className={`inline-flex size-11 items-center justify-center rounded transition-colors lg:size-8 hover:bg-accent/60 ${feedbackState[r.id] === false ? "text-destructive bg-destructive/10" : "text-muted-foreground hover:text-foreground"
                         }`}
                       title="Show less like this"
+                      aria-label="Show less like this"
                     >
                       <ThumbsDown className="size-3" />
                     </button>
@@ -259,10 +277,10 @@ export function ReaderAside({
       )}
 
       {showTipText && (
-        <p className="px-1 text-[11px] text-muted-foreground">
+        <p className="px-1 text-sm text-muted-foreground">
           Tip: press{" "}
-          <kbd className="rounded bg-muted px-1 py-0.5 text-[10px]">1</kbd>–
-          <kbd className="rounded bg-muted px-1 py-0.5 text-[10px]">5</kbd> to
+          <kbd className="rounded bg-muted px-1 py-0.5 text-xs">1</kbd>–
+          <kbd className="rounded bg-muted px-1 py-0.5 text-xs">5</kbd> to
           switch reading modes.
         </p>
       )}

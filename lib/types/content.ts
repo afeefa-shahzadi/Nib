@@ -35,6 +35,9 @@ export interface PieceData {
   cover_image_url?: string | null
   is_nsfw?: boolean | null
   is_ai_generated?: boolean | null
+  tags?: string[] | null
+  published_at?: string | null
+  updated_at?: string | null
   prose_only?: boolean | null
   curator_share_enabled?: boolean | null
   price_paise?: number | null

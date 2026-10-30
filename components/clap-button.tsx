@@ -206,7 +206,7 @@ function ClapView({
 
   return (
     <div className="surface rounded-md p-5">
-      <p className="mb-3 text-xs tracking-wider text-muted-foreground uppercase">
+      <p className="mb-3 text-xs text-muted-foreground">
         Applause
       </p>
       <div className="flex items-center gap-4">
@@ -264,7 +264,7 @@ function ClapView({
           </p>
         </div>
       </div>
-      <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
+      <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
         Hold to clap up to 50 times. Authors see who their most enthusiastic
         readers are.
       </p>

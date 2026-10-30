@@ -55,7 +55,7 @@ export function ParagraphBlock({ block }: { block: Block }) {
   if (role === "evidence") {
     return (
       <div className="surface my-5 rounded-md border border-note/30 px-5 py-4">
-        <p className="mb-1 flex items-center gap-1 text-[10px] tracking-[0.18em] text-note uppercase">
+        <p className="mb-1 flex items-center gap-1 text-xs text-note">
           <Asterisk className="size-3" /> Evidence
         </p>
         <RichOrText
@@ -69,7 +69,7 @@ export function ParagraphBlock({ block }: { block: Block }) {
   if (role === "counter") {
     return (
       <div className="surface my-5 rounded-md border border-destructive/30 px-5 py-4">
-        <p className="mb-1 text-[10px] tracking-[0.18em] text-destructive uppercase">
+        <p className="mb-1 text-xs text-destructive">
           Counter-argument
         </p>
         <RichOrText
@@ -118,7 +118,7 @@ export function CitationBlock({ block }: { block: Block }) {
   const label = source ?? text ?? "Source"
   return (
     <figure className="surface my-5 rounded-md border border-info/30 px-5 py-4">
-      <p className="mb-1 text-[10px] tracking-[0.18em] text-info uppercase">
+      <p className="mb-1 text-xs text-info">
         Citation
       </p>
       {quote && (
@@ -148,7 +148,7 @@ export function CitationBlock({ block }: { block: Block }) {
 export function CalloutBlock({ block }: { block: Block }) {
   return (
     <aside className="surface-elevated my-6 rounded-md border-l-2 border-primary px-5 py-4">
-      <p className="mb-1 text-xs tracking-[0.18em] text-success uppercase">
+      <p className="mb-1 text-xs text-success">
         Note
       </p>
       <RichOrText
@@ -162,7 +162,7 @@ export function CalloutBlock({ block }: { block: Block }) {
 
 export function QuestionBlock({
   block,
-  labelClassName = "tracking-[0.18em] uppercase",
+  labelClassName = "",
 }: {
   block: Block
   labelClassName?: string

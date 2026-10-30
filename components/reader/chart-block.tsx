@@ -256,7 +256,7 @@ export function ChartBlock({ block }: { block: Block }) {
     <>
       <figure className="surface group relative my-6 rounded-md p-5">
         <div className="mb-6 flex items-center justify-between">
-          <p className="text-[10px] tracking-[0.18em] text-primary uppercase">
+          <p className="text-xs text-primary first-letter:uppercase">
             {chartType} chart
           </p>
           <button
@@ -285,7 +285,7 @@ export function ChartBlock({ block }: { block: Block }) {
 
       <MediaLightbox open={open} onClose={() => setOpen(false)}>
         <div className="w-[85vw] max-w-4xl rounded-lg bg-background p-8">
-          <p className="mb-4 text-[10px] tracking-[0.18em] text-primary uppercase">
+          <p className="mb-4 text-xs text-primary first-letter:uppercase">
             {chartType} chart{cap && ` — ${cap}`}
           </p>
           <div className="h-[65vh] w-full">
