@@ -636,7 +636,7 @@ export function ReaderClient({
 
             {/* One end-of-piece card: follow in the app, or get new pieces by email. */}
             {author && author.handle && viewerId !== piece.author_id && (
-              <section className="mt-16 rounded-lg border border-border p-6" aria-labelledby="more-from">
+              <section className="mt-16 rounded-lg border border-border p-6" aria-labelledby="more-from" data-no-hovercard>
                 <h2 id="more-from" className="font-display text-2xl">More from {author.display_name}</h2>
                 <p className="mt-2 text-muted-foreground">Follow to see new pieces in your feed, or get them by email.</p>
                 <div className="mt-4 flex flex-wrap items-center gap-3">

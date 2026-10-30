@@ -49,7 +49,8 @@ export function MentionHoverPortal({
       const a = (e.target as HTMLElement | null)?.closest(
         'a[href^="/u/"]'
       ) as HTMLAnchorElement | null
-      if (!a) return
+      // Author chrome (byline, "More from" card) already shows who this is.
+      if (!a || a.closest("[data-no-hovercard]")) return
       const href = a.getAttribute("href") || ""
       const m = href.match(/^\/u\/([^/]+?)(?:\/|$)/)
       if (!m) return

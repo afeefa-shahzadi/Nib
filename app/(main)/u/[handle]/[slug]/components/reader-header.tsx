@@ -68,7 +68,7 @@ export function ReaderHeader({
         <p className="mt-5 text-lg text-muted-foreground">{piece.summary}</p>
       )}
       {author && (
-        <div className="mt-6 flex items-center gap-3">
+        <div className="mt-6 flex items-center gap-3" data-no-hovercard>
           <Link href={`/u/${author.handle}`} className="flex min-w-0 items-center gap-3 hover:text-primary">
             <Avatar className="size-10">
               {author.avatar_url && <AvatarImage src={author.avatar_url} alt="" />}
