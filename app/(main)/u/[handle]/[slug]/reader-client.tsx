@@ -466,7 +466,7 @@ export function ReaderClient({
 
       {/* One clap state for the bar and the aside Applause card. */}
       <ClapProvider pieceId={piece.id} authed={authed} onSignInRequired={() => router.push("/login")}>
-      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-[minmax(0,42rem)_18rem] lg:justify-center xl:gap-16">
+      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-[minmax(0,42rem)_18rem] lg:gap-16 xl:grid-cols-[minmax(0,42rem)_20rem] xl:gap-24">
         <article ref={articleRef} className="w-full max-w-[42rem] min-w-0">
           <SponsoredBanner contentObjectId={piece.id} />
 
@@ -553,6 +553,7 @@ export function ReaderClient({
                 blocks={listenBlocks}
                 initialSaved={initialSaved}
                 onShowInfo={() => setMoreOpen(true)}
+                modeCount={modes.length}
               />
             </div>
 

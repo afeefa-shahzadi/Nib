@@ -79,6 +79,8 @@ type Props = {
   pieceAuthorId?: string | null
   /** Opens the outline/author sheet (shown in the More menu below lg, where the aside is hidden). */
   onShowInfo?: () => void
+  /** How many reading modes the piece offers; number keys switch between them. */
+  modeCount?: number
 }
 
 // 44px touch targets below lg; icon-only below sm.
@@ -124,6 +126,7 @@ export function ReaderActions({
   pieceAuthorId,
   initialSaved,
   onShowInfo,
+  modeCount = 0,
 }: Props) {
   const router = useRouter()
   const saveFn = savePiece
@@ -506,7 +509,7 @@ export function ReaderActions({
             <DropdownMenuSeparator />
             {onShowInfo && (
               <DropdownMenuItem onSelect={onShowInfo} className={ITEM + " lg:hidden"}>
-                <ListTree /> Outline &amp; author
+                <ListTree /> Outline and more
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -517,6 +520,11 @@ export function ReaderActions({
             >
               <Flag /> Report
             </DropdownMenuItem>
+            {modeCount > 1 && (
+              <p className="hidden px-2 pt-2 pb-1 text-xs text-muted-foreground lg:block">
+                Tip: press <kbd className="rounded bg-muted px-1">1</kbd>–<kbd className="rounded bg-muted px-1">{modeCount}</kbd> to switch reading modes.
+              </p>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
