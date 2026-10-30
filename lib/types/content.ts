@@ -261,8 +261,8 @@ export interface CollectionRow {
   id: string
   title: string
   description: string | null
-  cover_url: string | null
-  price_paise: number
+  collection_type?: string | null
+  piece_count: number
   curator_id: string
   created_at: string
   curator: {

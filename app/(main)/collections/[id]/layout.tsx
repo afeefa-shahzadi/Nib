@@ -22,7 +22,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description: data.collection.description ?? undefined,
         type: "article",
         url: `/collections/${id}`,
-        images: data.collection.cover_url ? [data.collection.cover_url] : [],
       },
       alternates: {
         canonical: `/collections/${id}`,
@@ -50,7 +49,6 @@ export default async function Layout({
         "@type": "CollectionPage",
         headline: data.collection.title,
         description: data.collection.description ?? undefined,
-        image: data.collection.cover_url ?? undefined,
         creator: data.curator
           ? {
               "@type": "Person",

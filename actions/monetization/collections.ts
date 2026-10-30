@@ -252,7 +252,7 @@ export async function listPublicCollections() {
   const __handler = async () => {
     const { data } = await supabaseAdmin
       .from("collections")
-      .select("id, title, description, curator_id, created_at")
+      .select("id, title, description, curator_id, created_at, collection_type")
       // Without this, private lists (other readers' "Saved") were listed
       // publicly and then 404'd when opened.
       .eq("is_public", true)
@@ -276,10 +276,20 @@ export async function listPublicCollections() {
         }) => [p.id, p]
       )
     )
-    return data.map((c: { curator_id: string }) => ({
-      ...c,
-      curator: map.get(c.curator_id) ?? null,
-    }))
+    const { data: items } = await supabaseAdmin
+      .from("collection_items")
+      .select("collection_id")
+      .in("collection_id", data.map((c: { id: string }) => c.id))
+    const counts = new Map<string, number>()
+    for (const i of items ?? []) counts.set(i.collection_id, (counts.get(i.collection_id) ?? 0) + 1)
+    // Empty lists are noise on a public index; curators still see them in Studio.
+    return data
+      .map((c: { id: string; curator_id: string }) => ({
+        ...c,
+        curator: map.get(c.curator_id) ?? null,
+        piece_count: counts.get(c.id) ?? 0,
+      }))
+      .filter((c) => c.piece_count > 0)
   }
   return await __handler()
 }
