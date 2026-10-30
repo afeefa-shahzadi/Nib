@@ -589,6 +589,8 @@ export function ReaderClient({
                 initialSaved={initialSaved}
                 onShowInfo={() => setMoreOpen(true)}
                 modeCount={modes.length}
+                viewerId={viewerId}
+                pieceAuthorId={piece.author_id}
               />
             </div>
 

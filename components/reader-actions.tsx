@@ -9,6 +9,7 @@ import {
   Bookmark,
   BookmarkCheck,
   Repeat2,
+  Undo2,
   Share2,
   Square,
   MessageCircle,
@@ -55,7 +56,7 @@ import { Input } from "@/components/ui/input"
 import { createCollection, consumeListeningCredit } from "@/actions/monetization"
 import { ReportButton } from "./report-button"
 import { CommentsSheet } from "./comments-sheet"
-import { ClapButton } from "./clap-button"
+import { ClapButton, useClaps } from "./clap-button"
 
 type ListenBlock = {
   type?: string
@@ -126,6 +127,7 @@ export function ReaderActions({
   modeCount = 0,
 }: Props) {
   const router = useRouter()
+  const claps = useClaps()
   const saveFn = savePiece
   const unsaveFn = unsavePiece
   const listCol = listMyCollections
@@ -409,10 +411,7 @@ export function ReaderActions({
           </Button>
         )}
         <ClapButton
-          pieceId={pieceId}
-          authed={authed}
-          onSignInRequired={() => router.push("/login")}
-          inline
+          disabled={!!viewerId && viewerId === pieceAuthorId}
           className={buttonVariants({ variant: "ghost", className: ACTION })}
         />
         <Button
@@ -451,6 +450,11 @@ export function ReaderActions({
             <DropdownMenuItem onSelect={openRepost} className={ITEM}>
               <Repeat2 /> Repost
             </DropdownMenuItem>
+            {claps && claps.mine > 0 && (
+              <DropdownMenuItem onSelect={claps.undo} className={ITEM}>
+                <Undo2 /> Undo claps ({claps.mine})
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             {onShowInfo && (
               <DropdownMenuItem onSelect={onShowInfo} className={ITEM + " lg:hidden"}>
