@@ -17,7 +17,7 @@ import {
 import { decryptSecret } from "@/lib/crypto"
 import { ollamaAvailable, OLLAMA_LOCAL_ONLY } from "@/lib/ai-providers"
 
-const DEFAULT_MODEL = "mistral-small-latest"
+const DEFAULT_MODEL = "ministral-8b-latest"
 
 // byok_api_key is sensitive and service-role-only under the profiles column
 // grants; reading it via the cookie client runs as `authenticated` and is
