@@ -14,7 +14,9 @@ type ProviderProps = { pieceId: string; authed: boolean; onSignInRequired?: () =
 
 // One piece's clap state + persistence, shared by the bar button and the More menu's undo.
 function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
-  const [total, setTotal] = useState(0)
+  // Shown total = everyone else's claps + yours, so it can't drift or go negative
+  // whatever order the two loads finish in.
+  const [stats, setStats] = useState<{ total: number; mineAtLoad: number } | null>(null)
   const [mine, setMine] = useState(0)
   const [pulse, setPulse] = useState(0)
   const mineRef = useRef(0)
@@ -23,32 +25,43 @@ function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
 
   useEffect(() => {
     let live = true
-    getPieceClapStats({ data: { piece_id: pieceId } }).then((s) => live && setTotal(s.total)).catch(() => {})
-    if (authed)
-      getMyClaps({ data: { piece_id: pieceId } })
-        .then((r) => {
-          if (!live) return
-          mineRef.current = saved.current = r.count
-          setMine(r.count)
-        })
-        .catch(() => {})
+    Promise.all([
+      getPieceClapStats({ data: { piece_id: pieceId } }),
+      authed ? getMyClaps({ data: { piece_id: pieceId } }) : Promise.resolve({ count: 0 }),
+    ])
+      .then(([s, m]) => {
+        if (!live) return
+        mineRef.current = saved.current = m.count
+        setMine(m.count)
+        setStats({ total: s.total, mineAtLoad: m.count })
+      })
+      .catch(() => {})
     return () => {
       live = false
     }
   }, [pieceId, authed])
 
-  const save = async (n: number) => {
-    if (n === saved.current) return
-    const before = saved.current
+  // One save at a time, always for the latest count, so an older request can't land last.
+  const inFlight = useRef(false)
+  const save = async () => {
+    if (inFlight.current) return
+    inFlight.current = true
     try {
-      await setMyClaps({ data: { piece_id: pieceId, count: n } })
-      saved.current = n
-    } catch (e) {
-      // Put the screen back to what the server actually has.
-      setTotal((t) => t - (mineRef.current - before))
-      mineRef.current = before
-      setMine(before)
-      toast.error((e as Error).message)
+      while (mineRef.current !== saved.current) {
+        const n = mineRef.current
+        try {
+          await setMyClaps({ data: { piece_id: pieceId, count: n } })
+          saved.current = n
+        } catch (e) {
+          // Put the screen back to what the server actually has.
+          mineRef.current = saved.current
+          setMine(saved.current)
+          toast.error((e as Error).message)
+          break
+        }
+      }
+    } finally {
+      inFlight.current = false
     }
   }
 
@@ -56,19 +69,18 @@ function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
     if (!timer.current) return
     clearTimeout(timer.current)
     timer.current = null
-    void save(mineRef.current)
+    void save()
   }
 
   const setCount = (n: number) => {
     const next = Math.max(0, Math.min(MAX, n))
     if (next === mineRef.current) return false
-    setTotal((t) => t + (next - mineRef.current))
     mineRef.current = next
     setMine(next)
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(() => {
       timer.current = null
-      void save(next)
+      void save()
     }, SAVE_AFTER)
     return true
   }
@@ -96,6 +108,7 @@ function useClapState({ pieceId, authed, onSignInRequired }: ProviderProps) {
   })
   useEffect(() => () => flushRef.current(), [])
 
+  const total = stats ? Math.max(0, stats.total - stats.mineAtLoad) + mine : mine
   return { total, mine, pulse, bump, undo, flush }
 }
 
