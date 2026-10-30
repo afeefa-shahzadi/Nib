@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { feedWindow, FEED_PAGE_SIZE, type FeedSort, type FeedSince } from "@/lib/feed-query"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { excludeNsfw } from "@/lib/nsfw"
 import { ActionContext } from "@/lib/types/actions"
@@ -91,10 +92,13 @@ export async function getFollowingFeed() {
   return await __handler({ context })
 }
 
+type DiscoverArgs = { tag?: string; q?: string; sort?: FeedSort; since?: FeedSince; page?: number }
+
 export async function getDiscoverFeed(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
 
-  const __handler = async ({ data }: { data?: { tag?: string; q?: string } }) => {
+  const __handler = async ({ data }: { data?: DiscoverArgs }) => {
+    const win = feedWindow(data ?? {})
     // §3.5: discover/trending is a public discovery surface — NSFW is excluded
     // unconditionally, regardless of viewer opt-in (opt-in only applies to the
     // followed-authors feed above).
@@ -104,11 +108,12 @@ export async function getDiscoverFeed(args: { data?: any } = {}) {
         .select("id, title, slug, summary, tags, published_at, author_id, cover_image_url, is_nsfw")
         .eq("status", "published")
         .eq("visibility", "public")
-        .order("published_at", { ascending: false })
-        .limit(50)
+        .order("published_at", { ascending: win.ascending })
+        .range(win.from, win.to)
     )
 
     if (data?.tag) query = query.contains("tags", [data.tag])
+    if (win.since) query = query.gte("published_at", win.since)
 
     if (data?.q) {
       // Strip characters that are syntax in a PostgREST `.or()` filter (commas,
@@ -132,7 +137,9 @@ export async function getDiscoverFeed(args: { data?: any } = {}) {
       }
     }
 
-    const { data: pieces, error } = await query
+    const { data: rows, error } = await query
+    const hasMore = (rows?.length ?? 0) > FEED_PAGE_SIZE
+    const pieces = (rows ?? []).slice(0, FEED_PAGE_SIZE)
     if (error) {
       console.error("[server]", error)
       throw new Error("Request failed. Please try again.")
@@ -194,21 +201,35 @@ export async function getDiscoverFeed(args: { data?: any } = {}) {
         boost_amount_paise: boostMap.get(p.id) ?? 0,
       })
     )
-    enriched.sort((a, b) => {
-      if (a.boosted !== b.boosted) return a.boosted ? -1 : 1
-      if (a.boosted && b.boosted)
-        return (b.boost_amount_paise ?? 0) - (a.boost_amount_paise ?? 0)
-      return (b.published_at ?? "").localeCompare(a.published_at ?? "")
-    })
+    // Promoted pieces lead the first page of the default newest-first view only;
+    // reordering anywhere else would break the chosen sort and paging.
+    if (win.from === 0 && !win.ascending)
+      enriched.sort((a, b) => {
+        if (a.boosted !== b.boosted) return a.boosted ? -1 : 1
+        if (a.boosted && b.boosted)
+          return (b.boost_amount_paise ?? 0) - (a.boost_amount_paise ?? 0)
+        return (b.published_at ?? "").localeCompare(a.published_at ?? "")
+      })
 
+    // Trending topics come from the 100 newest public pieces, independent of filters.
+    if (win.from > 0) return { pieces: enriched, trending: [], hasMore }
+    const { data: recent } = await excludeNsfw(
+      supabaseAdmin
+        .from("content_objects")
+        .select("tags, is_nsfw")
+        .eq("status", "published")
+        .eq("visibility", "public")
+        .order("published_at", { ascending: false })
+        .limit(100)
+    )
     const tagCount = new Map<string, number>()
-    for (const p of pieces ?? [])
+    for (const p of recent ?? [])
       for (const t of p.tags ?? []) tagCount.set(t, (tagCount.get(t) ?? 0) + 1)
     const trending = Array.from(tagCount.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 12)
       .map(([tag, count]) => ({ tag, count }))
-    return { pieces: enriched, trending }
+    return { pieces: enriched, trending, hasMore }
   }
-  return await __handler({ data: args?.data as { tag?: string; q?: string } })
+  return await __handler({ data: args?.data as DiscoverArgs })
 }
