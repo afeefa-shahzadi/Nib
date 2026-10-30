@@ -90,13 +90,16 @@ export interface BranchGraphItem {
 }
 
 // Outcome-shaped collection / Bundle Item
+// A creator's bundle as listMyBundles returns it (price is in paise).
 export interface BundleItem {
   id: string
   title: string
   description: string | null
-  outcome: string | null
-  price_cents: number
-  is_public: boolean
+  outcome_statement: string | null
+  price: number
+  visibility: string
+  handle?: string
+  item_count: number
 }
 
 // Mini piece structure used in dropdowns / lookups

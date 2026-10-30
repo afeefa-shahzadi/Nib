@@ -51,6 +51,7 @@ export default function AuthorClient({
   following,
   paymentsOpen,
   collections = [],
+  bundles = [],
   clapped = [],
   recommendations,
 }: {
@@ -73,6 +74,7 @@ export default function AuthorClient({
   following: number
   paymentsOpen: boolean
   collections?: Array<{ id: string; title: string; description: string | null }>
+  bundles?: Array<{ id: string; title: string; outcome_statement: string | null; price: number; item_count: number }>
   clapped?: Piece[]
   recommendations: Array<{
     id: string
@@ -250,6 +252,7 @@ export default function AuthorClient({
             <TabsList>
               <TabsTrigger value="pieces">Pieces</TabsTrigger>
               {tiers.length > 0 && <TabsTrigger value="tiers">Memberships</TabsTrigger>}
+              {bundles.length > 0 && <TabsTrigger value="bundles">Bundles</TabsTrigger>}
               {collections.length > 0 && <TabsTrigger value="collections">Collections</TabsTrigger>}
               {clapped.length > 0 && <TabsTrigger value="clapped">Clapped</TabsTrigger>}
               {graph && graph.pieces.length > 0 && <TabsTrigger value="graph">Graph</TabsTrigger>}
@@ -316,6 +319,25 @@ export default function AuthorClient({
           {tiers.length > 0 && (
             <TabsContent value="tiers" className="mt-6">
               <MembershipTiers tiers={tiers} authorId={author.id} authorName={author.display_name} paymentsOpen={paymentsOpen} />
+            </TabsContent>
+          )}
+
+          {bundles.length > 0 && (
+            <TabsContent value="bundles" className="mt-6">
+              <ul>
+                {bundles.map((b) => (
+                  <li key={b.id} className="hairline-t last:hairline-b">
+                    <Link href={`/u/${author.handle}/bundles/${b.id}`} className="group block py-6">
+                      <h2 className="font-display text-xl leading-snug group-hover:text-primary">{b.title}</h2>
+                      {b.outcome_statement && <p className="mt-1 text-muted-foreground">{b.outcome_statement}</p>}
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {b.item_count} {b.item_count === 1 ? "piece" : "pieces"} ·{" "}
+                        {b.price > 0 ? `₹${(b.price / 100).toLocaleString("en-IN")}` : "Free"}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </TabsContent>
           )}
 

@@ -16,8 +16,17 @@ function loadCheckout(): Promise<void> {
 }
 
 // Opens Razorpay for a piece; resolves true once the payment is verified.
-export async function buyPiece(contentObjectId: string, collectionId?: string): Promise<boolean> {
-  const order = await createRazorpayOrder({ data: { kind: "piece", contentObjectId, collectionId, amountPaise: 0 } })
+export function buyPiece(contentObjectId: string, collectionId?: string): Promise<boolean> {
+  return payOnce({ kind: "piece", contentObjectId, collectionId, amountPaise: 0 })
+}
+
+// Opens Razorpay for a bundle; resolves true once the payment is verified.
+export function buyBundle(bundleId: string): Promise<boolean> {
+  return payOnce({ kind: "bundle", bundleId, amountPaise: 0 })
+}
+
+async function payOnce(data: Record<string, unknown>): Promise<boolean> {
+  const order = await createRazorpayOrder({ data })
   await loadCheckout()
   return new Promise((resolve, reject) => {
     const Rz = (window as RzWindow).Razorpay!

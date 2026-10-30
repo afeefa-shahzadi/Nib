@@ -4,7 +4,7 @@ import { assertPaymentsOpen } from "@/lib/plan"
 import { createHmac, timingSafeEqual } from "crypto"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
-import { assertMonetizable } from "@/lib/nsfw"
+import { assertBundleMonetizable, assertMonetizable } from "@/lib/nsfw"
 import { resolveCuratorAttribution } from "@/lib/curator-attribution"
 import { checkRateLimit } from "@/lib/rate-limit.server"
 import { rzFetch } from "@/lib/razorpay/api"
@@ -55,8 +55,29 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
     let resolvedAuthorId = data.authorId
     let chargePaise: number
     if (data.kind === "bundle") {
-      // Bundle checkout is parked (park/paid-features) until paid release.
-      throw new Error("This item isn't available for purchase.")
+      // Price and author come from the DB. A bundle purchase opens the pieces
+      // in that bundle only (viewerHasAuthorAccess).
+      if (!data.bundleId) throw new Error("bundleId required")
+      const { data: b } = await supabaseAdmin
+        .from("bundles")
+        .select("author_id, price, visibility")
+        .eq("id", data.bundleId)
+        .maybeSingle()
+      if (!b || b.visibility !== "public" || !Number.isInteger(b.price) || b.price <= 0)
+        throw new Error("This item isn't available for purchase.")
+      if (b.author_id === userId) throw new Error("You can't buy your own bundle.")
+      await assertBundleMonetizable(supabaseAdmin, data.bundleId)
+      const { data: owned } = await supabaseAdmin
+        .from("purchases")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("bundle_id", data.bundleId)
+        .eq("kind", "bundle")
+        .eq("status", "paid")
+        .limit(1)
+      if (owned?.length) throw new Error("You already own this bundle.")
+      resolvedAuthorId = b.author_id
+      chargePaise = b.price
     } else if (data.kind === "piece") {
       // Price and author come from the DB, never the request body. A piece
       // purchase unlocks that piece only (viewerHasAuthorAccess).
@@ -115,7 +136,8 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
 
     const serviceClient = supabaseAdmin
 
-    const item_id = data.contentObjectId ?? resolvedAuthorId!
+    const item_id =
+      data.kind === "bundle" ? data.bundleId! : data.contentObjectId ?? resolvedAuthorId!
     const referral =
       data.kind === "tip"
         ? null

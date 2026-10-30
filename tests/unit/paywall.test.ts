@@ -110,3 +110,20 @@ test("active membership unlocks every piece", async () => {
   currentFake = fakeWith({ memberships: () => [{ id: "m" }] })
   assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1", "p9"), true)
 })
+
+test("bundle purchase unlocks the pieces in that bundle only", async () => {
+  process.env.LAUNCH_FREE = "0"
+  currentFake = fakeWith({
+    bundle_items: (f) =>
+      f.some(([c, v]) => c === "content_object_id" && v === "p1") ? [{ bundle_id: "b1" }] : [],
+    purchases: (f) =>
+      f.some(([c, v]) => c === "in.bundle_id" && v.includes("b1")) &&
+      f.some(([c, v]) => c === "author_id" && v === "a1")
+        ? [{ id: "x" }]
+        : [],
+  })
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1", "p1"), true)
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1", "p2"), false)
+  // another writer's piece in a1's bundle stays locked
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a2", "p1"), false)
+})

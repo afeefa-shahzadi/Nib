@@ -58,7 +58,8 @@ export function gateBlocks<T extends { monetization_eligible?: boolean; content:
 }
 
 // Does viewer have access to monetization-gated blocks? An active membership
-// opens every piece by the author; a paid piece purchase opens only that piece.
+// opens every piece by the author; a paid piece purchase opens only that piece,
+// and a paid bundle opens the pieces in it.
 export async function viewerHasAuthorAccess(
   viewerId: string | null,
   authorId: string,
@@ -68,7 +69,7 @@ export async function viewerHasAuthorAccess(
   if (!viewerId) return false
   if (viewerId === authorId) return true
   const admin = await createAdminClient()
-  const [{ data: mem }, pur] = await Promise.all([
+  const [{ data: mem }, pur, bun] = await Promise.all([
     admin
       .from("memberships")
       .select("id")
@@ -86,8 +87,35 @@ export async function viewerHasAuthorAccess(
           .eq("status", "paid")
           .limit(1)
       : Promise.resolve({ data: [] }),
+    contentObjectId ? boughtInBundle(admin, viewerId, authorId, contentObjectId) : false,
   ])
-  return (mem?.length ?? 0) > 0 || (pur.data?.length ?? 0) > 0
+  return (mem?.length ?? 0) > 0 || (pur.data?.length ?? 0) > 0 || bun
+}
+
+// Is this piece in a bundle the viewer bought from its author? A bundle can
+// hold other writers' pieces; buying it never unlocks theirs.
+async function boughtInBundle(
+  admin: Awaited<ReturnType<typeof createAdminClient>>,
+  viewerId: string,
+  authorId: string,
+  contentObjectId: string
+) {
+  const { data: inBundles } = await admin
+    .from("bundle_items")
+    .select("bundle_id")
+    .eq("content_object_id", contentObjectId)
+  const ids = (inBundles ?? []).map((r) => r.bundle_id as string)
+  if (!ids.length) return false
+  const { data } = await admin
+    .from("purchases")
+    .select("id")
+    .eq("user_id", viewerId)
+    .in("bundle_id", ids)
+    .eq("author_id", authorId)
+    .eq("kind", "bundle")
+    .eq("status", "paid")
+    .limit(1)
+  return (data?.length ?? 0) > 0
 }
 
 export const ReadingMode = z.enum([

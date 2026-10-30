@@ -32,14 +32,18 @@ export async function listMyBundles() {
   const __handler = async ({ context }: { context: ActionContext }) => {
     const { data, error } = await context.supabase
       .from("bundles")
-      .select("*")
+      .select("*, author:profiles(handle), bundle_items(count)")
       .eq("author_id", context.userId!)
       .order("created_at", { ascending: false })
     if (error) {
       console.error("[server]", error)
       throw new Error("Request failed. Please try again.")
     }
-    return data ?? []
+    return (data ?? []).map(({ bundle_items, author, ...b }: any) => ({
+      ...b,
+      handle: author?.handle as string | undefined,
+      item_count: (bundle_items?.[0]?.count as number) ?? 0,
+    }))
   }
   return await __handler({ context })
 }
@@ -225,7 +229,7 @@ export async function listBundleItems(args: { data?: any } = {}) {
     await assertBundleOwner(context.supabase, data.bundle_id, context.userId)
     const { data: items, error } = await context.supabase
       .from("bundle_items")
-      .select("*")
+      .select("*, piece:content_objects(title)")
       .eq("bundle_id", data.bundle_id)
       .order("position", { ascending: true })
     if (error) {
@@ -393,4 +397,60 @@ export async function reorderBundleItems(args: { data?: any } = {}) {
     data: args?.data as { bundle_id: string; ordered_ids: string[] },
     context,
   })
+}
+
+// ---------- PUBLIC: bundles readers can open and buy ----------
+export async function listPublicBundles(authorId: string) {
+  const admin = await createAdminClient()
+  const { data } = await admin
+    .from("bundles")
+    .select("id, title, outcome_statement, description, price, bundle_items(count)")
+    .eq("author_id", authorId)
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+  return (data ?? []).map(({ bundle_items, ...b }: any) => ({
+    ...b,
+    item_count: (bundle_items?.[0]?.count as number) ?? 0,
+  }))
+}
+
+export async function getPublicBundle(handle: string, id: string) {
+  const admin = await createAdminClient()
+  const { data: _auth } = await (await createClient()).auth.getUser()
+  const viewerId = _auth?.user?.id ?? null
+  const { data: bundle } = await admin
+    .from("bundles")
+    .select(
+      "id, title, outcome_statement, description, price, author:profiles!inner(id, handle, display_name, avatar_url)"
+    )
+    .eq("id", id)
+    .eq("visibility", "public")
+    .eq("profiles.handle", handle)
+    .maybeSingle()
+  if (!bundle) return null
+  const { data: rows } = await admin
+    .from("bundle_items")
+    .select(
+      "id, piece:content_objects(id, title, summary, slug, status, visibility, author:profiles!content_objects_author_id_profiles_id_fk(handle, display_name))"
+    )
+    .eq("bundle_id", id)
+    .order("position", { ascending: true })
+  // Readers only see published public pieces; drafts stay hidden.
+  const items = (rows ?? [])
+    .map((r: any) => r.piece)
+    .filter((p: any) => p && p.status === "published" && p.visibility !== "private")
+  const author = bundle.author as any
+  let owned = viewerId === author.id
+  if (viewerId && !owned) {
+    const { data: pur } = await admin
+      .from("purchases")
+      .select("id")
+      .eq("user_id", viewerId)
+      .eq("bundle_id", id)
+      .eq("kind", "bundle")
+      .eq("status", "paid")
+      .limit(1)
+    owned = (pur?.length ?? 0) > 0
+  }
+  return { ...bundle, author, items, owned, signedIn: !!viewerId }
 }
