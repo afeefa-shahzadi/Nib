@@ -33,9 +33,12 @@ async function loadProfiles(
   )
 }
 
-function rangeStart(timeframe: "month" | "all"): string | null {
-  if (timeframe === "all") return null
-  return utcMonthStart()
+export type Timeframe = "week" | "month" | "all"
+
+function rangeStart(timeframe: Timeframe): string | null {
+  if (timeframe === "week") return new Date(Date.now() - 7 * 86_400_000).toISOString()
+  if (timeframe === "month") return utcMonthStart()
+  return null
 }
 
 // ============ READER LEADERBOARD ============
@@ -45,7 +48,7 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
   const __handler = async ({
     data,
   }: {
-    data: { timeframe: "month" | "all" }
+    data: { timeframe: Timeframe }
   }) => {
     const start = rangeStart(data.timeframe)
 
@@ -135,7 +138,7 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
       timeframe: data.timeframe,
     }
   }
-  return await __handler({ data: args?.data as { timeframe: "month" | "all" } })
+  return await __handler({ data: args?.data as { timeframe: Timeframe } })
 }
 
 function getReaderTier(points: number) {
@@ -153,7 +156,7 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
   const __handler = async ({
     data,
   }: {
-    data: { timeframe: "month" | "all" }
+    data: { timeframe: Timeframe }
   }) => {
     const start = rangeStart(data.timeframe)
 
@@ -247,7 +250,7 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
       timeframe: data.timeframe,
     }
   }
-  return await __handler({ data: args?.data as { timeframe: "month" | "all" } })
+  return await __handler({ data: args?.data as { timeframe: Timeframe } })
 }
 
 // Rank lookup for the signed-in user

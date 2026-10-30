@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache"
+import { authorLeaderboard, readerLeaderboard, type Timeframe } from "@/actions/leaderboard"
 import { cache } from "react"
 import { getAuthorByHandle, getPieceBySlug, getRelatedPieces } from "@/actions/content"
 import { getDiscoverFeed } from "@/actions/social"
@@ -22,3 +23,5 @@ export const cachedCollectionsByCurator = unstable_cache((id: string) => listCol
 // Per-request dedupe (viewer-dependent, so not cross-request): the reader's
 // layout metadata and page both load the same piece.
 export const pieceBySlug = cache((slug: string) => getPieceBySlug({ data: { slug } }))
+export const cachedAuthorLeaderboard = unstable_cache((timeframe: Timeframe) => authorLeaderboard({ data: { timeframe } }), ["lb-author"], opts)
+export const cachedReaderLeaderboard = unstable_cache((timeframe: Timeframe) => readerLeaderboard({ data: { timeframe } }), ["lb-reader"], opts)
