@@ -40,3 +40,15 @@ test("ranks engaged public pieces by reads + claps + 3×responses + 2×highlight
   assert.equal(r.rows[1].slug, "talked")
   assert.equal(r.rows[0].saves, 1)
 })
+
+test("reads past PostgREST's 1,000-row page so big tables aren't cut off", async () => {
+  let clapPages = 0
+  currentFake = makeFakeClient(({ table }: ResolveCtx) => {
+    if (table !== "piece_claps") return { data: data[table] ?? [] }
+    clapPages++
+    return { data: clapPages === 1 ? Array.from({ length: 1000 }, () => ({ piece_id: "p1", count: 1 })) : [{ piece_id: "p1", count: 1 }] }
+  }, null)
+  const r: any = await lb.pieceLeaderboard({ data: { timeframe: "all" } })
+  assert.equal(clapPages, 2)
+  assert.equal(r.rows.find((x: any) => x.userId === "p1").claps, 1001)
+})

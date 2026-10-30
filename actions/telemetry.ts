@@ -25,11 +25,13 @@ export async function recordTelemetry(args: { data?: any } = {}) {
     // verify piece exists & is at least author-visible to prevent garbage rows
     const { data: piece } = await supabaseAdmin
       .from("content_objects")
-      .select("id")
+      .select("id, author_id")
       .eq("id", data.piece_id)
       .eq("status", "published")
       .maybeSingle()
     if (!piece) return { ok: false }
+    // Authors reading their own piece don't count as readers (analytics, leaderboard).
+    if (authUserId && piece.author_id === authUserId) return { ok: true, skipped: true }
     const { error } = await supabaseAdmin.from("telemetry_events").insert({
       piece_id: data.piece_id,
       content_object_id: data.piece_id, // Satisfy old NOT NULL constraint

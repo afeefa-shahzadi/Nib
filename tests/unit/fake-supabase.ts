@@ -72,6 +72,7 @@ export function makeFakeClient(
       or: () => stub,
       order: () => stub,
       limit: () => stub,
+      range: () => stub,
       insert: (rows: any) => {
         state.op = "insert"
         state.payload = rows

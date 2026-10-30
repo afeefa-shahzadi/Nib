@@ -32,6 +32,19 @@ async function loadProfiles(
   )
 }
 
+// PostgREST returns at most 1,000 rows per request; read every page so totals don't silently stop there.
+// ponytail: pulls raw rows into memory; move the sums into a Postgres function if tables reach the millions.
+const PAGE = 1000
+async function selectAll(build: () => any): Promise<any[]> {
+  const out: any[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await build().range(from, from + PAGE - 1)
+    if (error) throw new Error(error.message)
+    out.push(...(data ?? []))
+    if (!data || data.length < PAGE) return out
+  }
+}
+
 export type Timeframe = "week" | "month" | "all"
 
 function rangeStart(timeframe: Timeframe): string | null {
@@ -52,40 +65,31 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
     const start = rangeStart(data.timeframe)
 
     // Points
-    let ptsQ = supabaseAdmin.from("insight_points").select("user_id, points")
-    if (start) ptsQ = ptsQ.gte("created_at", start)
-    const { data: pts } = await ptsQ
+    const since = (q: any, col: string) => (start ? q.gte(col, start) : q)
+    const pts = await selectAll(() => since(supabaseAdmin.from("insight_points").select("user_id, points"), "created_at"))
     const points = new Map<string, number>()
     for (const r of pts ?? [])
       points.set(r.user_id, (points.get(r.user_id) ?? 0) + r.points)
 
     // Claps given (sum of count)
-    let clQ = supabaseAdmin.from("piece_claps").select("user_id, count")
-    if (start) clQ = clQ.gte("updated_at", start)
-    const { data: cl } = await clQ
+    const cl = await selectAll(() => since(supabaseAdmin.from("piece_claps").select("user_id, count"), "updated_at"))
     const claps = new Map<string, number>()
     for (const r of cl ?? [])
       claps.set(r.user_id, (claps.get(r.user_id) ?? 0) + r.count)
 
     // Annotations
-    let anQ = supabaseAdmin.from("block_annotations").select("user_id")
-    if (start) anQ = anQ.gte("created_at", start)
-    const { data: an } = await anQ
+    const an = await selectAll(() => since(supabaseAdmin.from("block_annotations").select("user_id"), "created_at"))
     const ann = new Map<string, number>()
     for (const r of an ?? []) ann.set(r.user_id, (ann.get(r.user_id) ?? 0) + 1)
 
     // Follows
-    const { data: fo } = await supabaseAdmin
-      .from("follows")
-      .select("follower_id")
+    const fo = await selectAll(() => supabaseAdmin.from("follows").select("follower_id"))
     const follows = new Map<string, number>()
     for (const r of fo ?? [])
       follows.set(r.follower_id, (follows.get(r.follower_id) ?? 0) + 1)
 
     // Streaks (canonical table is user_stats — reading_streaks is legacy/unwritten)
-    const { data: st } = await supabaseAdmin
-      .from("user_stats")
-      .select("user_id, current_streak, longest_streak")
+    const st = await selectAll(() => supabaseAdmin.from("user_stats").select("user_id, current_streak, longest_streak"))
     const streak = new Map<string, { current: number; longest: number }>()
     for (const r of st ?? [])
       streak.set(r.user_id, {
@@ -95,9 +99,7 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
 
     // Real money a reader earns: the curator share on sales from their collections.
     // Insight points are recognition only and never convert to cash.
-    let cuQ = supabaseAdmin.from("earnings_ledger").select("user_id, net_paise").eq("source", "curator_share")
-    if (start) cuQ = cuQ.gte("created_at", start)
-    const { data: cu } = await cuQ
+    const cu = await selectAll(() => since(supabaseAdmin.from("earnings_ledger").select("user_id, net_paise").eq("source", "curator_share"), "created_at"))
     const curated = new Map<string, number>()
     for (const r of cu ?? []) curated.set(r.user_id, (curated.get(r.user_id) ?? 0) + r.net_paise)
 
@@ -169,19 +171,16 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
     const start = rangeStart(data.timeframe)
 
     // Followers
-    const { data: fo } = await supabaseAdmin.from("follows").select("author_id")
+    const since = (q: any, col: string) => (start ? q.gte(col, start) : q)
+    const fo = await selectAll(() => supabaseAdmin.from("follows").select("author_id"))
     const followers = new Map<string, number>()
     for (const r of fo ?? [])
       followers.set(r.author_id, (followers.get(r.author_id) ?? 0) + 1)
 
     // Published pieces & piece->author map
-    let pcQ = supabaseAdmin
-      .from("content_objects")
-      .select("id, author_id, published_at")
-      .eq("status", "published")
-      .eq("visibility", "public")
-    if (start) pcQ = pcQ.gte("published_at", start)
-    const { data: pieces } = await pcQ
+    const pieces = await selectAll(() =>
+      since(supabaseAdmin.from("content_objects").select("id, author_id, published_at").eq("status", "published").eq("visibility", "public"), "published_at")
+    )
     const published = new Map<string, number>()
     const pieceAuthor = new Map<string, string>()
     for (const r of pieces ?? []) {
@@ -191,14 +190,10 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
 
     // Claps received — need full piece->author map
     if (start) {
-      const { data: allPieces } = await supabaseAdmin
-        .from("content_objects")
-        .select("id, author_id")
+      const allPieces = await selectAll(() => supabaseAdmin.from("content_objects").select("id, author_id"))
       for (const r of allPieces ?? []) pieceAuthor.set(r.id, r.author_id)
     }
-    let clQ = supabaseAdmin.from("piece_claps").select("piece_id, count")
-    if (start) clQ = clQ.gte("updated_at", start)
-    const { data: cl } = await clQ
+    const cl = await selectAll(() => since(supabaseAdmin.from("piece_claps").select("piece_id, count"), "updated_at"))
     const claps = new Map<string, number>()
     for (const r of cl ?? []) {
       const a = pieceAuthor.get(r.piece_id)
@@ -206,20 +201,13 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
     }
 
     // Tips received
-    let tipQ = supabaseAdmin
-      .from("tips")
-      .select("author_id, net_paise")
-      .eq("status", "paid")
-    if (start) tipQ = tipQ.gte("created_at", start)
-    const { data: tips } = await tipQ
+    const tips = await selectAll(() => since(supabaseAdmin.from("tips").select("author_id, net_paise").eq("status", "paid"), "created_at"))
     const tipsIn = new Map<string, number>()
     for (const r of tips ?? [])
       tipsIn.set(r.author_id, (tipsIn.get(r.author_id) ?? 0) + (r.net_paise || 0))
 
     // Earnings ledger
-    let edQ = supabaseAdmin.from("earnings_ledger").select("user_id, net_paise")
-    if (start) edQ = edQ.gte("created_at", start)
-    const { data: ed } = await edQ
+    const ed = await selectAll(() => since(supabaseAdmin.from("earnings_ledger").select("user_id, net_paise"), "created_at"))
     const ledger = new Map<string, number>()
     for (const r of ed ?? [])
       ledger.set(r.user_id, (ledger.get(r.user_id) ?? 0) + r.net_paise)
@@ -271,14 +259,14 @@ export async function pieceLeaderboard(args: { data?: any } = {}) {
   const start = rangeStart(timeframe)
   const since = (q: any, col: string) => (start ? q.gte(col, start) : q)
 
-  const [{ data: pieces }, { data: cl }, { data: rs }, { data: hl }, { data: sv }, { data: fr }] = await Promise.all([
-    supabaseAdmin.from("content_objects").select("id, title, slug, author_id").eq("status", "published").eq("visibility", "public"),
-    since(supabaseAdmin.from("piece_claps").select("piece_id, count"), "updated_at"),
-    since(supabaseAdmin.from("piece_responses").select("piece_id, user_id"), "created_at"),
-    since(supabaseAdmin.from("reader_highlights").select("piece_id, user_id"), "created_at"),
-    since(supabaseAdmin.from("collection_items").select("content_object_id, collections(curator_id)"), "created_at"),
+  const [pieces, cl, rs, hl, sv, fr] = await Promise.all([
+    selectAll(() => supabaseAdmin.from("content_objects").select("id, title, slug, author_id").eq("status", "published").eq("visibility", "public")),
+    selectAll(() => since(supabaseAdmin.from("piece_claps").select("piece_id, count"), "updated_at")),
+    selectAll(() => since(supabaseAdmin.from("piece_responses").select("piece_id, user_id"), "created_at")),
+    selectAll(() => since(supabaseAdmin.from("reader_highlights").select("piece_id, user_id"), "created_at")),
+    selectAll(() => since(supabaseAdmin.from("collection_items").select("content_object_id, collections(curator_id)"), "created_at")),
     // A full read: scrolled to the end after enough time to read it (see use-telemetry).
-    since(supabaseAdmin.from("telemetry_events").select("piece_id, session").eq("event", "full_read"), "created_at"),
+    selectAll(() => since(supabaseAdmin.from("telemetry_events").select("piece_id, session").eq("event", "full_read"), "created_at")),
   ])
   // Authors' own responses, highlights and saves don't count (claps on your own piece are refused already).
   const authorOf = new Map((pieces ?? []).map((p: any) => [p.id as string, p.author_id as string]))
@@ -292,7 +280,7 @@ export async function pieceLeaderboard(args: { data?: any } = {}) {
   const highlights = tally(hl, "piece_id", (r) => r.user_id)
   const saves = tally(sv, "content_object_id", (r) => r.collections?.curator_id)
   // One read per browser session per piece, so re-reading or refreshing doesn't add up.
-  // ponytail: telemetry rows have no viewer id, so an author reading their own piece still counts once.
+  // Authors' own reads are never recorded (see recordTelemetry).
   const reads = new Map<string, number>()
   const seen = new Set<string>()
   for (const r of (fr ?? []) as any[]) {
