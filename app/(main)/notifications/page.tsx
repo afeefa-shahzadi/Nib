@@ -254,6 +254,32 @@ export default function NotificationsPage() {
                     </Link>
                   )
                 }
+                if (n.type === "sale" || n.type === "curator_sale") {
+                  const sender = p.sender_id ? actors[p.sender_id] : undefined
+                  return (
+                    <Link
+                      key={n.id}
+                      href="/studio/earnings"
+                      onClick={() => markOne(n.id)}
+                      className={`flex gap-3 px-4 py-3 transition-colors hover:bg-accent/40 ${isUnread ? "bg-primary/5" : ""}`}
+                    >
+                      <IndianRupee className="mt-1 size-4 shrink-0 text-primary" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm">
+                          <span className="font-medium">{sender?.display_name ?? "Someone"}</span>{" "}
+                          <span className="text-muted-foreground">
+                            {n.type === "curator_sale" ? "bought from your collection · you earned" : "bought your work"}
+                          </span>{" "}
+                          <span className="font-medium">
+                            ₹{((p.amount_paise ?? 0) / 100).toLocaleString("en-IN")}
+                          </span>
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{relTime(n.created_at)}</p>
+                      </div>
+                      {isUnread && <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />}
+                    </Link>
+                  )
+                }
                 if (n.type === "tip_received") {
                   const sender = p.sender_id ? actors[p.sender_id] : undefined
                   return (

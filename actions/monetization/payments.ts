@@ -7,6 +7,7 @@ import { assertMonetizable } from "@/lib/nsfw"
 import { assertNotRestricted } from "@/lib/restrictions"
 import { alertOps } from "@/lib/alerts"
 import { checkRateLimit } from "@/lib/rate-limit.server"
+import { splitSale } from "@/lib/revenue-split"
 import { SupabaseClient } from "@supabase/supabase-js"
 
 const RZ_BASE = "https://api.razorpay.com/v1"
@@ -584,23 +585,28 @@ export async function settlePaidPurchase(
     .update({ razorpay_payment_id: paymentId, status: "paid" })
     .eq("razorpay_order_id", orderId)
     .eq("status", "created")
-    .select("author_id, user_id, amount_paise, kind")
+    .select("author_id, user_id, amount_paise, kind, curator_id, collection_id")
     .maybeSingle()
   if (!paid?.author_id) return false
 
   const feeType = paid.kind === "tip" ? "tip" : "purchase"
-  const net = await calculateAuthorNetPaise(
+  // A curator is only stamped at order time after checking the collection,
+  // the author's opt-in and that curator ≠ author (resolveCuratorAttribution).
+  const curated = feeType === "purchase" && !!paid.curator_id
+  const split = await calculateSaleSplit(
     paid.author_id,
     paid.amount_paise,
     feeType,
+    curated,
     supabaseAdmin
   )
-  // Stamp the credited net on the purchase so a later refund/dispute can
+  const net = split.author
+  // Stamp the credited shares on the purchase so a later refund/dispute can
   // reverse exactly what was credited (fee tiers are GMV-dependent and can't
   // be recomputed later) — see reversePaidPurchase.
   await supabaseAdmin
     .from("purchases")
-    .update({ net_paise: net })
+    .update({ net_paise: net, curator_net_paise: curated ? split.curator : null })
     .eq("razorpay_order_id", orderId)
   await supabaseAdmin.from("earnings_ledger").insert({
     user_id: paid.author_id,
@@ -609,6 +615,25 @@ export async function settlePaidPurchase(
     net_paise: net,
     status: "available",
   })
+  if (curated && split.curator > 0) {
+    // gross 0: the curator's share must not count toward their own Studio cap.
+    await supabaseAdmin.from("earnings_ledger").insert({
+      user_id: paid.curator_id,
+      source: "curator_share",
+      gross_paise: 0,
+      net_paise: split.curator,
+      status: "available",
+    })
+    await supabaseAdmin.from("notifications").insert({
+      user_id: paid.curator_id,
+      type: "curator_sale",
+      payload: {
+        sender_id: paid.user_id,
+        amount_paise: split.curator,
+        collection_id: paid.collection_id,
+      },
+    })
+  }
   await supabaseAdmin.from("notifications").insert({
     user_id: paid.author_id,
     type: paid.kind === "tip" ? "tip_received" : "sale",
@@ -643,9 +668,19 @@ export async function reversePaidPurchase(
     .update({ status: "reversed" })
     .eq("razorpay_order_id", orderId)
     .eq("status", "paid")
-    .select("author_id, net_paise, amount_paise")
+    .select("author_id, net_paise, amount_paise, curator_id, curator_net_paise")
     .maybeSingle()
   if (!reversed?.author_id) return false
+
+  if (reversed.curator_id && reversed.curator_net_paise) {
+    await supabaseAdmin.from("earnings_ledger").insert({
+      user_id: reversed.curator_id,
+      source: "chargeback",
+      gross_paise: 0,
+      net_paise: -reversed.curator_net_paise,
+      status: "available",
+    })
+  }
 
   if (reversed.net_paise == null) {
     // Settled before purchases.net_paise existed — the exact credit is unknown.
@@ -759,52 +794,50 @@ export async function calculateAuthorNetPaise(
   type: "tip" | "sponsorship" | "purchase",
   supabaseAdmin: SupabaseClient
 ): Promise<number> {
-  // 1. Check if user is a Studio subscriber
+  return (await calculateSaleSplit(authorId, grossPaise, type, false, supabaseAdmin)).author
+}
+
+// Author/curator/platform shares for one sale. Studio's ₹50k monthly cap counts
+// the author's paid tips plus earnings-ledger gross since the 1st.
+export async function calculateSaleSplit(
+  authorId: string,
+  grossPaise: number,
+  type: "tip" | "sponsorship" | "purchase",
+  curated: boolean,
+  supabaseAdmin: SupabaseClient
+) {
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("plan")
     .eq("id", authorId)
     .maybeSingle()
-
   const isStudio = profile?.plan === "studio"
 
-  // 2. If not Studio, standard platform fee applies
-  if (!isStudio) {
-    return type === "sponsorship" ? Math.floor(grossPaise * 0.8) : Math.floor(grossPaise * 0.9)
+  let studioMonthGmvPaise = 0
+  if (isStudio) {
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+    const startStr = startOfMonth.toISOString()
+    const [{ data: tips }, { data: ledger }] = await Promise.all([
+      supabaseAdmin
+        .from("tips")
+        .select("amount_paise")
+        .eq("author_id", authorId)
+        .eq("status", "paid")
+        .gte("created_at", startStr),
+      supabaseAdmin
+        .from("earnings_ledger")
+        .select("gross_paise")
+        .eq("user_id", authorId)
+        .gte("created_at", startStr),
+    ])
+    studioMonthGmvPaise =
+      (tips ?? []).reduce((s: number, t: { amount_paise: number }) => s + t.amount_paise, 0) +
+      (ledger ?? []).reduce((s: number, l: { gross_paise: number }) => s + l.gross_paise, 0)
   }
 
-  // 3. Is Studio. Calculate GMV for current month.
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
-  const startStr = startOfMonth.toISOString()
-
-  const { data: tips } = await supabaseAdmin
-    .from("tips")
-    .select("amount_paise")
-    .eq("author_id", authorId)
-    .eq("status", "paid")
-    .gte("created_at", startStr)
-
-  const { data: ledger } = await supabaseAdmin
-    .from("earnings_ledger")
-    .select("gross_paise")
-    .eq("user_id", authorId)
-    .gte("created_at", startStr)
-
-  const tipsGmv = (tips ?? []).reduce((s: number, t: { amount_paise: number }) => s + t.amount_paise, 0)
-  const ledgerGmv = (ledger ?? []).reduce((s: number, l: { gross_paise: number }) => s + l.gross_paise, 0)
-  const totalGmvPaise = tipsGmv + ledgerGmv
-
-  // Studio cap threshold: ₹50,000 -> 5000000 paise
-  const STUDIO_CAP_PAISE = 5000000
-
-  // 0% up to ₹50k, 5% above ₹50k
-  if (totalGmvPaise + grossPaise > STUDIO_CAP_PAISE) {
-    return Math.floor(grossPaise * 0.95)
-  } else {
-    return grossPaise
-  }
+  return splitSale({ grossPaise, kind: type, isStudio, studioMonthGmvPaise, curated })
 }
 
 // ============== Apply earnings to Studio (pay ₹499 from balance) ==============

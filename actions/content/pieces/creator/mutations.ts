@@ -237,6 +237,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       is_nsfw?: boolean
       is_ai_generated?: boolean
       prose_only?: boolean
+      curator_share_enabled?: boolean
       cover_image_url?: string | null
       allow_inline_comments?: boolean
     }
@@ -257,6 +258,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       "is_nsfw",
       "is_ai_generated",
       "prose_only",
+      "curator_share_enabled",
       "cover_image_url",
       "allow_inline_comments",
     ] as const) {

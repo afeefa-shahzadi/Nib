@@ -64,6 +64,7 @@ interface PieceMeta {
   isNsfw: boolean
   isAiGenerated: boolean
   proseOnly: boolean
+  curatorShare: boolean
   allowInlineComments: boolean
   coverImageUrl: string | null
 }
@@ -79,6 +80,7 @@ const DEFAULT_META: PieceMeta = {
   isNsfw: false,
   isAiGenerated: false,
   proseOnly: false,
+  curatorShare: false,
   allowInlineComments: true,
   coverImageUrl: null,
 }
@@ -132,6 +134,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const isNsfw = meta.isNsfw
   const isAiGenerated = meta.isAiGenerated
   const proseOnly = meta.proseOnly
+  const curatorShare = meta.curatorShare
   const allowInlineComments = meta.allowInlineComments
   const coverImageUrl = meta.coverImageUrl
 
@@ -145,6 +148,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const setIsNsfw = (v: boolean) => setMeta((m) => ({ ...m, isNsfw: v }))
   const setIsAiGenerated = (v: boolean) => setMeta((m) => ({ ...m, isAiGenerated: v }))
   const setProseOnly = (v: boolean) => setMeta((m) => ({ ...m, proseOnly: v }))
+  const setCuratorShare = (v: boolean) => setMeta((m) => ({ ...m, curatorShare: v }))
   const setAllowInlineComments = (v: boolean) => setMeta((m) => ({ ...m, allowInlineComments: v }))
 
   const [blocks, setBlocks] = useState<BlockDraft[]>([])
@@ -325,6 +329,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       isNsfw: piece.is_nsfw ?? false,
       isAiGenerated: piece.is_ai_generated ?? false,
       proseOnly: piece.prose_only ?? false,
+      curatorShare: piece.curator_share_enabled ?? false,
       allowInlineComments: piece.allow_inline_comments ?? true,
       coverImageUrl: piece.cover_image_url ?? null,
     })
@@ -714,6 +719,7 @@ export function MyceliumComposer({ pieceId }: Props) {
             is_nsfw: isNsfw,
             is_ai_generated: isAiGenerated,
             prose_only: proseOnly,
+            curator_share_enabled: curatorShare,
             allow_inline_comments: allowInlineComments,
             cover_image_url: coverImageUrl,
             ...extra,
@@ -741,6 +747,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       isNsfw,
       isAiGenerated,
       proseOnly,
+      curatorShare,
       allowInlineComments,
       coverImageUrl,
     ]
@@ -1275,6 +1282,8 @@ export function MyceliumComposer({ pieceId }: Props) {
         setIsAiGenerated={setIsAiGenerated}
         proseOnly={proseOnly}
         setProseOnly={setProseOnly}
+        curatorShare={curatorShare}
+        setCuratorShare={setCuratorShare}
         allowInlineComments={allowInlineComments}
         setAllowInlineComments={setAllowInlineComments}
         onSuggestMeta={suggestMeta}

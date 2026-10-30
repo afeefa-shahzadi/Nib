@@ -9,7 +9,7 @@ import {
   PAYOUT_MIN_INR,
 } from "@/lib/currency"
 import { monthlyLeaderboard } from "@/actions/monetization"
-import { Check, Coins, Flame, Heart, Layers, Megaphone, Sparkles, Trophy, Users } from "lucide-react"
+import { Check, Coins, Flame, Heart, Layers, Library, Megaphone, Sparkles, Trophy, Users } from "lucide-react"
 import { LaunchPaymentsNotice } from "@/components/launch-payments-notice"
 import Link from "next/link"
 import { formatCompactNumber } from "@/lib/utils"
@@ -66,6 +66,16 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
       ],
     },
     {
+      icon: <Library className="size-5 text-primary" aria-hidden />,
+      title: "Curator share",
+      payout: "15% of sales from your collection",
+      blurb: "Build a public collection. When a reader buys a piece from it, you earn a share.",
+      details: [
+        "Only on pieces whose authors opt in",
+        "Starts when paid pieces go on sale",
+      ],
+    },
+    {
       icon: <Users className="size-5 text-primary" aria-hidden />,
       title: "Reader Pass pool",
       payout: "85% of every pass goes to writers",
@@ -116,7 +126,7 @@ export default function EarnPage() {
         </section>
 
         <section className="container-wide pb-16 md:pb-24">
-          <h2 className="mb-6 font-display text-2xl md:text-3xl">Five ways to earn money</h2>
+          <h2 className="mb-6 font-display text-2xl md:text-3xl">Six ways to earn money</h2>
           <div className="grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {moneyStreams(fmt).map((s) => (
               <article key={s.title} className="surface flex flex-col rounded-xl border border-border/60 p-4 sm:p-6">

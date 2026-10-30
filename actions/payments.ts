@@ -5,6 +5,7 @@ import { createHmac, timingSafeEqual } from "crypto"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { assertMonetizable } from "@/lib/nsfw"
+import { resolveCuratorAttribution } from "@/lib/curator-attribution"
 import { checkRateLimit } from "@/lib/rate-limit.server"
 
 const RZ_BASE = "https://api.razorpay.com/v1"
@@ -59,6 +60,8 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
       kind: "bundle" | "piece" | "tip"
       bundleId?: string
       contentObjectId?: string
+      /** Collection the buyer came from; may earn its curator a share. */
+      collectionId?: string
       amountPaise: number
     }
     context: ActionContext
@@ -118,6 +121,15 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
     const serviceClient = supabaseAdmin
 
     const item_id = data.contentObjectId ?? resolvedAuthorId!
+    const referral =
+      data.kind === "tip"
+        ? null
+        : await resolveCuratorAttribution(serviceClient, {
+            collectionId: data.collectionId,
+            contentObjectId: data.contentObjectId,
+            authorId: resolvedAuthorId!,
+            buyerId: userId,
+          })
 
     const { error } = await serviceClient.from("purchases").insert({
       user_id: userId!,
@@ -131,6 +143,8 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
       currency: "INR",
       razorpay_order_id: order.id,
       status: "created",
+      collection_id: referral?.collectionId ?? null,
+      curator_id: referral?.curatorId ?? null,
     })
     if (error) {
       console.error("[payments] insert purchase failed", error)
@@ -150,6 +164,8 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
       kind: "bundle" | "piece" | "tip"
       bundleId?: string
       contentObjectId?: string
+      /** Collection the buyer came from; may earn its curator a share. */
+      collectionId?: string
       amountPaise: number
     },
     context,

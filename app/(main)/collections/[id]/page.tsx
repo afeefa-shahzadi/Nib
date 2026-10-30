@@ -109,7 +109,7 @@ export default function CollectionDetail() {
                   className={`mt-1 font-display text-xl ${isCompleted ? "line-through" : ""}`}
                 >
                   <Link
-                    href={`/u/${p.author_handle ?? d.curator?.handle ?? ""}/${p.slug}`}
+                    href={`/u/${p.author_handle ?? d.curator?.handle ?? ""}/${p.slug}?via=${id}`}
                     className="no-underline hover:text-primary"
                   >
                     {p.title}

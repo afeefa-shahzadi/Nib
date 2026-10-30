@@ -43,6 +43,8 @@ interface MetaDialogProps {
   setIsAiGenerated: (value: boolean) => void
   proseOnly: boolean
   setProseOnly: (value: boolean) => void
+  curatorShare: boolean
+  setCuratorShare: (value: boolean) => void
   allowInlineComments: boolean
   setAllowInlineComments: (value: boolean) => void
   onSuggestMeta: () => Promise<void>
@@ -78,6 +80,8 @@ export function MetaDialog({
   setIsAiGenerated,
   proseOnly,
   setProseOnly,
+  curatorShare,
+  setCuratorShare,
   allowInlineComments,
   setAllowInlineComments,
   onSuggestMeta,
@@ -313,6 +317,19 @@ export function MetaDialog({
                   id="prose-only"
                   checked={proseOnly}
                   onCheckedChange={setProseOnly}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <div>
+                  <Label htmlFor="curator-share">Let curators earn a share</Label>
+                  <p className="text-xs text-muted-foreground">
+                    When this piece is sold from someone&apos;s collection, they get 15% of the sale.
+                  </p>
+                </div>
+                <Switch
+                  id="curator-share"
+                  checked={curatorShare}
+                  onCheckedChange={setCuratorShare}
                 />
               </div>
               <div className="flex items-center justify-between mt-4">
