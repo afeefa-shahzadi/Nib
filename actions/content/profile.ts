@@ -5,6 +5,7 @@ import { createAdminClient, createServiceRoleClient, createClient } from "@/lib/
 import { ActionContext } from "@/lib/types/actions"
 import { encryptSecret } from "@/lib/crypto"
 import { updateTag } from "next/cache"
+import { HANDLE_RE } from "@/lib/handle"
 
 // ---------- AUTH: current user's app role(s) ----------
 export async function getMyRole() {
@@ -107,6 +108,17 @@ export async function updateMyProfile(args: { data?: any } = {}) {
     context: ActionContext
   }) => {
     const patch: Record<string, unknown> = {}
+    if (data.handle !== undefined) {
+      data.handle = String(data.handle).trim().toLowerCase()
+      if (!HANDLE_RE.test(data.handle)) throw new Error("Handles are 3–30 letters, numbers or _.")
+      const { data: taken } = await context.supabase
+        .from("profiles")
+        .select("id")
+        .eq("handle", data.handle)
+        .neq("id", context.userId!)
+        .maybeSingle()
+      if (taken) throw new Error("That handle is taken.")
+    }
     if (data.website !== undefined) patch.website = normalizeLink(data.website)
     if (data.links !== undefined) patch.links = normalizeLinks(data.links)
     if (data.pinned_piece_id !== undefined) {

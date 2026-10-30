@@ -153,6 +153,19 @@ export function ReaderClient({
   const modes = useMemo(() => availableModes(blocks as Block[], MODES), [blocks])
   const requestedMode = searchParams?.get("mode") as ReadingMode | null
   const mode: ReadingMode = requestedMode && modes.includes(requestedMode) ? requestedMode : "standard"
+  // No ?mode= in the link: open in the reader's default mode (Settings > Reading), when this piece offers it.
+  useEffect(() => {
+    if (requestedMode) return
+    let saved: string | null = null
+    try {
+      saved = localStorage.getItem("reader:mode")
+    } catch {}
+    if (saved && saved !== "standard" && modes.includes(saved as ReadingMode)) {
+      const q = new URLSearchParams(window.location.search)
+      q.set("mode", saved)
+      router.replace(`${window.location.pathname}?${q}`, { scroll: false })
+    }
+  }, [requestedMode, modes, router])
   const [authed, setAuthed] = useState(false)
   const [viewerId, setViewerId] = useState<string | null>(null)
   const [sourcesOpen, setSourcesOpen] = useState(false)

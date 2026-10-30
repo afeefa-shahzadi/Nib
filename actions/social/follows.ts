@@ -113,7 +113,16 @@ export async function followAuthor(args: { data?: any } = {}) {
           .single()
 
         // 1. Send "Successfully Subscribed" email
-        if (author && context.user?.email) {
+        // Skipped when the reader turned off Nib emails (Settings > Notifications).
+        const { data: optedOut } = context.user?.email
+          ? await svc
+              .from("email_unsubscribes")
+              .select("email")
+              .eq("email", context.user.email.toLowerCase())
+              .is("author_id", null)
+              .maybeSingle()
+          : { data: null }
+        if (author && context.user?.email && !optedOut) {
           const { sendSubscriptionEmail } = await import("@/lib/email")
           await sendSubscriptionEmail({
             authorName: author.display_name,
