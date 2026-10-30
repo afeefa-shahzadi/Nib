@@ -337,7 +337,11 @@ export function RelationshipGraph({
               aria-label={showMap ? "Hide minimap" : "Show minimap"}
               aria-pressed={showMap}
             >
-              <MapIcon />
+              {/* Lucide has no map-off icon; a diagonal stroke marks the hidden state. */}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                <MapIcon />
+                {!showMap && <line x1="3" y1="3" x2="21" y2="21" />}
+              </svg>
             </ControlButton>
           </Controls>
           {showMap && <MiniMap
