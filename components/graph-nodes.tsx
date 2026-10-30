@@ -49,13 +49,13 @@ export function PieceNode({ data }: { data: Record<string, unknown> }) {
               </div>
               <span
                 className={cn(
-                  "mt-1 rounded px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap shadow-sm backdrop-blur-sm",
+                  "mt-2 line-clamp-2 w-40 rounded px-2 py-1 text-center text-sm leading-snug font-medium shadow-sm backdrop-blur-sm",
                   p.author
                     ? "bg-muted/80 text-muted-foreground dark:bg-muted/80 dark:text-muted-foreground"
                     : "bg-background/80 text-foreground"
                 )}
               >
-                {label.length > 28 ? label.slice(0, 26) + "…" : label}
+                {label}
               </span>
             </Link>
           </div>

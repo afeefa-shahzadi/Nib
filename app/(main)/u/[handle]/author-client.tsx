@@ -38,6 +38,17 @@ type Graph = {
 }
 
 const TAGS_COLLAPSED = 8
+const PAGE = 20
+
+function ShowMore({ total, shown, onMore }: { total: number; shown: number; onMore: () => void }) {
+  if (shown >= total) return null
+  return (
+    <div className="mt-8 flex flex-col items-center gap-2">
+      <Button variant="outline" onClick={onMore}>Show more</Button>
+      <p className="text-sm text-muted-foreground">Showing {shown} of {total}</p>
+    </div>
+  )
+}
 
 export default function AuthorClient({
   author,
@@ -115,6 +126,12 @@ export default function AuthorClient({
     return sort === "oldest" ? [...out].reverse() : out
   }, [pieces, query, activeTag, sort, filtering, pinned])
 
+  // Paging restarts whenever the search, topic or sort changes.
+  const pageKey = `${query}|${activeTag}|${sort}`
+  const [more, setMore] = useState({ key: pageKey, n: PAGE })
+  const shown = more.key === pageKey ? more.n : PAGE
+  const [shownCollections, setShownCollections] = useState(PAGE)
+
   const initials = author.display_name.split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase()
   const joined = author.created_at
     ? new Date(author.created_at).toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" })
@@ -170,8 +187,7 @@ export default function AuthorClient({
           <span className="text-muted-foreground"> following</span>
         </p>
 
-        {(author.website || links.length > 0) && (
-          <ul className="mt-4 space-y-1">
+        <ul className="mt-4 flex flex-wrap gap-x-5">
             {[author.website, ...links].filter(Boolean).map((url, i) => (
               <li key={url}>
                 <a
@@ -189,8 +205,16 @@ export default function AuthorClient({
                 </a>
               </li>
             ))}
-          </ul>
-        )}
+          <li>
+            <a
+              href={`/u/${author.handle}/feed.xml`}
+              className="-my-1 inline-flex min-h-11 items-center gap-2 py-1 text-sm text-muted-foreground hover:text-foreground lg:min-h-8"
+            >
+              <Rss className="size-4" aria-hidden />
+              RSS
+            </a>
+          </li>
+        </ul>
 
         <div className="mt-6 flex gap-2">
           <FollowButton
@@ -220,13 +244,6 @@ export default function AuthorClient({
 
         <div className="mt-8">
           <SubscribeCard compact authorId={author.id} authorName={author.display_name} />
-          <a
-            href={`/u/${author.handle}/feed.xml`}
-            className="-my-1 mt-2 inline-flex min-h-11 items-center gap-2 py-1 text-sm text-muted-foreground hover:text-foreground lg:min-h-8"
-          >
-            <Rss className="size-4" aria-hidden />
-            RSS feed
-          </a>
         </div>
       </aside>
 
@@ -286,12 +303,15 @@ export default function AuthorClient({
             ) : list.length === 0 && !(pinned && !filtering) ? (
               <p className="hairline-t hairline-b py-12 text-muted-foreground">No pieces match.</p>
             ) : (
-              <ul>
-                {pinned && !filtering && <PieceRow p={pinned} pinned />}
-                {list.map((p) => (
-                  <PieceRow key={p.id} p={p} />
-                ))}
-              </ul>
+              <>
+                <ul>
+                  {pinned && !filtering && <PieceRow p={pinned} pinned />}
+                  {list.slice(0, shown).map((p) => (
+                    <PieceRow key={p.id} p={p} />
+                  ))}
+                </ul>
+                <ShowMore total={list.length} shown={shown} onMore={() => setMore({ key: pageKey, n: shown + PAGE })} />
+              </>
             )}
           </TabsContent>
 
@@ -304,7 +324,7 @@ export default function AuthorClient({
           {collections.length > 0 && (
             <TabsContent value="collections" className="mt-6">
               <ul>
-                {collections.map((c) => (
+                {collections.slice(0, shownCollections).map((c) => (
                   <li key={c.id} className="hairline-t last:hairline-b">
                     <Link href={`/collections/${c.id}`} className="group block py-6">
                       <h2 className="font-display text-xl leading-snug group-hover:text-primary">{c.title}</h2>
@@ -313,6 +333,7 @@ export default function AuthorClient({
                   </li>
                 ))}
               </ul>
+              <ShowMore total={collections.length} shown={shownCollections} onMore={() => setShownCollections(shownCollections + PAGE)} />
             </TabsContent>
           )}
 

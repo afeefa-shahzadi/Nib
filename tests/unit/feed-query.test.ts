@@ -5,7 +5,7 @@ import { feedWindow, FEED_PAGE_SIZE } from "@/lib/feed-query"
 const now = Date.parse("2026-10-30T12:00:00Z")
 
 test("defaults: newest first, first page, no time limit", () => {
-  assert.deepEqual(feedWindow({}, now), { ascending: false, from: 0, to: FEED_PAGE_SIZE, since: null })
+  assert.deepEqual(feedWindow({}, now), { column: "published_at", ascending: false, from: 0, to: FEED_PAGE_SIZE, since: null })
 })
 
 test("page n asks for one extra row to know if more exist", () => {
@@ -28,4 +28,11 @@ test("time windows become a published_at cutoff", () => {
 test("junk input falls back to safe defaults", () => {
   assert.deepEqual(feedWindow({ page: -3, sort: "x" as never, since: "x" as never }, now), feedWindow({}, now))
   assert.equal(feedWindow({ page: 1e9 }, now).from, 50 * FEED_PAGE_SIZE)
+})
+
+test("title sort is A to Z; today is the past 24 hours", () => {
+  const w = feedWindow({ sort: "title", since: "today" }, now)
+  assert.equal(w.column, "title")
+  assert.equal(w.ascending, true)
+  assert.equal(w.since, "2026-10-29T12:00:00.000Z")
 })

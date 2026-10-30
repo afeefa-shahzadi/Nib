@@ -92,7 +92,7 @@ export async function getFollowingFeed() {
   return await __handler({ context })
 }
 
-type DiscoverArgs = { tag?: string; q?: string; sort?: FeedSort; since?: FeedSince; page?: number }
+type DiscoverArgs = { tagged?: "tagged" | "untagged"; tag?: string; q?: string; sort?: FeedSort; since?: FeedSince; page?: number }
 
 export async function getDiscoverFeed(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
@@ -108,12 +108,14 @@ export async function getDiscoverFeed(args: { data?: any } = {}) {
         .select("id, title, slug, summary, tags, published_at, author_id, cover_image_url, is_nsfw")
         .eq("status", "published")
         .eq("visibility", "public")
-        .order("published_at", { ascending: win.ascending })
+        .order(win.column, { ascending: win.ascending })
         .range(win.from, win.to)
     )
 
     if (data?.tag) query = query.contains("tags", [data.tag])
     if (win.since) query = query.gte("published_at", win.since)
+    if (data?.tagged === "tagged") query = query.not("tags", "is", null).not("tags", "eq", "{}")
+    if (data?.tagged === "untagged") query = query.eq("tags", "{}")
 
     if (data?.q) {
       // Strip characters that are syntax in a PostgREST `.or()` filter (commas,
@@ -203,7 +205,7 @@ export async function getDiscoverFeed(args: { data?: any } = {}) {
     )
     // Promoted pieces lead the first page of the default newest-first view only;
     // reordering anywhere else would break the chosen sort and paging.
-    if (win.from === 0 && !win.ascending)
+    if (win.from === 0 && win.column === "published_at" && !win.ascending)
       enriched.sort((a, b) => {
         if (a.boosted !== b.boosted) return a.boosted ? -1 : 1
         if (a.boosted && b.boosted)

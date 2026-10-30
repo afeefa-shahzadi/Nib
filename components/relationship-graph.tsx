@@ -48,34 +48,32 @@ const nodeTypes = {
   branchNode: BranchNode,
 }
 
-const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = "TB") => {
+const NODE_W = 180
+const NODE_H = 120
+
+// Connected nodes go through dagre; unconnected ones would all land in dagre's
+// first rank as one long row, so they're packed into a grid underneath instead.
+const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+  const linked = new Set(edges.flatMap((e) => [e.source, e.target]))
   const dagreGraph = new dagre.graphlib.Graph()
   dagreGraph.setDefaultEdgeLabel(() => ({}))
-  dagreGraph.setGraph({ rankdir: direction, ranker: 'longest-path' })
-
-  nodes.forEach((node) => {
-    // We give generous dimensions to allow the text/hover triggers to spread out
-    dagreGraph.setNode(node.id, { width: 140, height: 100 })
-  })
-
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target)
-  })
-
+  dagreGraph.setGraph({ rankdir: "TB", ranker: "longest-path", nodesep: 24, ranksep: 64 })
+  nodes.filter((n) => linked.has(n.id)).forEach((n) => dagreGraph.setNode(n.id, { width: NODE_W, height: NODE_H }))
+  edges.forEach((e) => dagreGraph.setEdge(e.source, e.target))
   dagre.layout(dagreGraph)
 
+  const placed = nodes.filter((n) => linked.has(n.id)).map((n) => dagreGraph.node(n.id))
+  const top = placed.length ? Math.max(...placed.map((p) => p.y)) + NODE_H : 0
+  const loose = nodes.filter((n) => !linked.has(n.id))
+  const cols = Math.min(4, Math.max(1, loose.length))
+
   const newNodes = nodes.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id)
-    const newNode = {
-      ...node,
-      targetPosition: Position.Top,
-      sourcePosition: Position.Bottom,
-      position: {
-        x: nodeWithPosition.x - 70,
-        y: nodeWithPosition.y - 50,
-      },
-    }
-    return newNode
+    const i = loose.indexOf(node)
+    const pos =
+      i === -1
+        ? { x: dagreGraph.node(node.id).x - NODE_W / 2, y: dagreGraph.node(node.id).y - NODE_H / 2 }
+        : { x: (i % cols) * NODE_W, y: top + Math.floor(i / cols) * NODE_H }
+    return { ...node, targetPosition: Position.Top, sourcePosition: Position.Bottom, position: pos }
   })
 
   return { nodes: newNodes, edges }
@@ -310,7 +308,7 @@ export function RelationshipGraph({
         </div>
       </div>
 
-      <div className="surface h-150 w-full overflow-hidden rounded-md border p-0 relative">
+      <div className="surface h-[min(600px,70vh)] w-full overflow-hidden rounded-md border p-0 relative">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -318,6 +316,8 @@ export function RelationshipGraph({
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           fitView
+          fitViewOptions={{ padding: 0.15, maxZoom: 1.2 }}
+          minZoom={0.4}
           colorMode={resolvedTheme === "dark" ? "dark" : "light"}
           proOptions={{ hideAttribution: true }}
           className="bg-background"
@@ -328,7 +328,9 @@ export function RelationshipGraph({
           zoomOnPinch={true}
         >
           <Controls />
-          <MiniMap 
+          {nodes.length > 40 && <MiniMap
+            className="hidden md:block"
+            position="top-right"
             zoomable 
             pannable 
             nodeColor={(n) => {
@@ -342,7 +344,7 @@ export function RelationshipGraph({
             }} 
             maskColor="color-mix(in oklab, var(--background) 60%, transparent)"
             style={{ backgroundColor: "var(--card)", border: "1px solid var(--border)" }}
-          />
+          />}
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} color="var(--border)" />
         </ReactFlow>
       </div>

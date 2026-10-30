@@ -51,13 +51,14 @@ export function FeedClient({
   const [tag, setTag] = useState<string | undefined>(undefined)
   const [sort, setSort] = useState<FeedSort>("newest")
   const [since, setSince] = useState<FeedSince>("any")
+  const [tagged, setTagged] = useState<"all" | "tagged" | "untagged">("all")
   const [results, setResults] = useState<Discover | null>(null)
   const [extra, setExtra] = useState<Piece[]>([])
   const [more, setMore] = useState<boolean | null>(null)
   const [page, setPage] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
 
-  const filtered = !!(debouncedQ || tag || sort !== "newest" || since !== "any")
+  const filtered = !!(debouncedQ || tag || sort !== "newest" || since !== "any" || tagged !== "all")
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 300)
@@ -68,13 +69,13 @@ export function FeedClient({
   useEffect(() => {
     if (!filtered) return
     let live = true
-    getDiscoverFeed({ data: { q: debouncedQ || undefined, tag, sort, since, page: 0 } }).then(
+    getDiscoverFeed({ data: { q: debouncedQ || undefined, tag, sort, since, tagged: tagged === "all" ? undefined : tagged, page: 0 } }).then(
       (r) => live && setResults(r as Discover)
     )
     return () => {
       live = false
     }
-  }, [filtered, debouncedQ, tag, sort, since])
+  }, [filtered, debouncedQ, tag, sort, since, tagged])
 
   // Changing a filter resets paging; results arrive from the effect above.
   const reset = () => {
@@ -96,7 +97,7 @@ export function FeedClient({
   async function loadMore() {
     setLoadingMore(true)
     try {
-      const d = (await getDiscoverFeed({ data: { q: debouncedQ || undefined, tag, sort, since, page: page + 1 } })) as Discover
+      const d = (await getDiscoverFeed({ data: { q: debouncedQ || undefined, tag, sort, since, tagged: tagged === "all" ? undefined : tagged, page: page + 1 } })) as Discover
       const seen = new Set(pieces.map((p) => p.id))
       setExtra([...extra, ...d.pieces.filter((p) => !seen.has(p.id))])
       setMore(d.hasMore ?? false)
@@ -113,6 +114,7 @@ export function FeedClient({
     setTag(undefined)
     setSort("newest")
     setSince("any")
+    setTagged("all")
   }
 
   const pickTag = change(setTag)
@@ -154,6 +156,7 @@ export function FeedClient({
           <SelectContent>
             <SelectItem value="newest">Newest first</SelectItem>
             <SelectItem value="oldest">Oldest first</SelectItem>
+            <SelectItem value="title">Title A–Z</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -163,16 +166,28 @@ export function FeedClient({
           <SelectTrigger id="feed-since" className="w-full"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="any">Any time</SelectItem>
+            <SelectItem value="today">Past 24 hours</SelectItem>
             <SelectItem value="week">Past week</SelectItem>
             <SelectItem value="month">Past month</SelectItem>
             <SelectItem value="year">Past year</SelectItem>
           </SelectContent>
         </Select>
       </div>
+      <div className="col-span-2 space-y-2">
+        <Label htmlFor="feed-tagged">Topics</Label>
+        <Select value={tagged} onValueChange={(v) => change(setTagged)(v as typeof tagged)}>
+          <SelectTrigger id="feed-tagged" className="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any</SelectItem>
+            <SelectItem value="tagged">Has topics</SelectItem>
+            <SelectItem value="untagged">No topics</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   )
 
-  const activeFilters = (sort !== "newest" ? 1 : 0) + (since !== "any" ? 1 : 0)
+  const activeFilters = (sort !== "newest" ? 1 : 0) + (since !== "any" ? 1 : 0) + (tagged !== "all" ? 1 : 0)
 
   return (
     <>

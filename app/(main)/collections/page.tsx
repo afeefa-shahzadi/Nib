@@ -7,12 +7,13 @@ import { CollectionRow } from "@/lib/types/content"
 
 const TYPE_LABEL: Record<string, string> = { list: "Reading list", course: "Course", playbook: "Playbook" }
 
-export default async function CollectionsPage() {
+export default async function CollectionsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const page = Math.max(0, Number((await searchParams).page) || 0)
   const {
     data: { user },
   } = await (await createClient()).auth.getUser()
-  const [rows, mine] = await Promise.all([
-    listPublicCollections().catch(() => []) as Promise<CollectionRow[]>,
+  const [{ rows, hasMore }, mine] = await Promise.all([
+    listPublicCollections(page).catch(() => ({ rows: [], hasMore: false })) as Promise<{ rows: CollectionRow[]; hasMore: boolean }>,
     user ? myCollections().catch(() => []) : Promise.resolve([]),
   ])
 
@@ -49,7 +50,7 @@ export default async function CollectionsPage() {
         </section>
       )}
 
-      {rows.length === 0 ? (
+      {rows.length === 0 && page === 0 ? (
         <div className="hairline-t hairline-b mt-12 py-12">
           <h2 className="font-display text-2xl">No public collections yet</h2>
           <p className="mt-2 max-w-[38rem] text-muted-foreground">
@@ -83,6 +84,22 @@ export default async function CollectionsPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {(page > 0 || hasMore) && (
+        <nav aria-label="Pages" className="mt-12 flex items-center justify-between gap-4">
+          {page > 0 ? (
+            <Button asChild variant="outline">
+              <Link href={page === 1 ? "/collections" : `/collections?page=${page - 1}`}>Previous</Link>
+            </Button>
+          ) : <span />}
+          <span className="text-sm text-muted-foreground">Page {page + 1}</span>
+          {hasMore ? (
+            <Button asChild variant="outline">
+              <Link href={`/collections?page=${page + 1}`}>Next</Link>
+            </Button>
+          ) : <span />}
+        </nav>
       )}
     </main>
   )

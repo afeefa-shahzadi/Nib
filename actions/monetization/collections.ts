@@ -246,8 +246,11 @@ export async function removeFromCollection(args: { data?: any } = {}) {
   })
 }
 
-export async function listPublicCollections() {
+const COLLECTIONS_PAGE_SIZE = 24
+
+export async function listPublicCollections(page = 0) {
   const supabaseAdmin = await createAdminClient()
+  const from = Math.min(50, Math.max(0, Math.floor(page) || 0)) * COLLECTIONS_PAGE_SIZE
 
   const __handler = async () => {
     const { data } = await supabaseAdmin
@@ -257,8 +260,11 @@ export async function listPublicCollections() {
       // publicly and then 404'd when opened.
       .eq("is_public", true)
       .order("created_at", { ascending: false })
-      .limit(50)
-    if (!data || data.length === 0) return []
+      // One extra row says whether a next page exists.
+      .range(from, from + COLLECTIONS_PAGE_SIZE)
+    if (!data || data.length === 0) return { rows: [], hasMore: false }
+    const hasMore = data.length > COLLECTIONS_PAGE_SIZE
+    data.length = Math.min(data.length, COLLECTIONS_PAGE_SIZE)
     const curatorIds = [
       ...new Set(data.map((c: { curator_id: string }) => c.curator_id)),
     ]
@@ -283,13 +289,14 @@ export async function listPublicCollections() {
     const counts = new Map<string, number>()
     for (const i of items ?? []) counts.set(i.collection_id, (counts.get(i.collection_id) ?? 0) + 1)
     // Empty lists are noise on a public index; curators still see them in Studio.
-    return data
+    const rows = data
       .map((c: { id: string; curator_id: string }) => ({
         ...c,
         curator: map.get(c.curator_id) ?? null,
         piece_count: counts.get(c.id) ?? 0,
       }))
       .filter((c) => c.piece_count > 0)
+    return { rows, hasMore }
   }
   return await __handler()
 }
