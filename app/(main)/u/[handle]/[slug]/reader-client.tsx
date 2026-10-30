@@ -636,10 +636,15 @@ export function ReaderClient({
 
             {/* One end-of-piece card: follow in the app, or get new pieces by email. */}
             {author && author.handle && viewerId !== piece.author_id && (
-              <section className="mt-16 rounded-lg border border-border p-6" aria-labelledby="more-from" data-no-hovercard>
-                <h2 id="more-from" className="font-display text-2xl">More from {author.display_name}</h2>
+              <section className="mt-16 rounded-lg border border-border p-6" aria-labelledby="more-from">
+                <h2 id="more-from" className="font-display text-2xl">
+                  More from{" "}
+                  <Link href={`/u/${author.handle}`} className="hover:text-primary hover:underline hover:underline-offset-4">
+                    {author.display_name}
+                  </Link>
+                </h2>
                 <p className="mt-2 text-muted-foreground">Follow to see new pieces in your feed, or get them by email.</p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
+                <div className="mt-4 flex flex-wrap items-center gap-3" data-no-hovercard>
                   <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" />
                   <Button asChild variant="outline">
                     <Link href={`/u/${author.handle}`}>See all pieces</Link>
