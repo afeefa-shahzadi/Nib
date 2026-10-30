@@ -13,16 +13,18 @@ import {
 
 // Shown across Studio while the creator is restricted. Self-fetches; renders
 // nothing when the account is clear, so it's safe to mount unconditionally.
-export function RestrictionBanner() {
-  const [r, setR] = useState<MyRestriction | null>(null)
+// `initial` comes from the studio layout (server); without it, self-fetch.
+export function RestrictionBanner({ initial }: { initial?: MyRestriction } = {}) {
+  const [r, setR] = useState<MyRestriction | null>(initial ?? null)
   const [reason, setReason] = useState("")
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
+    if (initial) return
     getMyRestriction()
       .then(setR)
       .catch(() => {})
-  }, [])
+  }, [initial])
 
   if (!r || !r.restricted) return null
 

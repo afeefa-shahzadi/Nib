@@ -7,15 +7,17 @@ import { Button } from "@/components/ui/button"
 import { supabase } from "@/lib/supabase/client"
 
 // Shown to signed-in 13–17-year-olds until a parent approves their account.
-export function ConsentBanner() {
-  const [pending, setPending] = useState(false)
+// `initialPending` comes from a server layout; without it, self-fetch.
+export function ConsentBanner({ initialPending }: { initialPending?: boolean } = {}) {
+  const [pending, setPending] = useState(initialPending ?? false)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
+    if (initialPending !== undefined) return
     // Guests skip the server round trip.
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) getMyConsentStatus().then((s) => setPending(s === "pending")).catch(() => {})
     })
-  }, [])
+  }, [initialPending])
   if (!pending) return null
   return (
     <div role="status" className="hairline-b bg-note/10">

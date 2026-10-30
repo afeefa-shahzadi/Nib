@@ -10,7 +10,6 @@ import { hasStudioAccess } from "@/lib/plan"
 import { getMyProfile } from "@/actions/content"
 import { unreadCount } from "@/actions/social"
 import { listMyOrgs } from "@/actions/orgs"
-import { tickReadingStreak } from "@/actions/monetization"
 import { supabase } from "@/lib/supabase/client"
 import Link from "next/link"
 import Image from "next/image"
@@ -149,12 +148,6 @@ export default function StudioLayoutClient({
       window.localStorage.removeItem("studio:active_org")
     }
   }, [activeOrgId])
-
-  // Auto-tick streak on every studio session open.
-  // The server action is idempotent: it skips if already ticked today.
-  useEffect(() => {
-    tickReadingStreak().catch(() => {})
-  }, [])
 
   const unreadFn = unreadCount
   const unreadQuery = useQuery({
