@@ -40,6 +40,7 @@ import { WaitlistButton } from "@/components/waitlist-button"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PasswordInput } from "@/components/auth/password-input"
 import { AvatarDialog } from "@/components/settings/avatar-dialog"
+import { LinksEditor } from "@/components/settings/links-editor"
 import { useMyPlan } from "@/hooks/use-my-plan"
 import { hasStudioAccess } from "@/lib/plan"
 import { AccessibilitySettings } from "@/components/accessibility-settings"
@@ -200,7 +201,7 @@ function useProfile() {
 }
 
 // ---------------- Profile ----------------
-type ProfileForm = { displayName: string; handle: string; bio: string; website: string; links: string; pinned: string }
+type ProfileForm = { displayName: string; handle: string; bio: string; website: string; links: string[]; pinned: string }
 
 function ProfileSection() {
   const q = useProfile()
@@ -212,7 +213,7 @@ function ProfileSection() {
       handle: q.data?.handle ?? "",
       bio: q.data?.bio ?? "",
       website: q.data?.website ?? "",
-      links: (q.data?.links ?? []).join("\n"),
+      links: q.data?.links ?? [],
       pinned: q.data?.pinned_piece_id ?? "none",
     }),
     [q.data]
@@ -230,7 +231,7 @@ function ProfileSection() {
       })
     })
   }, [q.data, fromServer])
-  const set = (k: keyof ProfileForm) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
+  const set = (k: Exclude<keyof ProfileForm, "links">) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
   const dirty = JSON.stringify(form) !== JSON.stringify(base)
 
   // Live handle check, debounced.
@@ -252,7 +253,7 @@ function ProfileSection() {
           handle: form.handle,
           bio: form.bio || null,
           website: form.website || null,
-          links: form.links.split("\n"),
+          links: form.links,
           pinned_piece_id: form.pinned === "none" ? null : form.pinned,
         },
       })
@@ -392,16 +393,16 @@ function ProfileSection() {
         </div>
 
         <div className="py-5">
-          <Label htmlFor="set-links">Other links</Label>
-          <Textarea id="set-links" className="mt-2" rows={3} placeholder={"x.com/you\nlinkedin.com/in/you"} value={form.links} onChange={(e) => set("links")(e.target.value)} />
-          <p className="mt-1 text-sm text-muted-foreground">One per line, up to 5. Shown on your profile.</p>
+          <p className="text-sm font-medium">Other links</p>
+          <LinksEditor value={form.links} onChange={(links) => setForm((f) => ({ ...f, links }))} />
+          <p className="mt-1 text-sm text-muted-foreground">Up to 5, shown on your profile. X, GitHub, LinkedIn, Instagram and YouTube get their icons.</p>
         </div>
 
         <div className="py-5">
           <Label htmlFor="set-dob">Date of birth</Label>
           <Input id="set-dob" className="mt-2 min-h-11 sm:max-w-xs" value={q.data?.date_of_birth || "Not provided"} disabled />
           <p className="mt-1 text-sm text-muted-foreground">
-            Not shown to anyone. To correct it, <Link href="/contact" className="underline underline-offset-2">contact support</Link>.
+            To correct it, <Link href="/contact" className="underline underline-offset-2">contact support</Link>.
           </p>
         </div>
       </Section>
@@ -928,7 +929,7 @@ function PlanSection() {
 }
 
 // ---------------- Privacy and data ----------------
-function ProfileSwitch({ field, title, help }: { field: "show_claps" | "hide_from_leaderboard"; title: string; help: string }) {
+function ProfileSwitch({ field, title, help }: { field: "show_claps" | "show_birthday" | "hide_from_leaderboard"; title: string; help: string }) {
   const q = useProfile()
   const [local, setLocal] = useState<boolean | null>(null)
   const on = local ?? Boolean((q.data as Record<string, unknown> | null | undefined)?.[field])
@@ -970,7 +971,12 @@ function DataSection() {
       <ProfileSwitch
         field="show_claps"
         title="Show pieces I clapped"
-        help="Adds a Clapped tab to your public profile."
+        help="Off by default. Turn on to add a Clapped tab to your public profile."
+      />
+      <ProfileSwitch
+        field="show_birthday"
+        title="Show my birthday on my profile"
+        help="Day and month only. Your age and birth year stay private."
       />
       <ProfileSwitch
         field="hide_from_leaderboard"

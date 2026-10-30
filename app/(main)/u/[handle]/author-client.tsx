@@ -14,22 +14,15 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEffect, useMemo, useState } from "react"
-import { Crown, Globe, Link2, Rss, Search, Share, X } from "lucide-react"
+import { Crown, Globe, Rss, Search, Share, X } from "lucide-react"
 import Link from "next/link"
 import { Piece, TierItem } from "@/lib/types/content"
 import { toast } from "sonner"
 import { cn, formatCompactNumber } from "@/lib/utils"
 import { flairClass } from "@/lib/flair"
 import { linkLabel } from "@/lib/profile-links"
-import { GithubIcon, InstagramIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "@/components/brand/social-icons"
+import { LinkIcon } from "@/components/brand/link-icon"
 
-const BRAND_ICONS: Record<string, typeof GithubIcon> = {
-  X: TwitterIcon,
-  GitHub: GithubIcon,
-  LinkedIn: LinkedinIcon,
-  Instagram: InstagramIcon,
-  YouTube: YoutubeIcon,
-}
 
 type Graph = {
   pieces: Array<{ id: string; title: string; slug: string }>
@@ -72,6 +65,7 @@ export default function AuthorClient({
     website?: string | null
     links?: string[] | null
     pinned_piece_id?: string | null
+    birthday?: string | null
   }
   pieces: Piece[]
   tiers: TierItem[]
@@ -178,6 +172,7 @@ export default function AuthorClient({
         <p className="mt-2 text-muted-foreground">
           @{author.handle}
           {joined && <> · Joined {joined}</>}
+          {author.birthday && <> · Birthday {author.birthday}</>}
         </p>
         {author.bio && <p className="mt-4 text-lg leading-relaxed text-foreground/85">{author.bio}</p>}
 
@@ -201,8 +196,7 @@ export default function AuthorClient({
                 >
                   {(() => {
                     if (i === 0 && author.website) return <Globe className="size-4" aria-hidden />
-                    const Icon = BRAND_ICONS[linkLabel(url!)] ?? Link2
-                    return <Icon className="size-4" aria-hidden />
+                    return <LinkIcon url={url!} />
                   })()}
                   {i === 0 && author.website ? new URL(url!).hostname.replace(/^www\./, "") : linkLabel(url!)}
                 </a>

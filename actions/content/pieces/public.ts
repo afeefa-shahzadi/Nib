@@ -229,7 +229,7 @@ export async function getAuthorByHandle(args: { data?: any } = {}) {
   const __handler = async ({ data }: { data: { handle: string } }) => {
     const { data: author, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, handle, display_name, bio, avatar_url, flair, created_at, website, links, pinned_piece_id")
+      .select("id, handle, display_name, bio, avatar_url, flair, created_at, website, links, pinned_piece_id, date_of_birth, show_birthday")
       .eq("handle", data.handle)
       .maybeSingle()
     if (error) {
@@ -237,6 +237,12 @@ export async function getAuthorByHandle(args: { data?: any } = {}) {
       throw new Error("Request failed. Please try again.")
     }
     if (!author) return null
+    // Birthday is opt-in and shows day and month only; the full date never leaves the server.
+    const { date_of_birth, show_birthday, ...publicAuthor } = author as typeof author & { date_of_birth: string | null; show_birthday: boolean }
+    const birthday =
+      show_birthday && date_of_birth
+        ? new Date(date_of_birth).toLocaleDateString("en-IN", { day: "numeric", month: "long", timeZone: "UTC" })
+        : null
     const { data: pieces } = await excludeNsfw(
       supabaseAdmin
         .from("content_objects")
@@ -256,7 +262,7 @@ export async function getAuthorByHandle(args: { data?: any } = {}) {
       supabaseAdmin.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", author.id),
     ])
     return {
-      author,
+      author: { ...publicAuthor, birthday },
       pieces: pieces ?? [],
       tiers: tiers ?? [],
       followers: followers ?? 0,

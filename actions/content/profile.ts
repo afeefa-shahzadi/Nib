@@ -98,6 +98,7 @@ export async function updateMyProfile(args: { data?: any } = {}) {
       byok_model?: string
       nsfw_enabled?: boolean
       show_claps?: boolean
+      show_birthday?: boolean
       hide_from_leaderboard?: boolean
       disability_visual?: boolean
       disability_cognitive?: boolean
@@ -147,6 +148,7 @@ export async function updateMyProfile(args: { data?: any } = {}) {
       "byok_model",
       "nsfw_enabled",
       "show_claps",
+      "show_birthday",
       "hide_from_leaderboard",
       "disability_visual",
       "disability_cognitive",
