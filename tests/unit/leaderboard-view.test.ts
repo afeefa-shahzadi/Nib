@@ -20,6 +20,11 @@ test("search keeps real ranks and hides the podium", () => {
   assert.equal(v.podium.length, 0)
 })
 
+test("search also matches the author's name on piece rows", () => {
+  const v = rankView([{ userId: "p1", displayName: "Charts", handle: "nib", authorName: "Nib Team", score: 1 }], { key: "score", q: "team" })
+  assert.equal(v.matches, 1)
+})
+
 test("sorting by another column keeps ranks", () => {
   const v = rankView(rows, { key: "score", sort: "claps" })
   assert.equal(v.rows[0].userId, "u0")

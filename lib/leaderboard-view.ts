@@ -2,7 +2,7 @@
 // Ranks come from the score alone, so searching or sorting never renumbers people.
 export const LB_PAGE_SIZE = 25
 
-type Row = { userId: string; displayName: string; handle: string | null }
+type Row = { userId: string; displayName: string; handle: string | null; authorName?: string }
 
 export function rankView<T extends Row>(
   rows: T[],
@@ -15,7 +15,7 @@ export function rankView<T extends Row>(
 
   const q = (opts.q ?? "").trim().toLowerCase()
   let list = q
-    ? ranked.filter((r) => r.displayName.toLowerCase().includes(q) || (r.handle ?? "").toLowerCase().includes(q))
+    ? ranked.filter((r) => [r.displayName, r.handle, r.authorName].some((s) => (s ?? "").toLowerCase().includes(q)))
     : ranked
   const sort = opts.sort && opts.sort !== opts.key ? opts.sort : null
   const dir = opts.dir ?? "desc"

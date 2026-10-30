@@ -271,12 +271,14 @@ export async function pieceLeaderboard(args: { data?: any } = {}) {
   const start = rangeStart(timeframe)
   const since = (q: any, col: string) => (start ? q.gte(col, start) : q)
 
-  const [{ data: pieces }, { data: cl }, { data: rs }, { data: hl }, { data: sv }] = await Promise.all([
+  const [{ data: pieces }, { data: cl }, { data: rs }, { data: hl }, { data: sv }, { data: fr }] = await Promise.all([
     supabaseAdmin.from("content_objects").select("id, title, slug, author_id").eq("status", "published").eq("visibility", "public"),
     since(supabaseAdmin.from("piece_claps").select("piece_id, count"), "updated_at"),
     since(supabaseAdmin.from("piece_responses").select("piece_id, user_id"), "created_at"),
     since(supabaseAdmin.from("reader_highlights").select("piece_id, user_id"), "created_at"),
     since(supabaseAdmin.from("collection_items").select("content_object_id, collections(curator_id)"), "created_at"),
+    // A full read: scrolled to the end after enough time to read it (see use-telemetry).
+    since(supabaseAdmin.from("telemetry_events").select("piece_id, session").eq("event", "full_read"), "created_at"),
   ])
   // Authors' own responses, highlights and saves don't count (claps on your own piece are refused already).
   const authorOf = new Map((pieces ?? []).map((p: any) => [p.id as string, p.author_id as string]))
@@ -289,8 +291,18 @@ export async function pieceLeaderboard(args: { data?: any } = {}) {
   const responses = tally(rs, "piece_id", (r) => r.user_id)
   const highlights = tally(hl, "piece_id", (r) => r.user_id)
   const saves = tally(sv, "content_object_id", (r) => r.collections?.curator_id)
+  // One read per browser session per piece, so re-reading or refreshing doesn't add up.
+  // ponytail: telemetry rows have no viewer id, so an author reading their own piece still counts once.
+  const reads = new Map<string, number>()
+  const seen = new Set<string>()
+  for (const r of (fr ?? []) as any[]) {
+    const k = `${r.piece_id}|${r.session}`
+    if (r.session && seen.has(k)) continue
+    seen.add(k)
+    reads.set(r.piece_id, (reads.get(r.piece_id) ?? 0) + 1)
+  }
 
-  const live = (pieces ?? []).filter((p: any) => claps.has(p.id) || responses.has(p.id) || highlights.has(p.id) || saves.has(p.id))
+  const live = (pieces ?? []).filter((p: any) => reads.has(p.id) || claps.has(p.id) || responses.has(p.id) || highlights.has(p.id) || saves.has(p.id))
   const profiles = await loadProfiles(supabaseAdmin, [...new Set(live.map((p: any) => p.author_id as string))])
   const rows = live.map((p: any) => {
     const a = profiles.get(p.author_id)
@@ -305,11 +317,12 @@ export async function pieceLeaderboard(args: { data?: any } = {}) {
       handle: a?.handle ?? null,
       authorName: a?.display_name ?? "Anonymous",
       avatarUrl: a?.avatar_url ?? null,
+      reads: reads.get(p.id) ?? 0,
       claps: c,
       responses: r,
       highlights: h,
       saves: s,
-      engagementScore: c + r * 3 + h * 2 + s * 2,
+      engagementScore: (reads.get(p.id) ?? 0) + c + r * 3 + h * 2 + s * 2,
     }
   })
   rows.sort((a, b) => b.engagementScore - a.engagementScore)

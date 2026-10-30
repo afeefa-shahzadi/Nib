@@ -822,7 +822,7 @@ To save a single piece, click **Save** on it and choose **My Saved (private)**, 
 
 ## The leaderboard
 
-The [leaderboard](/leaderboard) shows who's writing and reading the most, and which pieces readers engage with most. Switch between **Writers**, **Readers** and **Pieces**, choose what to rank by (for pieces: engagement, claps, most discussed or most saved), and pick this week, this month or all time.
+The [leaderboard](/leaderboard) shows who's writing and reading the most, and which pieces readers engage with most. Switch between **Writers**, **Readers** and **Pieces**, choose what to rank by (for pieces: engagement, most read, claps, most discussed or most saved), and pick this week, this month or all time.
 
 ![The leaderboard](leaderboard.png) The leaderboard.
 

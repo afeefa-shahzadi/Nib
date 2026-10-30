@@ -54,8 +54,17 @@ const BOARDS: Record<Who, Record<string, Board>> = {
       key: "engagementScore",
       unit: "score",
       cols: [
+        { key: "reads", label: "Reads" },
         { key: "claps", label: "Claps" },
         { key: "responses", label: "Responses" },
+      ],
+    },
+    reads: {
+      label: "Most read",
+      key: "reads",
+      unit: "reads",
+      cols: [
+        { key: "claps", label: "Claps" },
         { key: "saves", label: "Saves" },
       ],
     },
@@ -128,7 +137,8 @@ const HOW: Record<Who, string[]> = {
     "Earnings: tips and sales after Nib's fee. Shown once paid features open.",
   ],
   pieces: [
-    "Engagement: 1 per clap, 3 per response, 2 per highlight and 2 per save.",
+    "Engagement: 1 per read, 1 per clap, 3 per response, 2 per highlight and 2 per save.",
+    "A read counts when someone reaches the end after spending enough time to read it, once per visit.",
     "Only published, public pieces are ranked. The period counts what readers did in it, so an older piece can climb this week.",
   ],
   readers: [
