@@ -13,5 +13,5 @@ export const MODE_HINT: Record<ReadingMode, string> = {
   standard: "Default reading flow",
   expert: "Evidence + citations inline",
   teach: "Scaffolded for learners",
-  debate: "Contested claims surfaced",
+  debate: "Strongest objections, answered",
 }

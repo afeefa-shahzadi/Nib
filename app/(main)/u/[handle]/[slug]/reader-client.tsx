@@ -69,6 +69,8 @@ import {
   DebateRoomItem,
 } from "@/lib/types/content"
 import { MODES, MODE_HINT } from "@/lib/content/reader/data"
+import { MODE_LABEL } from "@/lib/types/composer"
+import { ExplainSimply } from "@/components/reader/explain-simply"
 import { availableModes } from "@/lib/reader-variants"
 import { ReaderHeader } from "./components/reader-header"
 import { ReaderAside } from "./components/reader-aside"
@@ -144,7 +146,12 @@ export function ReaderClient({
   }
   const [showFollowDialog, setShowFollowDialog] = useState(false)
   // Only offer modes that actually change this piece; an unavailable requested mode reads as Standard.
-  const modes = useMemo(() => availableModes(blocks as Block[], MODES), [blocks])
+  // Teach is always offered: even without authored Teach variants it carries
+  // the "Explain simply" beginner step.
+  const modes = useMemo(() => {
+    const m = availableModes(blocks as Block[], MODES)
+    return m.includes("teach") ? m : MODES.filter((x) => m.includes(x) || x === "teach")
+  }, [blocks])
   const requestedMode = searchParams?.get("mode") as ReadingMode | null
   const mode: ReadingMode = requestedMode && modes.includes(requestedMode) ? requestedMode : "standard"
   const [authed, setAuthed] = useState(false)
@@ -504,7 +511,7 @@ export function ReaderClient({
                       aria-label={`Reading mode: ${mode}`}
                       className="h-11 px-3"
                     >
-                      {mode[0].toUpperCase() + mode.slice(1)} mode
+                      {MODE_LABEL[mode]} mode
                       <ChevronDown />
                     </Button>
                   </DropdownMenuTrigger>
@@ -515,7 +522,7 @@ export function ReaderClient({
                     >
                       {modes.map((m) => (
                         <DropdownMenuRadioItem key={m} value={m} className="min-h-11 flex-col items-start justify-center gap-0 [&>span:first-child]:top-1/2 [&>span:first-child]:-translate-y-1/2">
-                          <span className="capitalize">{m}</span>
+                          <span>{MODE_LABEL[m]}</span>
                           <span className="text-xs text-muted-foreground">{MODE_HINT[m]}</span>
                         </DropdownMenuRadioItem>
                       ))}
@@ -539,7 +546,7 @@ export function ReaderClient({
                     title={`${MODE_HINT[m]} (press ${modes.indexOf(m) + 1})`}
                     className="h-11 shrink-0 px-2.5 text-sm text-muted-foreground capitalize data-[state=on]:bg-primary data-[state=on]:text-primary-foreground lg:h-9"
                   >
-                    {m}
+                    {MODE_LABEL[m]}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
@@ -587,6 +594,7 @@ export function ReaderClient({
           </Sheet>
 
           <div className="mt-8 relative">
+            {mode === "teach" && <ExplainSimply authed={authed} blocks={listenBlocks} articleRef={articleRef} />}
             {launchFree && bodyBlocks.some((b: any) => b.monetization_eligible) && (
               <Badge variant="secondary" className="mb-4">Free during launch</Badge>
             )}
@@ -658,8 +666,21 @@ export function ReaderClient({
 
             {boosts.length > 0 && <PlatformBoostAd boosts={boosts} />}
 
+          {mode === "debate" && (rooms.length > 0 || viewerId === piece.author_id) && (
+            <div className="surface mt-12 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 p-4">
+              <p className="text-sm text-muted-foreground">
+                {rooms.length > 0 ? "Think a counterpoint missed something? Argue it with other readers." : "Let readers argue these counterpoints with each other."}
+              </p>
+              {rooms.length > 0 ? (
+                <a href="#live-debates" className="text-sm font-medium text-primary hover:underline">Argue it live</a>
+              ) : (
+                <Link href="/studio/debates" className="text-sm font-medium text-primary hover:underline">Open a debate room</Link>
+              )}
+            </div>
+          )}
+
           {rooms.length > 0 && (
-            <div className="mt-12 space-y-6">
+            <div id="live-debates" className="mt-12 scroll-mt-24 space-y-6">
               <h2 className="font-display text-2xl text-foreground">
                 Live debates
               </h2>

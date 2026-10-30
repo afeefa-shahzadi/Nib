@@ -5,7 +5,7 @@ export const MODE_LINES = [
   { name: "Standard", line: "The piece as written." },
   { name: "Expert", line: "Sources, detail and footnotes." },
   { name: "Teach", line: "Examples and questions added." },
-  { name: "Debate", line: "The claim and its best objection." },
+  { name: "Counterpoints", line: "The claim and its best objection." },
 ]
 
 // anchor = section id on /product.
@@ -96,7 +96,7 @@ export const EXCERPT = {
     "Writers decide which blocks appear in which mode.",
   ],
   expertHtml:
-    "Every piece can be read in Skim, Standard, Expert, Teach or Debate mode. Writers decide which blocks appear in which mode, and can write a separate version of a block for a mode.<sup>[1]</sup> Thesis, Evidence, Counter and Footnote are block types, not formatting.<sup>[2]</sup>",
+    "Every piece can be read in Skim, Standard, Expert, Teach or Counterpoints mode. Writers decide which blocks appear in which mode, and can write a separate version of a block for a mode.<sup>[1]</sup> Thesis, Evidence, Counter and Footnote are block types, not formatting.<sup>[2]</sup>",
   notes: [
     { title: "The complete composer guide", href: "/u/nib/composer-guide" },
     { title: "Getting started on Nib", href: "/u/nib/getting-started" },

@@ -659,10 +659,9 @@ test("blog screenshots", async ({ browser }) => {
     await page.keyboard.press("Escape")
   })
   await step(page, "accessibility/eli5", async () => {
-    await page.goto(post)
-    await readerMore()
-    await page.getByRole("menuitem", { name: /ELI5/ }).click()
-    await page.getByText(/Synthesizing/).waitFor({ state: "hidden", timeout: 60000 }).catch(() => {})
+    await page.goto(`${post}?mode=teach`)
+    await page.getByRole("button", { name: /Explain simply/ }).click()
+    await page.getByText(/Writing a simple explanation/).waitFor({ state: "hidden", timeout: 60000 }).catch(() => {})
     await page.waitForTimeout(500)
     await shot(page, "accessibility/eli5")
   })

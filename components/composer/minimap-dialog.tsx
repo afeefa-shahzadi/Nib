@@ -183,7 +183,7 @@ function MinimapLegend() {
     { mode: "standard", label: "Standard", color: "var(--primary)" },
     { mode: "expert", label: "Expert", color: "var(--success)" },
     { mode: "teach", label: "Teach", color: "var(--info)" },
-    { mode: "debate", label: "Debate", color: "var(--destructive)" },
+    { mode: "debate", label: "Counterpoints", color: "var(--destructive)" },
   ]
 
   return (

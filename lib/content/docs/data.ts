@@ -23,7 +23,7 @@ export const MODES: { id: ModeId; name: string; hint: string }[] = [
   { id: "standard", name: "Standard", hint: "Default reading flow." },
   { id: "expert", name: "Expert", hint: "Evidence + citations inline." },
   { id: "teach", name: "Teach", hint: "Scaffolded for learners." },
-  { id: "debate", name: "Debate", hint: "Contested claims surfaced." },
+  { id: "debate", name: "Counterpoints", hint: "The strongest objection to each claim, and the answer." },
 ]
 
 export const DEMO_PIECE: DemoBlock[] = [

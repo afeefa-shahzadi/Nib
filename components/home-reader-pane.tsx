@@ -13,7 +13,7 @@ const LABEL: Record<Mode, string> = {
   standard: "Standard",
   expert: "Expert",
   teach: "Teach",
-  debate: "Debate",
+  debate: "Counterpoints",
 }
 const html = (h: string, extra: Partial<Block> = {}): Block => ({
   type: "paragraph",

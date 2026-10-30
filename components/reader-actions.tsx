@@ -12,7 +12,6 @@ import {
   Share2,
   Square,
   MessageCircle,
-  BrainCircuit,
   Flag,
   ListTree,
   MoreHorizontal,
@@ -54,8 +53,6 @@ import {
 } from "@/actions/content"
 import { Input } from "@/components/ui/input"
 import { createCollection, consumeListeningCredit } from "@/actions/monetization"
-import { canUseAISummary } from "@/actions/accessibility"
-import { generateModeVariant } from "@/actions/ai"
 import { ReportButton } from "./report-button"
 import { CommentsSheet } from "./comments-sheet"
 import { ClapButton } from "./clap-button"
@@ -104,7 +101,7 @@ const TONE: Record<string, { rate: number; pitch: number; pause: number }> = {
 }
 
 // ... TONE and textOf ...
-function textOf(c: Record<string, unknown> | undefined): string {
+export function textOf(c: Record<string, unknown> | undefined): string {
   if (!c) return ""
   if (typeof c.text === "string") return c.text
   if (typeof c.html === "string")
@@ -149,10 +146,6 @@ export function ReaderActions({
   const [note, setNote] = useState("")
   const [busy, setBusy] = useState(false)
 
-  // ELI5 Summary
-  const [eli5Open, setEli5Open] = useState(false)
-  const [eli5Loading, setEli5Loading] = useState(false)
-  const [eli5Result, setEli5Result] = useState("")
 
   // TTS
   const [speaking, setSpeaking] = useState(false)
@@ -407,51 +400,6 @@ export function ReaderActions({
     }
   }
 
-  const doEli5 = async () => {
-    if (!requireAuth()) return
-    setEli5Open(true)
-    if (eli5Result) return // already generated
-
-    setEli5Loading(true)
-    try {
-      const allowed = await canUseAISummary()
-      if (!allowed) {
-        toast.error("AI summaries need a Studio plan or accessibility access.")
-        setEli5Open(false)
-        return
-      }
-
-      let fullText = ""
-      if (blocks && blocks.length) {
-        fullText = blocks.map(b => textOf(b.content)).join(" ").trim()
-      } else if (articleRef.current) {
-        fullText = articleRef.current.innerText
-      }
-
-      if (!fullText) {
-        toast.error("No content found to summarize.")
-        setEli5Open(false)
-        return
-      }
-
-      // Limit text length to prevent massive token usage
-      const sourceText = fullText.slice(0, 15000)
-
-      const res = await generateModeVariant({
-        data: {
-          mode: "eli5",
-          source: sourceText
-        }
-      })
-      setEli5Result(res.text)
-    } catch (e) {
-      toast.error((e as Error).message)
-      setEli5Open(false)
-    } finally {
-      setEli5Loading(false)
-    }
-  }
-
   return (
     <>
       <div className="flex shrink-0 items-center sm:gap-1">
@@ -499,9 +447,6 @@ export function ReaderActions({
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => setCommentsOpen(true)} className={ITEM}>
               <MessageCircle /> Responses
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={doEli5} className={ITEM}>
-              <BrainCircuit /> ELI5 summary
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={openRepost} className={ITEM}>
               <Repeat2 /> Repost
@@ -664,28 +609,6 @@ export function ReaderActions({
             <Button onClick={doRepost} disabled={busy}>
               {busy ? "Reposting…" : "Repost as draft"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ELI5 Dialog */}
-      <Dialog open={eli5Open} onOpenChange={setEli5Open}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Explain Like I&apos;m 5</DialogTitle>
-            <DialogDescription>
-              A simple, jargon-free summary of this piece.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="p-4 bg-muted/30 rounded-md border text-sm leading-relaxed">
-            {eli5Loading ? (
-              <span className="animate-pulse">Synthesizing...</span>
-            ) : (
-              eli5Result || "No summary available."
-            )}
-          </div>
-          <DialogFooter>
-            <Button onClick={() => setEli5Open(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

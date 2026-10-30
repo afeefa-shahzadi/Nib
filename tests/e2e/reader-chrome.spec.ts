@@ -8,7 +8,7 @@ const PIECE = "/u/creator_demo/the-shape-of-attention"
 // Mode switcher only renders when a piece has per-mode content (Task 27); creator_demo has none.
 const MODE_PIECE = "/u/nib/welcome"
 const SHOTS = ".superpowers/sdd/2026-10-28-free-launch/shots/task-18"
-const MORE_ITEMS = [/^Listen$/, /Listen settings/, /Responses/, /ELI5/, /Repost/, /Report/]
+const MORE_ITEMS = [/^Listen$/, /Listen settings/, /Responses/, /Repost/, /Report/]
 
 // Keep the subscribe modal out of layout tests: mark it as already shown this session.
 async function suppressSubscribeModal(page: Page) {
@@ -45,7 +45,7 @@ for (const [w, h] of [
     await expect(bar(page).getByRole("button", { name: "Save", exact: true })).toBeVisible()
     await expect(bar(page).getByRole("button", { name: /^Share/ })).toBeVisible()
     await expect(bar(page).getByRole("button", { name: "More actions" })).toBeVisible()
-    for (const hidden of [/Listen to this piece/, /^Responses$/, /Explain Like/, /^Repost$/, /^Report this piece$/]) {
+    for (const hidden of [/Listen to this piece/, /^Responses$/, /^Repost$/, /^Report this piece$/]) {
       await expect(bar(page).getByRole("button", { name: hidden })).toHaveCount(0)
     }
     if (w < 768) {
@@ -161,7 +161,7 @@ test("at 375px the mode menu picks a mode", async ({ page }) => {
   await expect(menu.getByRole("menuitemradio", { name: /standard/i })).toHaveAttribute("aria-checked", "true")
   await page.waitForTimeout(300)
   await page.screenshot({ path: `${SHOTS}/reader-375x812-dark-mode-menu.png` })
-  await menu.getByRole("menuitemradio", { name: /debate/i }).click()
+  await menu.getByRole("menuitemradio", { name: /counterpoints/i }).click()
   await page.waitForURL(/mode=debate/)
   await expect(bar(page).getByRole("button", { name: "Reading mode: debate" })).toBeVisible()
 })

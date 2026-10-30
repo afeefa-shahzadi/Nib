@@ -19,7 +19,7 @@ export const MODE_LABEL: Record<ReadingMode, string> = {
   standard: "Standard",
   expert: "Expert",
   teach: "Teach",
-  debate: "Debate",
+  debate: "Counterpoints",
 }
 
 // Persisted block types (matches DB enum)

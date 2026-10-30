@@ -211,7 +211,7 @@ That idea, one piece and several ways in, shapes most of what you'll find here.
 
 ## What's different
 
-- **Reading modes.** A piece can be read in Skim, Standard, Expert, Teach or Debate mode. Writers decide which blocks appear in which mode, and can write a separate version of a block for a mode; readers only see the modes a piece actually uses.
+- **Reading modes.** A piece can be read in Skim, Standard, Expert, Teach or Counterpoints mode. Writers decide which blocks appear in which mode, and can write a separate version of a block for a mode; readers only see the modes a piece actually uses.
 - **Arguments as structure.** Thesis, Evidence, Counter and Footnote are block types, not formatting. Readers can see the shape of an argument at a glance.
 - **Conversation attached to the work.** Inline comments, highlights, annotations and debate rooms all live on the piece itself.
 - **Runnable and interactive content.** Code blocks can run in a sandbox, charts are real charts, exercises check answers, and flowcharts are interactive.
@@ -578,7 +578,7 @@ There are five reading modes. Readers see a mode only if your piece gives it som
 - **Standard**: the full piece. This is the default.
 - **Expert**: precise detail and evidence.
 - **Teach**: scaffolded for learners.
-- **Debate**: contested claims brought forward.
+- **Counterpoints**: the strongest objection to each claim, and the answer.
 
 You decide what each mode shows, in two ways.
 
@@ -779,7 +779,7 @@ On Discover you can search, and filter by date (past day, week, month or year), 
 
 ## Reading a piece
 
-When the author has written mode-specific content for a piece, a **Mode** switcher appears above the text, offering only the modes that change something. **Skim** keeps the key claims, **Standard** is the whole piece, **Expert** adds precise detail, **Teach** adds plainer explanations and questions, and **Debate** brings forward counter-arguments and trade-offs. A piece without mode content has no switcher. Number keys **1**, **2** and so on pick the modes in the order shown. The address bar updates, so a link you share opens in the same mode.
+When the author has written mode-specific content for a piece, a **Mode** switcher appears above the text, offering only the modes that change something. **Skim** keeps the key claims, **Standard** is the whole piece, **Expert** adds precise detail, **Teach** adds plainer explanations and questions, and **Counterpoints** brings forward counter-arguments and trade-offs, with a link to the piece's debate room. **Teach** is always offered, because it includes **Explain simply**. Number keys **1**, **2** and so on pick the modes in the order shown. The address bar updates, so a link you share opens in the same mode.
 
 ![Reading modes](reader-modes.png) The mode switcher on a piece.
 
@@ -787,7 +787,6 @@ The sidebar has the table of contents ("On this page"), the author, branches and
 
 - **Listen** and **Listen settings**: have the piece read aloud (see [Accessibility](/u/${HANDLE}/accessibility)).
 - **Responses**: comments on the piece.
-- **ELI5 summary**: a short, simple AI summary.
 - **Repost**: share it to your own profile, with a note.
 - **Report**: flag a problem to the moderators.
 
@@ -978,9 +977,9 @@ Listen uses the voices built into your device and browser, so the voices you get
 
 ![Listen settings](listen-menu.png) Choosing a voice and speed.
 
-## Simple summaries (ELI5)
+## Simple explanations
 
-**ELI5** ("explain like I'm five") on a piece asks AI for a short, plain-language summary. It's useful for dense or technical writing, or for checking you've understood the main point.
+In **Teach** mode, **Explain simply** asks AI for a short, plain-language explanation of the whole piece. It's useful for dense or technical writing, or for checking you've understood the main point.
 
 ## Reading modes
 
