@@ -25,6 +25,9 @@ export const cachedCollectionsByCurator = unstable_cache((id: string) => listCol
 // Per-request dedupe (viewer-dependent, so not cross-request): the reader's
 // layout metadata and page both load the same piece.
 export const pieceBySlug = cache((slug: string) => getPieceBySlug({ data: { slug } }))
-export const cachedAuthorLeaderboard = unstable_cache((timeframe: Timeframe) => authorLeaderboard({ data: { timeframe } }), ["lb-author"], opts)
-export const cachedPieceLeaderboard = unstable_cache((timeframe: Timeframe) => pieceLeaderboard({ data: { timeframe } }), ["lb-piece"], opts)
-export const cachedReaderLeaderboard = unstable_cache((timeframe: Timeframe) => readerLeaderboard({ data: { timeframe } }), ["lb-reader"], opts)
+// Each board run sums whole tables (leaderboard_*_totals); 5 minutes is fresh enough for ranks.
+// ponytail: still one full aggregate per board every 5 min; move to a cron-refreshed snapshot table as tables grow.
+const lbOpts = { revalidate: 300, tags: ["public"] }
+export const cachedAuthorLeaderboard = unstable_cache((timeframe: Timeframe) => authorLeaderboard({ data: { timeframe } }), ["lb-author"], lbOpts)
+export const cachedPieceLeaderboard = unstable_cache((timeframe: Timeframe) => pieceLeaderboard({ data: { timeframe } }), ["lb-piece"], lbOpts)
+export const cachedReaderLeaderboard = unstable_cache((timeframe: Timeframe) => readerLeaderboard({ data: { timeframe } }), ["lb-reader"], lbOpts)

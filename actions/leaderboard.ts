@@ -3,7 +3,6 @@
 import { createAdminClient } from "@/lib/supabase/server"
 import { SupabaseClient } from "@supabase/supabase-js"
 import { utcMonthStart } from "@/lib/streak"
-import { unstable_cache } from "next/cache"
 
 type ProfileLite = {
   id: string
@@ -36,22 +35,11 @@ async function loadProfiles(
 }
 
 // Totals are summed in Postgres (see the leaderboard_*_totals functions); one jsonb value per board.
-// Each run aggregates whole tables, so share one result per board and
-// timeframe for 5 minutes: the cached pages and every viewer's
-// myLeaderboardRank read the same copy instead of re-summing.
-// ponytail: still a full aggregate every 5 min, and the data cache drops entries over 2MB (~15k
-// active users); move to a cron-refreshed snapshot table that stores only the top 500 before then.
-const totalsCached = unstable_cache(
-  async (fn: string, timeframe: Timeframe): Promise<any[]> => {
-    const supabaseAdmin = await createAdminClient()
-    const { data, error } = await supabaseAdmin.rpc(fn, { p_start: rangeStart(timeframe) })
-    if (error) throw new Error(error.message)
-    return (data ?? []) as any[]
-  },
-  ["leaderboard-totals"],
-  { revalidate: 300 }
-)
-const totals = (_db: SupabaseClient, fn: string, timeframe: Timeframe) => totalsCached(fn, timeframe)
+async function totals(supabaseAdmin: SupabaseClient, fn: string, start: string | null): Promise<any[]> {
+  const { data, error } = await supabaseAdmin.rpc(fn, { p_start: start })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as any[]
+}
 
 // Names and avatars only for the rows that are shown.
 async function withProfiles<T extends { userId: string }>(supabaseAdmin: SupabaseClient, rows: T[]): Promise<T[]> {
@@ -80,10 +68,11 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
   }: {
     data: { timeframe: Timeframe }
   }) => {
+    const start = rangeStart(data.timeframe)
 
     // Readers who left the board in Settings > Privacy.
     const [t, { data: hidden }] = await Promise.all([
-      totals(supabaseAdmin, "leaderboard_reader_totals", data.timeframe),
+      totals(supabaseAdmin, "leaderboard_reader_totals", start),
       supabaseAdmin.from("profiles").select("id").eq("hide_from_leaderboard", true),
     ])
     const out = new Set((hidden ?? []).map((h: { id: string }) => h.id))
@@ -133,8 +122,9 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
   }: {
     data: { timeframe: Timeframe }
   }) => {
+    const start = rangeStart(data.timeframe)
 
-    const t = await totals(supabaseAdmin, "leaderboard_author_totals", data.timeframe)
+    const t = await totals(supabaseAdmin, "leaderboard_author_totals", start)
     const rows = t.map((x) => {
       const [followers, published, claps, tips] = [x.followers, x.published, x.claps, x.tips].map(Number)
       const earnings = Number(x.ledger) + tips
@@ -170,7 +160,8 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
 export async function pieceLeaderboard(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
   const timeframe: Timeframe = args?.data?.timeframe ?? "all"
-  const live = await totals(supabaseAdmin, "leaderboard_piece_totals", timeframe)
+  const start = rangeStart(timeframe)
+  const live = await totals(supabaseAdmin, "leaderboard_piece_totals", start)
   const score = (p: any) => Number(p.reads) + Number(p.claps) + Number(p.responses) * 3 + Number(p.highlights) * 2 + Number(p.saves) * 2
   const shown = live.sort((a, b) => score(b) - score(a)).slice(0, 500)
   const profiles = await loadProfiles(supabaseAdmin, [...new Set(shown.map((p: any) => p.author_id as string))])
@@ -199,10 +190,9 @@ export async function pieceLeaderboard(args: { data?: any } = {}) {
 export async function myLeaderboardRank(args: { data?: any } = {}) {
 
   const __handler = async ({ data }: { data: { userId: string } }) => {
-    const [r, a] = await Promise.all([
-      readerLeaderboard({ data: { timeframe: "all" } }),
-      authorLeaderboard({ data: { timeframe: "all" } }),
-    ])
+    // The cached boards (500 rows each), not a fresh whole-table aggregate per viewer.
+    const { cachedReaderLeaderboard, cachedAuthorLeaderboard } = await import("@/lib/public-cache")
+    const [r, a] = await Promise.all([cachedReaderLeaderboard("all"), cachedAuthorLeaderboard("all")])
     const readerRow = r.rows.find((x) => x.userId === data.userId)
     const authorRow = a.rows.find((x) => x.userId === data.userId)
     return {
