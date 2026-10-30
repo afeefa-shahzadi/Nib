@@ -214,7 +214,8 @@ export function ReaderClient({
   const [related] = useState<RelatedPiece[]>(initialRelated)
   const [boosts] = useState<Record<string, unknown>[]>(initialBoosts)
 
-  const [progress, setProgress] = useState(0)
+  // Written straight to the bar: state here re-rendered the whole reader on every scroll tick.
+  const progressBar = useRef<HTMLDivElement>(null)
 
   const [moreOpen, setMoreOpen] = useState(false)
 
@@ -285,7 +286,7 @@ export function ReaderClient({
       const p = total > 0 ? Math.min(100, (scrolled / total) * 100) : 0
       // One-time follow dialog, once the reader is well into the piece.
       if (p >= 60) promptFollow()
-      setProgress((prev) => (Math.abs(prev - p) > 0.5 ? p : prev))
+      if (progressBar.current) progressBar.current.style.width = `${p}%`
     }
     onScroll()
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -432,7 +433,8 @@ export function ReaderClient({
       <div
         aria-hidden
         className="fixed top-0 right-0 left-0 z-40 h-0.5 bg-primary/80 transition-[width] duration-150"
-        style={{ width: `${progress}%` }}
+        ref={progressBar}
+        style={{ width: 0 }}
       />
 
       <MentionHoverPortal containerRef={articleRef} />
