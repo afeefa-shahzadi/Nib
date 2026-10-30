@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react"
 import {
   ReactFlow,
   Controls,
+  ControlButton,
   Background,
   MiniMap,
   useNodesState,
@@ -16,6 +17,7 @@ import {
   Position
 } from "@xyflow/react"
 import dagre from "dagre"
+import { Map as MapIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import "@xyflow/react/dist/style.css"
 import {
@@ -90,6 +92,7 @@ export function RelationshipGraph({
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
   const [typeFilter, setTypeFilter] = useState<"all" | "original" | "repost" | "branch">("all")
   const [pieceFilter, setPieceFilter] = useState<string>("all")
+  const [showMap, setShowMap] = useState(false)
 
   // Generate unique pieces for the dropdown
   const uniquePieces = useMemo(() => {
@@ -327,9 +330,17 @@ export function RelationshipGraph({
           panOnDrag={true}
           zoomOnPinch={true}
         >
-          <Controls />
-          {nodes.length > 40 && <MiniMap
-            className="hidden md:block"
+          <Controls>
+            <ControlButton
+              onClick={() => setShowMap(!showMap)}
+              title={showMap ? "Hide minimap" : "Show minimap"}
+              aria-label={showMap ? "Hide minimap" : "Show minimap"}
+              aria-pressed={showMap}
+            >
+              <MapIcon />
+            </ControlButton>
+          </Controls>
+          {showMap && <MiniMap
             position="top-right"
             zoomable 
             pannable 

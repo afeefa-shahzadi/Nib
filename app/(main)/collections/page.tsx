@@ -57,6 +57,8 @@ export default async function CollectionsPage({ searchParams }: { searchParams: 
             Gather pieces you&apos;d recommend into a list, a course or a playbook, and share it.
           </p>
         </div>
+      ) : rows.length === 0 ? (
+        <p className="hairline-t hairline-b mt-12 py-12 text-muted-foreground">No more collections.</p>
       ) : (
         <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((c) => (
