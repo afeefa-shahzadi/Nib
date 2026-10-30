@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { ArrowDown, ArrowUp } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import { cachedAuthorLeaderboard, cachedReaderLeaderboard } from "@/lib/public-cache"
+import { cachedAuthorLeaderboard, cachedPieceLeaderboard, cachedReaderLeaderboard } from "@/lib/public-cache"
 import { rankView } from "@/lib/leaderboard-view"
 import { isLaunchFree } from "@/lib/plan"
 import { formatCompactNumber } from "@/lib/utils"
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import type { Timeframe } from "@/actions/leaderboard"
 import { LeaderboardControls, Money } from "./controls"
 
-type Who = "writers" | "readers"
+type Who = "writers" | "readers" | "pieces"
 type Col = { key: string; label: string; money?: boolean }
 type Board = { label: string; key: string; cols: Col[]; unit: string }
 
@@ -45,6 +45,45 @@ const BOARDS: Record<Who, Record<string, Board>> = {
         { key: "tipsPaise", label: "Tips", money: true },
         { key: "followers", label: "Followers" },
         { key: "published", label: "Pieces" },
+      ],
+    },
+  },
+  pieces: {
+    engagement: {
+      label: "Engagement",
+      key: "engagementScore",
+      unit: "score",
+      cols: [
+        { key: "claps", label: "Claps" },
+        { key: "responses", label: "Responses" },
+        { key: "saves", label: "Saves" },
+      ],
+    },
+    claps: {
+      label: "Claps",
+      key: "claps",
+      unit: "claps",
+      cols: [
+        { key: "responses", label: "Responses" },
+        { key: "saves", label: "Saves" },
+      ],
+    },
+    discussed: {
+      label: "Most discussed",
+      key: "responses",
+      unit: "responses",
+      cols: [
+        { key: "highlights", label: "Highlights" },
+        { key: "claps", label: "Claps" },
+      ],
+    },
+    saved: {
+      label: "Most saved",
+      key: "saves",
+      unit: "saves",
+      cols: [
+        { key: "claps", label: "Claps" },
+        { key: "responses", label: "Responses" },
       ],
     },
   },
@@ -88,6 +127,10 @@ const HOW: Record<Who, string[]> = {
     "Activeness: 10 for each piece you publish, plus 1 for each clap.",
     "Earnings: tips and sales after Nib's fee. Shown once paid features open.",
   ],
+  pieces: [
+    "Engagement: 1 per clap, 3 per response, 2 per highlight and 2 per save.",
+    "Only published, public pieces are ranked. The period counts what readers did in it, so an older piece can climb this week.",
+  ],
   readers: [
     "Activeness: your Insight points, plus 1 per clap, 3 per note and 2 per writer you follow.",
     "Insight points come from reading closely, notes, quizzes and streaks. They're recognition, not money.",
@@ -102,7 +145,7 @@ type Params = { who?: string; by?: string; period?: string; q?: string; sort?: s
 export default async function LeaderboardPage({ searchParams }: { searchParams: Promise<Params> }) {
   const sp = await searchParams
   const launchFree = isLaunchFree()
-  const who: Who = sp.who === "readers" ? "readers" : "writers"
+  const who: Who = sp.who === "readers" || sp.who === "pieces" ? sp.who : "writers"
   const boards = Object.fromEntries(
     Object.entries(BOARDS[who]).filter(([k]) => !(launchFree && k === "earnings"))
   )
@@ -115,15 +158,17 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
 
   const [{ data: auth }, data] = await Promise.all([
     (await createClient()).auth.getUser(),
-    who === "writers" ? cachedAuthorLeaderboard(period) : cachedReaderLeaderboard(period),
+    who === "writers" ? cachedAuthorLeaderboard(period) : who === "pieces" ? cachedPieceLeaderboard(period) : cachedReaderLeaderboard(period),
   ])
   const rows = data.rows as unknown as (Record<string, number> & {
     userId: string
     handle: string | null
     displayName: string
     avatarUrl: string | null
+    slug?: string
+    authorName?: string
   })[]
-  const v = rankView(rows, { key: board.key, sort, dir, q, page: Number(sp.page) || 0, viewerId: auth.user?.id })
+  const v = rankView(rows, { key: board.key, sort, dir, q, page: Number(sp.page) || 0, viewerId: who === "pieces" ? null : auth.user?.id })
 
   const fmt = (n: number, money?: boolean) => (money ? <Money paise={n} /> : formatCompactNumber(n))
   const href = (over: Partial<Params>) => {
@@ -146,14 +191,14 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
   const arrow = (key?: string) =>
     (sort ?? board.key) === (key ?? board.key) &&
     (dir === "asc" ? <ArrowUp className="size-3.5" aria-hidden /> : <ArrowDown className="size-3.5" aria-hidden />)
-  const noun = who === "writers" ? "writers" : "readers"
+  const noun = who
 
   return (
     <main className="container-wide grid items-start gap-10 pt-16 pb-16 md:pt-24 md:pb-24 lg:grid-cols-12 lg:gap-12">
       <div className="lg:sticky lg:top-24 lg:col-span-5">
         <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">Leaderboard</h1>
         <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-          The most-read writers and the most active readers. Updates every minute.
+          The most-read writers, the most active readers and the pieces readers engage with most. Updates every minute.
         </p>
 
         <LeaderboardControls
@@ -206,7 +251,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                     <p className={`text-sm ${r.rank === 1 ? "text-primary" : "text-muted-foreground"}`}>
                       {["1st", "2nd", "3rd"][r.rank - 1]}
                     </p>
-                    <Person r={r} size={r.rank === 1 ? "size-12" : "size-10"} stacked />
+                    {who === "pieces" ? <PieceCell r={r} stacked /> : <Person r={r} size={r.rank === 1 ? "size-12" : "size-10"} stacked />}
                     <p className="mt-1 text-sm text-muted-foreground tabular-nums">
                       {fmt(r[board.key], board.key === "earningsPaise")}
                     </p>
@@ -224,7 +269,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
         {v.rows.length === 0 ? (
           <div className="hairline-t hairline-b py-12">
             <p className="text-muted-foreground">
-              {q ? "Nobody matches that name." : `No ${noun} have scores ${PERIODS[period]} yet.`}
+              {q ? (who === "pieces" ? "No piece or author matches that." : "Nobody matches that name.") : `No ${noun} have scores ${PERIODS[period]} yet.`}
             </p>
           </div>
         ) : (
@@ -232,7 +277,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
             <thead className="text-muted-foreground max-sm:sr-only">
               <tr className="hairline-b">
                 <th scope="col" className="w-12 py-2 text-left font-normal">#</th>
-                <th scope="col" className="py-2 text-left font-normal">Member</th>
+                <th scope="col" className="py-2 text-left font-normal">{who === "pieces" ? "Piece" : "Member"}</th>
                 {board.cols.map((c) => (
                   <th key={c.key} scope="col" className="py-2 text-right font-normal">
                     <Link href={sortHref(c.key)} className="inline-flex min-h-11 items-center gap-1 hover:text-foreground lg:min-h-8">
@@ -243,7 +288,7 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                 ))}
                 <th scope="col" className="py-2 text-right font-normal">
                   <Link href={sortHref()} className="inline-flex min-h-11 items-center gap-1 hover:text-foreground lg:min-h-8">
-                    {board.unit === "earned" ? "Earned" : board.unit === "points" ? "Points" : "Score"}
+                    {board.unit === "earned" ? "Earned" : board.unit === "score" ? "Score" : board.unit[0].toUpperCase() + board.unit.slice(1)}
                     {arrow()}
                   </Link>
                 </th>
@@ -254,9 +299,9 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
                 <tr key={r.userId} className={`hairline-b ${r.userId === auth.user?.id ? "bg-primary/5" : ""}`}>
                   <td className="w-12 py-3 align-top text-muted-foreground tabular-nums sm:align-middle">{r.rank}</td>
                   <td className="py-3">
-                    <Person r={r} size="size-8" />
+                    {who === "pieces" ? <PieceCell r={r} /> : <Person r={r} size="size-8" />}
                     {/* Phones: the secondary numbers sit under the name instead of in columns. */}
-                    <p className="mt-1 pl-11 text-sm text-muted-foreground sm:hidden">
+                    <p className={`mt-1 text-sm ${who === "pieces" ? "" : "pl-11"} text-muted-foreground sm:hidden`}>
                       {board.cols.map((c, i) => (
                         <span key={c.key}>
                           {i > 0 && " · "}
@@ -302,6 +347,27 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
         )}
       </div>
     </main>
+  )
+}
+
+function PieceCell({
+  r,
+  stacked,
+}: {
+  r: { displayName: string; handle: string | null; slug?: string; authorName?: string }
+  stacked?: boolean
+}) {
+  return (
+    <span className={`block min-w-0 ${stacked ? "mt-2" : ""}`}>
+      {r.handle && r.slug ? (
+        <Link href={`/u/${r.handle}/${r.slug}`} className={`font-medium hover:text-primary ${stacked ? "line-clamp-2" : "block truncate"}`}>
+          {r.displayName}
+        </Link>
+      ) : (
+        <span className="block truncate font-medium">{r.displayName}</span>
+      )}
+      {!stacked && <span className="block truncate text-muted-foreground">by {r.authorName}{r.handle && ` · @${r.handle}`}</span>}
+    </span>
   )
 }
 

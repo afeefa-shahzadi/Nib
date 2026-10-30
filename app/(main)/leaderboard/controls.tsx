@@ -47,6 +47,7 @@ export function LeaderboardControls({
         <TabsList>
           <TabsTrigger value="writers">Writers</TabsTrigger>
           <TabsTrigger value="readers">Readers</TabsTrigger>
+          <TabsTrigger value="pieces">Pieces</TabsTrigger>
         </TabsList>
       </Tabs>
       <div className="grid grid-cols-2 gap-3">
@@ -82,7 +83,7 @@ export function LeaderboardControls({
         }}
       >
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input key={q} name="q" type="search" defaultValue={q} aria-label="Search members" placeholder="Search members" className="pl-9" />
+        <Input key={q} name="q" type="search" defaultValue={q} aria-label={who === "pieces" ? "Search pieces or authors" : "Search members"} placeholder={who === "pieces" ? "Search pieces or authors" : "Search members"} className="pl-9" />
       </form>
       {money && <CurrencySelector />}
     </div>

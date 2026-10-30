@@ -261,6 +261,61 @@ export async function authorLeaderboard(args: { data?: any } = {}) {
   return await __handler({ data: args?.data as { timeframe: Timeframe } })
 }
 
+// ============ PIECE LEADERBOARD ============
+// Public, published pieces ranked by what readers did with them in the window.
+// Rows carry the piece id as userId and the title as displayName so the shared
+// rank/search/page helper works unchanged; handle is the author's.
+export async function pieceLeaderboard(args: { data?: any } = {}) {
+  const supabaseAdmin = await createAdminClient()
+  const timeframe: Timeframe = args?.data?.timeframe ?? "all"
+  const start = rangeStart(timeframe)
+  const since = (q: any, col: string) => (start ? q.gte(col, start) : q)
+
+  const [{ data: pieces }, { data: cl }, { data: rs }, { data: hl }, { data: sv }] = await Promise.all([
+    supabaseAdmin.from("content_objects").select("id, title, slug, author_id").eq("status", "published").eq("visibility", "public"),
+    since(supabaseAdmin.from("piece_claps").select("piece_id, count"), "updated_at"),
+    since(supabaseAdmin.from("piece_responses").select("piece_id, user_id"), "created_at"),
+    since(supabaseAdmin.from("reader_highlights").select("piece_id, user_id"), "created_at"),
+    since(supabaseAdmin.from("collection_items").select("content_object_id, collections(curator_id)"), "created_at"),
+  ])
+  // Authors' own responses, highlights and saves don't count (claps on your own piece are refused already).
+  const authorOf = new Map((pieces ?? []).map((p: any) => [p.id as string, p.author_id as string]))
+  const tally = (list: any[] | null, key: string, who: (r: any) => string | undefined, n: (r: any) => number = () => 1) => {
+    const m = new Map<string, number>()
+    for (const r of list ?? []) if (r[key] && who(r) !== authorOf.get(r[key])) m.set(r[key], (m.get(r[key]) ?? 0) + n(r))
+    return m
+  }
+  const claps = tally(cl, "piece_id", () => undefined, (r) => r.count)
+  const responses = tally(rs, "piece_id", (r) => r.user_id)
+  const highlights = tally(hl, "piece_id", (r) => r.user_id)
+  const saves = tally(sv, "content_object_id", (r) => r.collections?.curator_id)
+
+  const live = (pieces ?? []).filter((p: any) => claps.has(p.id) || responses.has(p.id) || highlights.has(p.id) || saves.has(p.id))
+  const profiles = await loadProfiles(supabaseAdmin, [...new Set(live.map((p: any) => p.author_id as string))])
+  const rows = live.map((p: any) => {
+    const a = profiles.get(p.author_id)
+    const c = claps.get(p.id) ?? 0
+    const r = responses.get(p.id) ?? 0
+    const h = highlights.get(p.id) ?? 0
+    const s = saves.get(p.id) ?? 0
+    return {
+      userId: p.id as string,
+      displayName: (p.title as string) || "Untitled",
+      slug: p.slug as string,
+      handle: a?.handle ?? null,
+      authorName: a?.display_name ?? "Anonymous",
+      avatarUrl: a?.avatar_url ?? null,
+      claps: c,
+      responses: r,
+      highlights: h,
+      saves: s,
+      engagementScore: c + r * 3 + h * 2 + s * 2,
+    }
+  })
+  rows.sort((a, b) => b.engagementScore - a.engagementScore)
+  return { rows: rows.slice(0, 500), total: rows.length, timeframe }
+}
+
 // Rank lookup for the signed-in user
 export async function myLeaderboardRank(args: { data?: any } = {}) {
 
