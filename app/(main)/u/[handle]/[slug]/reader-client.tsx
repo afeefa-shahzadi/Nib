@@ -28,6 +28,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { buyPiece } from "@/lib/razorpay/checkout-client"
+import { SubscribeDialog } from "@/components/subscribe-dialog"
 import { createHighlight } from "@/actions/highlights"
 import { ChevronDown, ChevronLeft, ChevronRight, BookOpen } from "lucide-react"
 import { useReaderTelemetry } from "@/hooks/use-telemetry"
@@ -124,9 +125,10 @@ export function ReaderClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const [subscribeOpen, setSubscribeOpen] = useState(false)
   const subscribe = () => {
     if (!authed) return router.push("/login")
-    tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+    setSubscribeOpen(true)
   }
   // Buying opens this piece only; ?via= credits the collection's curator.
   const buy = async () => {
@@ -615,6 +617,12 @@ export function ReaderClient({
             )}
           </div>
 
+            <SubscribeDialog
+              open={subscribeOpen}
+              onOpenChange={setSubscribeOpen}
+              authorId={piece.author_id}
+              authorName={author?.display_name || author?.handle || "this author"}
+            />
             {originalPiece && originalBlocks && (
               <EmbeddedRepost
                 piece={originalPiece}

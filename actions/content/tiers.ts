@@ -4,6 +4,18 @@ import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext, MembershipTier } from "@/lib/types/actions"
 import { hasStudioAccess } from "@/lib/plan"
 
+// ---------- PUBLIC: an author's paid plans, for the reader's subscribe dialog ----------
+export async function listAuthorTiers(args: { data?: { authorId: string } } = {}) {
+  const supabaseAdmin = await createAdminClient()
+  const { data } = await supabaseAdmin
+    .from("membership_tiers")
+    .select("id, name, description, price_cents, perks")
+    .eq("author_id", args.data?.authorId ?? "")
+    .gt("price_cents", 0)
+    .order("price_cents", { ascending: true })
+  return data ?? []
+}
+
 // ---------- CREATOR: tiers ----------
 export async function listMyTiers() {
   const supabaseAdmin = await createAdminClient()

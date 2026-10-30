@@ -148,6 +148,7 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
         : await resolveCuratorAttribution(serviceClient, {
             collectionId: data.collectionId,
             contentObjectId: data.contentObjectId,
+            bundleId: data.bundleId,
             authorId: resolvedAuthorId!,
             buyerId: userId,
           })
@@ -310,6 +311,16 @@ export async function createRazorpaySubscription(
   }) => {
     if (!context.userId) throw new Error("Sign in to continue.")
     const tier = await ensureTierPlan(data.tierId)
+    if (tier.author_id === context.userId)
+      throw new Error("You can't subscribe to your own plan.")
+    const { data: active } = await supabaseAdmin
+      .from("memberships")
+      .select("id")
+      .eq("user_id", context.userId)
+      .eq("author_id", tier.author_id)
+      .eq("status", "active")
+      .limit(1)
+    if (active?.length) throw new Error("You're already a member of this author.")
 
     const sub = (await rzFetch("/subscriptions", {
       method: "POST",

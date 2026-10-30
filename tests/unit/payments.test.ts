@@ -421,3 +421,25 @@ test("createRazorpayOrder rejects buying your own piece, or one you already own"
     /already own/
   )
 })
+
+// ---------- createRazorpaySubscription: no self or duplicate memberships ----------
+
+function tierFake(authorId: string, active: any[] = []) {
+  return makeFakeClient(({ table }: ResolveCtx): any => {
+    if (table === "membership_tiers")
+      return { data: { id: "t1", author_id: authorId, name: "Fan", price_cents: 9_900, razorpay_plan_id: "plan_1" } }
+    if (table === "memberships") return { data: active }
+    return { data: null }
+  }, "u1")
+}
+
+test("createRazorpaySubscription rejects subscribing to yourself", async () => {
+  currentFake = tierFake("u1")
+  await assert.rejects(orders.createRazorpaySubscription({ data: { tierId: "t1" } }), /your own/)
+})
+
+test("createRazorpaySubscription rejects a second active membership with the same author", async () => {
+  currentFake = tierFake("a1", [{ id: "m1" }])
+  await assert.rejects(orders.createRazorpaySubscription({ data: { tierId: "t1" } }), /already a member/)
+  assert.equal(currentFake.calls.filter((c) => c.table === "payment_subscriptions").length, 0)
+})

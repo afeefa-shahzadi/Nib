@@ -1,5 +1,5 @@
 "use client"
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/actions/payments"
+import { createRazorpayOrder, createRazorpaySubscription, verifyRazorpayPayment } from "@/actions/payments"
 
 type RzResponse = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }
 type RzWindow = Window & { Razorpay?: new (o: Record<string, unknown>) => { open(): void } }
@@ -28,6 +28,22 @@ export async function buyPiece(contentObjectId: string, collectionId?: string): 
       currency: order.currency,
       name: "Nib",
       handler: (r: RzResponse) => verifyRazorpayPayment({ data: r }).then(() => resolve(true), reject),
+      modal: { ondismiss: () => resolve(false) },
+    }).open()
+  })
+}
+
+// Opens Razorpay for a monthly plan. The webhook turns the membership on.
+export async function subscribeToTier(tierId: string): Promise<boolean> {
+  const { subscriptionId, keyId } = await createRazorpaySubscription({ data: { tierId } })
+  await loadCheckout()
+  return new Promise((resolve) => {
+    const Rz = (window as RzWindow).Razorpay!
+    new Rz({
+      key: keyId,
+      subscription_id: subscriptionId,
+      name: "Nib",
+      handler: () => resolve(true),
       modal: { ondismiss: () => resolve(false) },
     }).open()
   })
