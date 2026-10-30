@@ -65,6 +65,8 @@ interface PieceMeta {
   isAiGenerated: boolean
   proseOnly: boolean
   curatorShare: boolean
+  /** Rupees as typed; "" = not for sale. */
+  price: string
   allowInlineComments: boolean
   coverImageUrl: string | null
 }
@@ -81,6 +83,7 @@ const DEFAULT_META: PieceMeta = {
   isAiGenerated: false,
   proseOnly: false,
   curatorShare: false,
+  price: "",
   allowInlineComments: true,
   coverImageUrl: null,
 }
@@ -135,6 +138,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const isAiGenerated = meta.isAiGenerated
   const proseOnly = meta.proseOnly
   const curatorShare = meta.curatorShare
+  const price = meta.price
   const allowInlineComments = meta.allowInlineComments
   const coverImageUrl = meta.coverImageUrl
 
@@ -149,6 +153,7 @@ export function MyceliumComposer({ pieceId }: Props) {
   const setIsAiGenerated = (v: boolean) => setMeta((m) => ({ ...m, isAiGenerated: v }))
   const setProseOnly = (v: boolean) => setMeta((m) => ({ ...m, proseOnly: v }))
   const setCuratorShare = (v: boolean) => setMeta((m) => ({ ...m, curatorShare: v }))
+  const setPrice = (v: string) => setMeta((m) => ({ ...m, price: v }))
   const setAllowInlineComments = (v: boolean) => setMeta((m) => ({ ...m, allowInlineComments: v }))
 
   const [blocks, setBlocks] = useState<BlockDraft[]>([])
@@ -330,6 +335,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       isAiGenerated: piece.is_ai_generated ?? false,
       proseOnly: piece.prose_only ?? false,
       curatorShare: piece.curator_share_enabled ?? false,
+      price: piece.price_paise ? String(piece.price_paise / 100) : "",
       allowInlineComments: piece.allow_inline_comments ?? true,
       coverImageUrl: piece.cover_image_url ?? null,
     })
@@ -720,6 +726,7 @@ export function MyceliumComposer({ pieceId }: Props) {
             is_ai_generated: isAiGenerated,
             prose_only: proseOnly,
             curator_share_enabled: curatorShare,
+            price_paise: price.trim() ? Math.round(Number(price) * 100) : null,
             allow_inline_comments: allowInlineComments,
             cover_image_url: coverImageUrl,
             ...extra,
@@ -748,6 +755,7 @@ export function MyceliumComposer({ pieceId }: Props) {
       isAiGenerated,
       proseOnly,
       curatorShare,
+      price,
       allowInlineComments,
       coverImageUrl,
     ]
@@ -1284,6 +1292,8 @@ export function MyceliumComposer({ pieceId }: Props) {
         setProseOnly={setProseOnly}
         curatorShare={curatorShare}
         setCuratorShare={setCuratorShare}
+        price={price}
+        setPrice={setPrice}
         allowInlineComments={allowInlineComments}
         setAllowInlineComments={setAllowInlineComments}
         onSuggestMeta={suggestMeta}

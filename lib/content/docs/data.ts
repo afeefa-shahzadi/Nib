@@ -283,6 +283,10 @@ export const COMPOSER_TOOLS = [
     v: "Meta → Prose only. For fiction, essays and anything you don't split into modes: hides the reading-mode dots and AI-variant buttons on every block while you write. Saved per piece; turn it off any time.",
   },
   {
+    k: "Price to unlock",
+    v: "Meta → Price to unlock (₹10 to ₹10,000). Readers can buy the piece to open its supporters-only blocks; buying opens that piece only. Members still see every piece. Leave empty to keep locked blocks for members. Starts after launch.",
+  },
+  {
     k: "Let curators earn a share",
     v: "Meta → Let curators earn a share. When someone buys this piece from a public collection, the collection's curator gets 15%. You get 70% on Free, or 85% on Studio (80% after ₹50,000 of sales that month). Off by default; applies once paid pieces go on sale.",
   },

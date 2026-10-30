@@ -377,14 +377,47 @@ test("redeemStudioFromEarnings: rejects when available < ₹499 and writes nothi
   )
 })
 
-// ---------- createRazorpayOrder: unbuilt kinds are rejected ----------
+// ---------- createRazorpayOrder: bundle parked; piece priced from the DB ----------
 
-for (const kind of ["bundle", "piece"] as const) {
-  test(`createRazorpayOrder rejects ${kind} kind`, async () => {
-    currentFake = makeFakeClient(() => ({ data: null }), "u1")
+test("createRazorpayOrder rejects bundle kind", async () => {
+  currentFake = makeFakeClient(() => ({ data: null }), "u1")
+  await assert.rejects(
+    orders.createRazorpayOrder({ data: { kind: "bundle", bundleId: "b1", amountPaise: 100 } }),
+    /isn't available for purchase/
+  )
+})
+
+function pieceFake(piece: any, owned: any[] = []) {
+  return makeFakeClient(({ table }: ResolveCtx): any => {
+    if (table === "content_objects") return { data: piece }
+    if (table === "purchases") return { data: owned }
+    return { data: null }
+  }, "u1")
+}
+
+test("createRazorpayOrder rejects an unpriced or unpublished piece", async () => {
+  for (const piece of [
+    { author_id: "a1", price_paise: null, status: "published" },
+    { author_id: "a1", price_paise: 4_900, status: "draft" },
+    null,
+  ]) {
+    currentFake = pieceFake(piece)
     await assert.rejects(
-      orders.createRazorpayOrder({ data: { kind, bundleId: "b1", amountPaise: 100 } }),
+      orders.createRazorpayOrder({ data: { kind: "piece", contentObjectId: "c1", amountPaise: 1 } }),
       /isn't available for purchase/
     )
-  })
-}
+  }
+})
+
+test("createRazorpayOrder rejects buying your own piece, or one you already own", async () => {
+  currentFake = pieceFake({ author_id: "u1", price_paise: 4_900, status: "published" })
+  await assert.rejects(
+    orders.createRazorpayOrder({ data: { kind: "piece", contentObjectId: "c1", amountPaise: 1 } }),
+    /your own piece/
+  )
+  currentFake = pieceFake({ author_id: "a1", price_paise: 4_900, status: "published", is_nsfw: false }, [{ id: "p" }])
+  await assert.rejects(
+    orders.createRazorpayOrder({ data: { kind: "piece", contentObjectId: "c1", amountPaise: 1 } }),
+    /already own/
+  )
+})

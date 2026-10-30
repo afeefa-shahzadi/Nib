@@ -45,6 +45,8 @@ interface MetaDialogProps {
   setProseOnly: (value: boolean) => void
   curatorShare: boolean
   setCuratorShare: (value: boolean) => void
+  price: string
+  setPrice: (value: string) => void
   allowInlineComments: boolean
   setAllowInlineComments: (value: boolean) => void
   onSuggestMeta: () => Promise<void>
@@ -82,6 +84,8 @@ export function MetaDialog({
   setProseOnly,
   curatorShare,
   setCuratorShare,
+  price,
+  setPrice,
   allowInlineComments,
   setAllowInlineComments,
   onSuggestMeta,
@@ -318,6 +322,23 @@ export function MetaDialog({
                   checked={proseOnly}
                   onCheckedChange={setProseOnly}
                 />
+              </div>
+              <div className="mt-4 space-y-2">
+                <Label htmlFor="piece-price">Price to unlock (₹)</Label>
+                <Input
+                  id="piece-price"
+                  type="number"
+                  inputMode="numeric"
+                  min={10}
+                  max={10000}
+                  step={1}
+                  placeholder="Not for sale"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Readers can buy this piece to open its supporters-only blocks. Leave empty to keep them for members. ₹10 to ₹10,000.
+                </p>
               </div>
               <div className="flex items-center justify-between mt-4">
                 <div>

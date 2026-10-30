@@ -78,14 +78,35 @@ export async function createRazorpayOrder(args: { data?: any } = {}) {
     // amount from the client; a bundle is priced from the DB. Never trust the
     // request body for a paid unlock — the old code did, letting a caller pay
     // ₹1 for a bundle and, via author-scoped access, unlock the whole catalog.
-    const resolvedAuthorId = data.authorId
+    let resolvedAuthorId = data.authorId
     let chargePaise: number
-    if (data.kind === "bundle" || data.kind === "piece") {
+    if (data.kind === "bundle") {
       // Bundle checkout is parked (park/paid-features) until paid release.
-      // Single pieces were never priced (content_objects has no price column)
-      // and no UI creates these orders; the path existed only as a client-priced
-      // hole granting author-wide access. Reject until real per-piece pricing exists.
       throw new Error("This item isn't available for purchase.")
+    } else if (data.kind === "piece") {
+      // Price and author come from the DB, never the request body. A piece
+      // purchase unlocks that piece only (viewerHasAuthorAccess).
+      if (!data.contentObjectId) throw new Error("contentObjectId required")
+      const { data: piece } = await supabaseAdmin
+        .from("content_objects")
+        .select("author_id, price_paise, status")
+        .eq("id", data.contentObjectId)
+        .maybeSingle()
+      if (!piece || piece.status !== "published" || !piece.price_paise)
+        throw new Error("This item isn't available for purchase.")
+      if (piece.author_id === userId) throw new Error("You can't buy your own piece.")
+      await assertMonetizable(supabaseAdmin, data.contentObjectId)
+      const { data: owned } = await supabaseAdmin
+        .from("purchases")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("content_object_id", data.contentObjectId)
+        .eq("kind", "piece")
+        .eq("status", "paid")
+        .limit(1)
+      if (owned?.length) throw new Error("You already own this piece.")
+      resolvedAuthorId = piece.author_id
+      chargePaise = piece.price_paise
     } else {
       // tip: client-set amount, floored.
       if (!Number.isInteger(data.amountPaise) || data.amountPaise <= 0)

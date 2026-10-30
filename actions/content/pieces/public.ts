@@ -163,7 +163,7 @@ export async function getPieceBySlug(args: { data?: any } = {}) {
 
     // Gating blocks
     const viewerId = await tryGetViewerId()
-    const hasAccess = await viewerHasAuthorAccess(viewerId, piece.author_id)
+    const hasAccess = await viewerHasAuthorAccess(viewerId, piece.author_id, piece.id)
     const safeBlocks = gateBlocks(blocks ?? [], hasAccess)
 
     const list = siblings ?? []
@@ -200,7 +200,7 @@ export async function getPieceBySlug(args: { data?: any } = {}) {
         originalAuthor = oa
         originalBlocks = gateBlocks(
           ob ?? [],
-          await viewerHasAuthorAccess(viewerId, op.author_id)
+          await viewerHasAuthorAccess(viewerId, op.author_id, op.id)
         )
       }
     }

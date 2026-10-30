@@ -49,9 +49,10 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
       icon: <Layers className="size-5 text-primary" aria-hidden />,
       title: "Bundles and supporters-only blocks",
       payout: "You keep 90%, or 100% on Studio",
-      blurb: "Sell a bundle of pieces, or lock the parts of a piece worth paying for.",
+      blurb: "Sell a bundle of pieces, or lock the parts of a piece worth paying for and set a price to unlock it.",
       details: [
         "Same split as tips",
+        "One purchase opens that piece only",
         "Block-level locks need Studio",
       ],
     },

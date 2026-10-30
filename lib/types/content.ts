@@ -37,6 +37,7 @@ export interface PieceData {
   is_ai_generated?: boolean | null
   prose_only?: boolean | null
   curator_share_enabled?: boolean | null
+  price_paise?: number | null
   sources?: SourceCitation[] | null
   source_url?: string | null
 }

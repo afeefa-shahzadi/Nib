@@ -27,6 +27,7 @@ import { SourcesSheet, type SegregatedSources } from "@/components/reader/source
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { buyPiece } from "@/lib/razorpay/checkout-client"
 import { createHighlight } from "@/actions/highlights"
 import { ChevronDown, ChevronLeft, ChevronRight, BookOpen } from "lucide-react"
 import { useReaderTelemetry } from "@/hooks/use-telemetry"
@@ -123,6 +124,22 @@ export function ReaderClient({
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const subscribe = () => {
+    if (!authed) return router.push("/login")
+    tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
+  // Buying opens this piece only; ?via= credits the collection's curator.
+  const buy = async () => {
+    if (!authed) return router.push("/login")
+    try {
+      if (await buyPiece(piece.id, searchParams.get("via") ?? undefined)) {
+        toast.success("Unlocked. Thanks for supporting the author.")
+        router.refresh()
+      }
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
   const [showFollowDialog, setShowFollowDialog] = useState(false)
   // Only offer modes that actually change this piece; an unavailable requested mode reads as Standard.
   const modes = useMemo(() => availableModes(blocks as Block[], MODES), [blocks])
@@ -585,26 +602,13 @@ export function ReaderClient({
               has_dob={hasDob}
               highlights={[...initialHighlights, ...optimisticHighlights]}
               inlineComments={inlineComments.filter((c: any) => !c.parent_id && c.quoted_text)}
-              onUnlock={() => {
-                if (!authed) {
-                  router.push("/login")
-                  return
-                }
-                tipRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                })
-              }}
+              onUnlock={piece.price_paise ? buy : subscribe}
             />
             {!hasAccess && bodyBlocks.some((b: any) => b.monetization_eligible) && (
               <PremiumTeaserOverlay 
-                onSubscribe={() => {
-                  if (!authed) {
-                    router.push("/login")
-                    return
-                  }
-                  tipRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
-                }}
+                onSubscribe={subscribe}
+                onBuy={piece.price_paise ? buy : undefined}
+                pricePaise={piece.price_paise ?? undefined}
                 title={piece.title}
                 authorName={author?.display_name || author?.handle}
               />

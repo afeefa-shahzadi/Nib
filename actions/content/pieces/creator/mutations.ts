@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { normalizePiecePrice } from "@/lib/piece-price"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { revalidatePath, updateTag } from "next/cache"
@@ -238,6 +239,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       is_ai_generated?: boolean
       prose_only?: boolean
       curator_share_enabled?: boolean
+      price_paise?: number | null
       cover_image_url?: string | null
       allow_inline_comments?: boolean
     }
@@ -264,6 +266,7 @@ export async function updatePiece(args: { data?: any } = {}) {
     ] as const) {
       if (data[k] !== undefined) patch[k] = data[k]
     }
+    if (data.price_paise !== undefined) patch.price_paise = normalizePiecePrice(data.price_paise)
 
     // Check if we are transitioning to published
     let isNewPublish = false

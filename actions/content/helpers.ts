@@ -5,7 +5,7 @@ import { isLaunchFree } from "@/lib/plan"
 
 // Explicit column list excludes search_tsv (tsvector, not serializable)
 export const CO_COLS =
-  "id, author_id, title, slug, summary, canonical_thesis, status, visibility, tags, scheduled_for, published_at, created_at, updated_at, tips_enabled, sponsorship_enabled, repost_credits_required, reposted_from, is_nsfw, is_ai_generated, prose_only, curator_share_enabled, allow_inline_comments, cover_image_url, source_url" as const
+  "id, author_id, title, slug, summary, canonical_thesis, status, visibility, tags, scheduled_for, published_at, created_at, updated_at, tips_enabled, sponsorship_enabled, repost_credits_required, reposted_from, is_nsfw, is_ai_generated, prose_only, curator_share_enabled, allow_inline_comments, cover_image_url, source_url, price_paise" as const
 
 // Resolve viewer user id (if any) from current session, without throwing.
 export async function tryGetViewerId(): Promise<string | null> {
@@ -57,16 +57,18 @@ export function gateBlocks<T extends { monetization_eligible?: boolean; content:
   return blocks.map((b) => (b.monetization_eligible && !hasAccess ? { ...b, content: {} } : b))
 }
 
-// Does viewer have access to monetization-gated blocks for this author?
+// Does viewer have access to monetization-gated blocks? An active membership
+// opens every piece by the author; a paid piece purchase opens only that piece.
 export async function viewerHasAuthorAccess(
   viewerId: string | null,
-  authorId: string
+  authorId: string,
+  contentObjectId?: string
 ): Promise<boolean> {
   if (isLaunchFree()) return true
   if (!viewerId) return false
   if (viewerId === authorId) return true
   const admin = await createAdminClient()
-  const [{ data: mem }, { data: pur }] = await Promise.all([
+  const [{ data: mem }, pur] = await Promise.all([
     admin
       .from("memberships")
       .select("id")
@@ -74,16 +76,18 @@ export async function viewerHasAuthorAccess(
       .eq("author_id", authorId)
       .eq("status", "active")
       .limit(1),
-    admin
-      .from("purchases")
-      .select("id")
-      .eq("user_id", viewerId)
-      .eq("author_id", authorId)
-      .eq("status", "paid")
-      .in("kind", ["bundle", "piece"])
-      .limit(1),
+    contentObjectId
+      ? admin
+          .from("purchases")
+          .select("id")
+          .eq("user_id", viewerId)
+          .eq("content_object_id", contentObjectId)
+          .eq("kind", "piece")
+          .eq("status", "paid")
+          .limit(1)
+      : Promise.resolve({ data: [] }),
   ])
-  return (mem?.length ?? 0) > 0 || (pur?.length ?? 0) > 0
+  return (mem?.length ?? 0) > 0 || (pur.data?.length ?? 0) > 0
 }
 
 export const ReadingMode = z.enum([

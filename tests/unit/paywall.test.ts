@@ -80,3 +80,33 @@ test("tier debate room hidden without membership when off", async () => {
   const rooms: any[] = await debate.listRoomsForPiece({ data: { content_object_id: "c1" } })
   assert.deepEqual(rooms, [])
 })
+
+function fakeWith(rows: Record<string, (f: [string, any][]) => any>) {
+  return makeFakeClient((ctx: ResolveCtx): any => {
+    selects.push(ctx.table)
+    const r = rows[ctx.table]
+    return { data: r ? r(ctx.filters) : null }
+  })
+}
+
+test("piece purchase unlocks only that piece", async () => {
+  process.env.LAUNCH_FREE = "0"
+  currentFake = fakeWith({
+    purchases: (f) =>
+      f.some(([c, v]) => c === "content_object_id" && v === "p1") ? [{ id: "x" }] : [],
+  })
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1", "p1"), true)
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1", "p2"), false)
+})
+
+test("a purchase never grants author-wide access", async () => {
+  process.env.LAUNCH_FREE = "0"
+  currentFake = fakeWith({ purchases: () => [{ id: "x" }] })
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1"), false)
+})
+
+test("active membership unlocks every piece", async () => {
+  process.env.LAUNCH_FREE = "0"
+  currentFake = fakeWith({ memberships: () => [{ id: "m" }] })
+  assert.equal(await helpers.viewerHasAuthorAccess("u1", "a1", "p9"), true)
+})
