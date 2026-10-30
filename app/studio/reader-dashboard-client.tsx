@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Users, Rss, Sparkles, BookOpen } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 import { ReaderFeed, ReaderFollows } from "@/lib/types/content"
 
 export function ReaderDashboardClient({
@@ -14,6 +16,7 @@ export function ReaderDashboardClient({
   follows: ReaderFollows | null
   highlights: any[]
 }) {
+  const [allHighlights, setAllHighlights] = useState(false)
   const followingCount = follows?.following?.length ?? 0
   const recent = (feed?.pieces ?? []).slice(0, 8)
 
@@ -31,12 +34,9 @@ export function ReaderDashboardClient({
   ]
 
   return (
-    <div className="mx-auto w-full max-w-350 p-6 md:p-8">
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto w-full max-w-350 px-4 py-6 sm:px-6 md:px-8 md:py-8">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-            Reader
-          </p>
           <h1 className="font-display text-3xl text-foreground">
             Your reading desk
           </h1>
@@ -44,9 +44,9 @@ export function ReaderDashboardClient({
             Catch up on the authors you follow, then go discover more.
           </p>
         </div>
-        <Button asChild>
+        <Button className="min-h-11" asChild>
           <Link href="/feed">
-            <Rss className="mr-2 size-4" /> Open feed
+            <Rss className="size-4" aria-hidden /> Open feed
           </Link>
         </Button>
       </div>
@@ -55,16 +55,12 @@ export function ReaderDashboardClient({
         {kpis.map((c) => {
           const Icon = c.icon
           return (
-            <div key={c.label} className="surface rounded-md p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-[10px] tracking-wider text-muted-foreground uppercase">
-                  {c.label}
-                </p>
-                <Icon className="size-3.5 text-muted-foreground" />
-              </div>
-              <p
-                className="font-display text-2xl"
-              >
+            <div key={c.label} className="surface flex flex-col gap-2 rounded-lg p-4">
+              <p className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                {c.label}
+                <Icon className="size-4 shrink-0" aria-hidden />
+              </p>
+              <p className="font-display text-2xl tabular-nums">
                 {c.value}
               </p>
             </div>
@@ -80,12 +76,12 @@ export function ReaderDashboardClient({
             </h2>
             <Link
               href="/feed"
-              className="text-xs text-muted-foreground hover:text-foreground"
+              className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
             >
-              See all →
+              See all
             </Link>
           </div>
-          <div className="surface divide-y divide-border rounded-md">
+          <div className="surface divide-y divide-border rounded-lg">
             {feed?.empty && (
               <div className="px-5 py-10 text-center">
                 <Sparkles className="mx-auto mb-2 size-5 text-primary" />
@@ -95,7 +91,7 @@ export function ReaderDashboardClient({
                 <p className="mb-4 text-sm text-muted-foreground">
                   Follow a few authors to start seeing their pieces here.
                 </p>
-                <Button variant="outline" asChild>
+                <Button variant="outline" className="min-h-11" asChild>
                   <Link href="/feed">Discover authors</Link>
                 </Button>
               </div>
@@ -104,7 +100,7 @@ export function ReaderDashboardClient({
               <Link
                 key={p.id}
                 href={`/u/${p.author?.handle ?? "_"}/${p.slug}`}
-                className="block px-5 py-3 transition-colors hover:bg-accent/40"
+                className="block min-h-12 px-4 py-3 transition-colors hover:bg-accent/40"
               >
                 <div className="flex items-baseline justify-between gap-4">
                   <span className="truncate text-foreground">{p.title}</span>
@@ -115,7 +111,7 @@ export function ReaderDashboardClient({
                   )}
                 </div>
                 {p.summary && (
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                  <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
                     {p.summary}
                   </p>
                 )}
@@ -123,29 +119,38 @@ export function ReaderDashboardClient({
             ))}
           </div>
 
-          <div className="mt-8 mb-3 flex items-end justify-between">
+          <div className="mt-8 mb-3 flex items-center justify-between">
             <h2 className="font-display text-xl text-foreground">
-              Your Highlights & Annotations
+              Your highlights and notes
             </h2>
+            {highlights.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setAllHighlights((v) => !v)}
+                className="inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground"
+              >
+                {allHighlights ? "Show fewer" : `Show all ${highlights.length}`}
+              </button>
+            )}
           </div>
-          <div className="surface divide-y divide-border rounded-md">
+          <div className="surface divide-y divide-border rounded-lg">
             {highlights.length === 0 && (
               <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                 You haven&apos;t highlighted or annotated anything yet.
               </div>
             )}
-            {highlights.map((hl) => {
+            {(allHighlights ? highlights : highlights.slice(0, 5)).map((hl) => {
               const isAnnotation = hl.annotations && hl.annotations.length > 0;
               return (
-                <div key={hl.id} className="p-5 transition-colors hover:bg-accent/40">
+                <div key={hl.id} className="p-4">
                   <div className="flex items-center gap-2 mb-2">
                     {isAnnotation ? (
-                      <span className="bg-success/50 text-foreground px-1 rounded text-xs">Annotation</span>
+                      <Badge variant="secondary" className="font-normal">Note</Badge>
                     ) : (
-                      <span className="bg-note/50 text-foreground px-1 rounded text-xs">Highlight</span>
+                      <Badge variant="outline" className="font-normal">Highlight</Badge>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      on <Link href={`/u/${hl.piece?.author?.handle}/${hl.piece?.slug}`} className="hover:underline">{hl.piece?.title || 'Unknown Piece'}</Link>
+                    <span className="min-w-0 truncate text-sm text-muted-foreground">
+                      on <Link href={`/u/${hl.piece?.author?.handle}/${hl.piece?.slug}`} className="hover:underline">{hl.piece?.title || 'Untitled piece'}</Link>
                     </span>
                   </div>
                   <blockquote className="border-l-2 border-primary/20 pl-3 italic text-muted-foreground text-sm my-2">
@@ -163,10 +168,10 @@ export function ReaderDashboardClient({
         </section>
 
         <section>
-          <h2 className="mb-3 font-display text-xl text-foreground">
+          <h2 className="mb-3 flex min-h-11 items-center font-display text-xl text-foreground">
             You follow
           </h2>
-          <div className="surface divide-y divide-border rounded-md">
+          <div className="surface divide-y divide-border rounded-lg">
             {follows?.following?.length === 0 && (
               <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                 Not following anyone yet.
@@ -177,23 +182,23 @@ export function ReaderDashboardClient({
                 <Link
                   key={a.id}
                   href={`/u/${a.handle}`}
-                  className="block px-5 py-3 transition-colors hover:bg-accent/40"
+                  className="block min-h-12 px-4 py-3 transition-colors hover:bg-accent/40"
                 >
                   <p className="text-sm text-foreground">{a.display_name}</p>
-                  <p className="text-xs text-muted-foreground">@{a.handle}</p>
+                  <p className="text-sm text-muted-foreground">@{a.handle}</p>
                 </Link>
               ) : null
             )}
           </div>
-          <div className="surface mt-4 rounded-md p-4">
-            <p className="mb-2 inline-flex items-center gap-1 text-xs tracking-wider text-muted-foreground uppercase">
-              <BookOpen className="size-3" /> Want to publish?
+          <div className="surface mt-4 rounded-lg p-4">
+            <p className="mb-1 inline-flex items-center gap-2 font-medium text-foreground">
+              <BookOpen className="size-4 text-muted-foreground" aria-hidden /> Want to publish?
             </p>
-            <p className="mb-3 text-sm text-foreground">
+            <p className="mb-3 text-sm text-muted-foreground">
               Switch on author mode any time from Settings.
             </p>
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/studio/settings">Open settings</Link>
+            <Button variant="outline" className="min-h-11" asChild>
+              <Link href="/studio/settings#writing">Turn on author mode</Link>
             </Button>
           </div>
         </section>

@@ -33,26 +33,26 @@ export function LeaderboardRankCard({
   return (
     <Link
       href="/leaderboard"
-      className="surface block rounded-xl border border-border/60 p-4 transition hover:border-primary/40"
+      className="surface block rounded-lg p-4 transition hover:border-primary/40"
     >
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs tracking-wider text-muted-foreground uppercase">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Trophy className="size-4 text-note" />
           Your rank
         </div>
-        <span className="text-[10px] text-muted-foreground">View board →</span>
+        <span className="text-sm text-muted-foreground">View board</span>
       </div>
       {row ? (
         <div className="mt-2 flex items-baseline gap-2">
           <span className="font-display text-3xl">#{row.rank}</span>
-          <span className="text-xs text-muted-foreground">of {row.total}</span>
+          <span className="text-sm text-muted-foreground">of {row.total}</span>
         </div>
       ) : (
         <div className="mt-2 font-display text-xl text-muted-foreground">
           Unranked
         </div>
       )}
-      <p className="mt-1 text-xs text-muted-foreground">
+      <p className="mt-1 text-sm text-muted-foreground">
         {audience === "author"
           ? row && data?.author
             ? `${formatCompactNumber(data.author.followers)} followers${launchFree ? "" : ` · ${formatPaiseMarket(data.author.earningsPaise, code)} earned`}`

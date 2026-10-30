@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { CheckCircle2, Circle, ArrowRight } from "lucide-react"
+import { CheckCircle2, Circle, ArrowRight, ChevronDown } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 
 // Creator activation: publish → set a tier → first earnings.
@@ -54,48 +55,40 @@ export async function ActivationChecklist() {
   const doneCount = steps.filter((s) => s.done).length
 
   return (
-    <div className="hairline mb-8 rounded-lg p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <p className="text-[10px] tracking-wider text-muted-foreground uppercase">
-            Getting started
-          </p>
-          <h2 className="font-display text-lg">
-            Set up your studio ({doneCount}/{steps.length})
-          </h2>
-        </div>
-      </div>
-      <ol className="space-y-3">
+    <details className="group surface mb-8 rounded-lg">
+      <summary className="flex min-h-11 cursor-pointer list-none flex-col gap-3 rounded-lg p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+        <span className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-display text-lg">Set up your studio</span>
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            {doneCount} of {steps.length} done
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden />
+          </span>
+        </span>
+        <Progress value={(doneCount / steps.length) * 100} className="h-1.5" aria-label="Setup progress" />
+      </summary>
+      <ol className="px-2 pb-2 sm:px-3 sm:pb-3">
         {steps.map((s) => (
           <li key={s.label}>
             <Link
               href={s.href}
-              className="group flex items-start gap-3 rounded-md p-2 transition-colors hover:bg-accent/40"
+              className="flex min-h-11 items-center gap-3 rounded-md px-2 py-2 transition-colors hover:bg-accent/40"
             >
               {s.done ? (
-                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
+                <CheckCircle2 className="size-5 shrink-0 text-primary" aria-label="Done" />
               ) : (
-                <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <Circle className="size-5 shrink-0 text-muted-foreground" aria-label="Not done" />
               )}
               <span className="min-w-0 flex-1">
-                <span
-                  className={`block text-sm ${s.done ? "text-muted-foreground line-through" : "font-medium"}`}
-                >
+                <span className={`block text-sm ${s.done ? "text-muted-foreground line-through" : "font-medium"}`}>
                   {s.label}
                 </span>
-                {!s.done && (
-                  <span className="block text-xs text-muted-foreground">
-                    {s.detail}
-                  </span>
-                )}
+                {!s.done && <span className="block text-sm text-muted-foreground">{s.detail}</span>}
               </span>
-              {!s.done && (
-                <ArrowRight className="mt-1 size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-              )}
+              {!s.done && <ArrowRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />}
             </Link>
           </li>
         ))}
       </ol>
-    </div>
+    </details>
   )
 }
