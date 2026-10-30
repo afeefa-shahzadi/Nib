@@ -70,10 +70,11 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
       icon: <Library className="size-5 text-primary" aria-hidden />,
       title: "Curator share",
       payout: "15% of sales from your collection",
-      blurb: "Build a public collection. When a reader buys a piece from it, you earn a share.",
+      blurb: "Build a public collection. When a reader buys a piece, or a bundle that includes one, from it, you earn a share.",
       details: [
         "Only on pieces whose authors opt in",
-        "Starts when paid pieces go on sale",
+        "Authors keep 78% on Free, 85% on Studio",
+        "Starts after launch",
       ],
     },
     {
