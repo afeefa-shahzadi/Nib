@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Piece leaderboard: public, published pieces ranked by reader engagement.
+// Piece leaderboard: totals come from leaderboard_piece_totals (SQL, checked in
+// supabase/tests/leaderboard_totals.sql); this covers scoring, ordering and author lookup.
 import { test, before, mock } from "node:test"
 import assert from "node:assert/strict"
 import { makeFakeClient, ResolveCtx } from "./fake-supabase"
@@ -12,43 +13,26 @@ before(async () => {
   lb = await import("@/actions/leaderboard")
 })
 
-const data: Record<string, any[]> = {
-  // The query filters to published+public; p3 stands in for a hidden piece the DB didn't return.
-  content_objects: [
-    { id: "p1", title: "Quiet one", slug: "quiet", author_id: "a1" },
-    { id: "p2", title: "Talked about", slug: "talked", author_id: "a2" },
-    { id: "p4", title: "Nobody read", slug: "none", author_id: "a1" },
-  ],
-  piece_claps: [{ piece_id: "p1", count: 5 }, { piece_id: "p3", count: 99 }],
-  piece_responses: [{ piece_id: "p2", user_id: "r1" }, { piece_id: "p2", user_id: "r2" }, { piece_id: "p2", user_id: "a2" }],
-  reader_highlights: [{ piece_id: "p2", user_id: "r1" }, { piece_id: "p1", user_id: "a1" }],
-  collection_items: [{ content_object_id: "p1", collections: { curator_id: "r1" } }, { content_object_id: "p1", collections: { curator_id: "a1" } }],
-  telemetry_events: [
-    { piece_id: "p1", session: "s1" }, { piece_id: "p1", session: "s1" }, { piece_id: "p1", session: "s2" },
-    { piece_id: "p4", session: "s1" },
-  ],
-  profiles: [{ id: "a1", handle: "ann", display_name: "Ann", avatar_url: null }, { id: "a2", handle: "bo", display_name: "Bo", avatar_url: null }],
-}
+const totals = [
+  { id: "p2", title: "Talked about", slug: "talked", author_id: "a2", reads: 0, claps: 0, responses: 2, highlights: 1, saves: 0 },
+  { id: "p1", title: "Quiet one", slug: "quiet", author_id: "a1", reads: 2, claps: 5, responses: 0, highlights: 0, saves: 1 },
+  { id: "p4", title: "", slug: "none", author_id: "a1", reads: 1, claps: 0, responses: 0, highlights: 0, saves: 0 },
+]
+const profiles = [{ id: "a1", handle: "ann", display_name: "Ann", avatar_url: null }, { id: "a2", handle: "bo", display_name: "Bo", avatar_url: null }]
 
-test("ranks engaged public pieces by reads + claps + 3×responses + 2×highlights + 2×saves, ignoring the author's own activity", async () => {
-  currentFake = makeFakeClient(({ table }: ResolveCtx) => ({ data: data[table] ?? [] }), null)
-  const r: any = await lb.pieceLeaderboard({ data: { timeframe: "all" } })
-  // p1: 2 reads (one per session) + 5 claps + 1 save; p4 is ranked on its single read.
-  assert.deepEqual(r.rows.map((x: any) => [x.userId, x.engagementScore]), [["p1", 9], ["p2", 8], ["p4", 1]])
-  assert.equal(r.rows[0].reads, 2)
-  assert.equal(r.rows[1].handle, "bo")
-  assert.equal(r.rows[1].slug, "talked")
-  assert.equal(r.rows[0].saves, 1)
-})
-
-test("reads past PostgREST's 1,000-row page so big tables aren't cut off", async () => {
-  let clapPages = 0
-  currentFake = makeFakeClient(({ table }: ResolveCtx) => {
-    if (table !== "piece_claps") return { data: data[table] ?? [] }
-    clapPages++
-    return { data: clapPages === 1 ? Array.from({ length: 1000 }, () => ({ piece_id: "p1", count: 1 })) : [{ piece_id: "p1", count: 1 }] }
+test("ranks pieces by reads + claps + 3×responses + 2×highlights + 2×saves and attaches the author", async () => {
+  currentFake = makeFakeClient(({ table, op, payload }: ResolveCtx) => {
+    if (op === "rpc") {
+      assert.equal(table, "leaderboard_piece_totals")
+      assert.equal(payload.p_start, null)
+      return { data: totals }
+    }
+    return { data: table === "profiles" ? profiles : [] }
   }, null)
   const r: any = await lb.pieceLeaderboard({ data: { timeframe: "all" } })
-  assert.equal(clapPages, 2)
-  assert.equal(r.rows.find((x: any) => x.userId === "p1").claps, 1001)
+  assert.deepEqual(r.rows.map((x: any) => [x.userId, x.engagementScore]), [["p1", 9], ["p2", 8], ["p4", 1]])
+  assert.equal(r.total, 3)
+  assert.equal(r.rows[1].handle, "bo")
+  assert.equal(r.rows[1].slug, "talked")
+  assert.equal(r.rows[2].displayName, "Untitled")
 })
