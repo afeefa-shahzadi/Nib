@@ -34,7 +34,7 @@ interface SubscribeModalProps {
   authorAvatar?: string | null
 }
 
-export function SubscribeModal({ articleRef, authorId, authorHandle, authorName, authorAvatar }: SubscribeModalProps) {
+export function SubscribeModal({ articleRef, authorId, authorName, authorAvatar }: SubscribeModalProps) {
   const [open, setOpen] = useState(false)
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
