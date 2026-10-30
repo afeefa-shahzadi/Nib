@@ -31,7 +31,7 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
       payout: `From ${fmt(20)} per tip`,
       blurb: "Readers tip the pieces they value.",
       details: [
-        "Free plan: you keep 93%",
+        "Free plan: you keep 95%",
         `Studio: you keep 100% up to ${fmt(50000)} a month, then 95%`,
       ],
     },
@@ -51,7 +51,7 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
       payout: "You keep 93%, or 100% on Studio",
       blurb: "Sell a bundle of pieces, or lock the parts of a piece worth paying for and set a price to unlock it.",
       details: [
-        "Same split as tips",
+        "Studio: same as tips",
         "One purchase opens that piece only",
         "Block-level locks need Studio",
       ],

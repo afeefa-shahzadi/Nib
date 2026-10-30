@@ -12,8 +12,12 @@ test("processing fee is charged at cost before any split", () => {
   assert.equal(sale().processing, 236)
 })
 
-test("free plan tip: author keeps 93% of the net", () => {
-  assert.deepEqual(sale(), { processing: 236, author: 9_080, curator: 0, platform: 684 })
+test("free plan tip: author keeps 95% of the net", () => {
+  assert.deepEqual(sale(), { processing: 236, author: 9_275, curator: 0, platform: 489 })
+})
+
+test("free plan sale: author keeps 93% of the net", () => {
+  assert.equal(sale({ kind: "purchase" }).author, 9_080)
 })
 
 test("free plan sponsorship: author keeps 85%", () => {

@@ -2,7 +2,7 @@ import { PAYOUT_MIN_INR, formatINRMarket, type CurrencyCode } from "@/lib/curren
 import type { Tier } from "@/lib/types/marketing"
 
 /** Platform fee on tips/sponsorships for Free accounts, in percent. Marketing copy quotes this. */
-export const TIP_PLATFORM_FEE_PCT = 7
+export const TIP_PLATFORM_FEE_PCT = 5
 
 export function getTiers(): Tier[] {
   return [
@@ -142,7 +142,7 @@ export const COMPARE: Array<
   ["Publish unlimited pieces", false, true, true, true, true, true, true],
   ["Monthly bonus points", false, false, "2,500 pts", false, false, false, false],
   ["Claps, saves, reposts", false, true, true, true, true, true, true],
-  ["Tips received", "—", "93%", "93%", "100% (up to ₹50k)", "100%", "100%", "100%"],
+  ["Tips received", "—", "95%", "95%", "100% (up to ₹50k)", "100%", "100%", "100%"],
   ["Sponsored Pieces", false, true, true, true, true, true, true],
   ["Earn Insight Points (perks)", false, true, true, true, true, true, true],
   ["Block-level paid gating", false, false, false, true, true, true, true],
@@ -165,7 +165,7 @@ export function getFAQ(code: CurrencyCode = "INR") {
   },
   {
     q: "How does the platform make money on Free accounts?",
-    a: "Free accounts keep 93% of tips and sales and 85% of sponsorships. Studio accounts keep 100% up to ₹50,000 a month, then 95%. The payment processor's fee (about 2.4% including GST) is passed through at cost, never marked up.",
+    a: "Free accounts keep 95% of tips, 93% of sales and 85% of sponsorships. Studio accounts keep 100% up to ₹50,000 a month, then 95%. The payment processor's fee (about 2.4% including GST) is passed through at cost, never marked up.",
   },
     {
       q: "What are Insight Points for?",

@@ -1,7 +1,7 @@
 // Who gets what from one paid sale, in paise. Pure, so settlement and tests share it.
 //   Processing: the gateway fee (2% + 18% GST) comes off the top at cost, so
 //               Nib's percentage is margin and no sale can cost Nib money.
-//   Free plan:  author 93% of the net, sponsorships 85%.
+//   Free plan:  author 95% of tips, 93% of sales, 85% of sponsorships (of the net).
 //   Studio:     100% of the net until the month's sales pass ₹50,000, then 95%.
 //   Curated:    the curator takes 15% of the net. On Free the author gets 78%
 //               (Nib keeps 7%); on Studio it comes out of the author's share.
@@ -10,6 +10,7 @@ import { GST_RATE } from "@/lib/tax"
 export const STUDIO_CAP_PAISE = 5_000_000
 export const CURATOR_SHARE = 0.15
 export const GATEWAY_RATE = 0.02
+export const AUTHOR_SHARE_FREE_TIP = 0.95
 export const AUTHOR_SHARE_FREE = 0.93
 export const AUTHOR_SHARE_SPONSORSHIP = 0.85
 export const AUTHOR_SHARE_CURATED = 0.78
@@ -40,7 +41,8 @@ export function splitSale(args: {
   } else if (curated) {
     author = Math.floor(net * AUTHOR_SHARE_CURATED)
   } else {
-    author = Math.floor(net * (kind === "sponsorship" ? AUTHOR_SHARE_SPONSORSHIP : AUTHOR_SHARE_FREE))
+    const share = kind === "tip" ? AUTHOR_SHARE_FREE_TIP : kind === "sponsorship" ? AUTHOR_SHARE_SPONSORSHIP : AUTHOR_SHARE_FREE
+    author = Math.floor(net * share)
   }
   return { processing, author, curator, platform: net - author - curator }
 }
