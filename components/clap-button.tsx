@@ -189,7 +189,7 @@ function ClapView({
         }}
         aria-label={`Clap ${formatCompactNumber(total)} (you: ${mine}/50)`}
         aria-disabled={disabled}
-        title={disabled ? "You cannot applaud your own piece!" : `Clap (you: ${mine}/50)`}
+        title={disabled ? "You cannot applaud your own piece!" : `Clap, or hold to clap up to 50 times (you: ${mine}/50)`}
         className={cn(
           "relative inline-flex items-center gap-1.5 select-none",
           buttonProps.className,
@@ -221,7 +221,7 @@ function ClapView({
           onTouchEnd={stopHold}
           aria-label={`Clap (you: ${mine}/50)`}
           aria-disabled={disabled}
-          title={disabled ? "You cannot applaud your own piece!" : `Clap (you: ${mine}/50)`}
+          title={disabled ? "You cannot applaud your own piece!" : `Clap, or hold to clap up to 50 times (you: ${mine}/50)`}
           className={cn(
             "relative size-14 rounded-full border-2 transition-all select-none",
             "flex items-center justify-center",
