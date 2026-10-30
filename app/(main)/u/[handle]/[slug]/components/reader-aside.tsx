@@ -35,6 +35,7 @@ export function ReaderAside({
   branches,
   related,
   authed,
+  isAuthor,
   tipRef,
   onSignInRequired,
   isMobileSheet,
@@ -109,7 +110,7 @@ export function ReaderAside({
         </button>
       )}
 
-      {showTipJar && author && (
+      {showTipJar && author && !isAuthor && (
         <div ref={tipRef}>
           <TipJar
             authorId={piece.author_id}

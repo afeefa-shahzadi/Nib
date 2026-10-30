@@ -136,6 +136,7 @@ export function ReaderActions({
 
   const [savedState, setSavedState] = useState(initialSaved)
   const saved = authed ? savedState : false
+  const isOwn = !!viewerId && viewerId === pieceAuthorId
   const [saveOpen, setSaveOpen] = useState(false)
   const [collections, setCollections] = useState<
     Array<{ id: string; title: string; is_personal: boolean }>
@@ -212,6 +213,7 @@ export function ReaderActions({
       setSpeaking(false)
       return
     }
+    if (!requireAuth()) return
 
     if (viewerId !== pieceAuthorId) {
       setBusy(true)
@@ -447,9 +449,11 @@ export function ReaderActions({
             <DropdownMenuItem onSelect={() => setCommentsOpen(true)} className={ITEM}>
               <MessageCircle /> Responses
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={openRepost} className={ITEM}>
-              <Repeat2 /> Repost
-            </DropdownMenuItem>
+            {!isOwn && (
+              <DropdownMenuItem onSelect={openRepost} className={ITEM}>
+                <Repeat2 /> Repost
+              </DropdownMenuItem>
+            )}
             {claps && claps.mine > 0 && (
               <DropdownMenuItem onSelect={claps.undo} className={ITEM}>
                 <Undo2 /> Undo claps ({claps.mine})
@@ -461,14 +465,16 @@ export function ReaderActions({
                 <ListTree /> Outline and more
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem
-              onSelect={() => {
-                if (requireAuth()) setReportOpen(true)
-              }}
-              className={ITEM}
-            >
-              <Flag /> Report
-            </DropdownMenuItem>
+            {!isOwn && (
+              <DropdownMenuItem
+                onSelect={() => {
+                  if (requireAuth()) setReportOpen(true)
+                }}
+                className={ITEM}
+              >
+                <Flag /> Report
+              </DropdownMenuItem>
+            )}
             {modeCount > 1 && (
               <p className="hidden px-2 pt-2 pb-1 text-xs text-muted-foreground lg:block">
                 Tip: press <kbd className="rounded bg-muted px-1">1</kbd>–<kbd className="rounded bg-muted px-1">{modeCount}</kbd> to switch reading modes.
