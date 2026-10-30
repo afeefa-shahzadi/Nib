@@ -5,7 +5,6 @@ export {
   myQuestStatus,
   monthlyLeaderboard,
   streakLeaderboard,
-  consumeListeningCredit,
 } from "./monetization/quests"
 
 export {

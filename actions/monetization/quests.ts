@@ -3,7 +3,6 @@
 import { createAdminClient, createServiceRoleClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { getTier, tierChanged, streakRestoreCost } from "@/lib/tier"
-import { isLaunchFree } from "@/lib/plan"
 import { utcDay, streakStep, isStaleDailyQuest } from "@/lib/streak"
 
 // Grace window: 47 hours (same-day + next day, like Snapchat)
@@ -196,50 +195,6 @@ export async function restoreStreak() {
     restoredStreak,
     creditsSpent: cost,
     remainingCredits: currentCredits - cost,
-  }
-}
-
-export async function consumeListeningCredit() {
-  const authClient = await createClient()
-  const { data: _auth } = await authClient.auth.getUser()
-  // Identity from the cookie client; insight_points/user_stats/profiles writes
-  // are RLS-denied to `authenticated`, so reads/writes use the service role.
-  const supabaseAdmin = await createServiceRoleClient()
-  if (!_auth?.user) return { success: false, reason: "unauthorized" as const }
-
-  const userId = _auth.user.id
-
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("credits, disability_visual")
-    .eq("id", userId)
-    .maybeSingle()
-
-  const currentCredits = profile?.credits ?? 0
-
-  if (profile?.disability_visual === true || isLaunchFree()) {
-    return {
-      success: true as const,
-      remainingCredits: currentCredits,
-      bypassed: true,
-    }
-  }
-
-  if (currentCredits < 1) {
-    return {
-      success: false,
-      reason: "insufficient_credits" as const,
-      currentCredits,
-    }
-  }
-
-  await supabaseAdmin.from("profiles").update({
-    credits: currentCredits - 1,
-  }).eq("id", userId)
-
-  return {
-    success: true as const,
-    remainingCredits: currentCredits - 1,
   }
 }
 

@@ -53,7 +53,7 @@ import {
   repostPiece,
 } from "@/actions/content"
 import { Input } from "@/components/ui/input"
-import { createCollection, consumeListeningCredit } from "@/actions/monetization"
+import { createCollection } from "@/actions/monetization"
 import { ReportButton } from "./report-button"
 import { CommentsSheet } from "./comments-sheet"
 import { ClapButton, useClaps } from "./clap-button"
@@ -212,25 +212,6 @@ export function ReaderActions({
       window.speechSynthesis.cancel()
       setSpeaking(false)
       return
-    }
-    if (!requireAuth()) return
-
-    if (viewerId !== pieceAuthorId) {
-      setBusy(true)
-      try {
-        const res = await consumeListeningCredit()
-        if (!res.success) {
-          toast.error("Insufficient credits to listen. You need 1 credit.")
-          setBusy(false)
-          return
-        }
-        toast.success(`Used 1 listening credit. (${res.remainingCredits} remaining)`)
-      } catch {
-        toast.error("Failed to verify listening credits.")
-        setBusy(false)
-        return
-      }
-      setBusy(false)
     }
 
     // Build a queue of (text, tone, uid) segments. Prefer structured blocks (tone-aware);

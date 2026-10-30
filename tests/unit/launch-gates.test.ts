@@ -33,13 +33,11 @@ let tiers: typeof import("@/actions/content/tiers")
 let bundles: typeof import("@/actions/content/bundles")
 let orgs: typeof import("@/actions/orgs")
 let limits: typeof import("@/lib/ai-limits")
-let quests: typeof import("@/actions/monetization/quests")
 before(async () => {
   tiers = await import("@/actions/content/tiers")
   bundles = await import("@/actions/content/bundles")
   orgs = await import("@/actions/orgs")
   limits = await import("@/lib/ai-limits")
-  quests = await import("@/actions/monetization/quests")
 })
 
 const saved = process.env.LAUNCH_FREE
@@ -96,11 +94,4 @@ test("aiPlanForLimit gives launch users the free allowance, not a paid tier", ()
   process.env.LAUNCH_FREE = "0"
   assert.equal(lim("free"), 20_000)
   assert.equal(lim("org"), 1_000_000)
-})
-
-test("consumeListeningCredit is free under launch", async () => {
-  currentFake = fakeWith({ credits: 0, disability_visual: false })
-  const res: any = await quests.consumeListeningCredit()
-  assert.equal(res.success, true)
-  assert.equal(currentFake.calls.some((c) => c.table === "profiles" && c.op === "update"), false)
 })
