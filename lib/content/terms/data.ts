@@ -47,7 +47,7 @@ export const SECTIONS = [
   },
   {
     h: "12. Limitation of liability",
-    b: "To the maximum extent permitted by law, Nib is not liable for indirect, incidental, special, or consequential damages, or for any loss of revenue, data, or goodwill. Our total liability for any claim is capped at the greater of (a) amounts you paid us in the 12 months before the claim, or (b) US$100.",
+    b: "To the maximum extent permitted by law, Nib is not liable for indirect, incidental, special, or consequential damages, or for any loss of revenue, data, or goodwill. Our total liability for any claim is capped at the greater of (a) amounts you paid us in the 12 months before the claim, or (b) ₹10,000.",
   },
   {
     h: "13. Indemnity",
@@ -59,7 +59,7 @@ export const SECTIONS = [
   },
   {
     h: "15. Governing law",
-    b: "These Terms are governed by the laws of the jurisdiction where Nib is incorporated, without regard to conflict-of-laws rules. Disputes are resolved in that jurisdiction's competent courts, except where local consumer law gives you stronger rights.",
+    b: "These Terms are governed by the laws of India, without regard to conflict-of-laws rules. The courts at Visakhapatnam, Andhra Pradesh, have exclusive jurisdiction over disputes, except where your local consumer law gives you stronger rights.",
   },
   {
     h: "16. Contact",
