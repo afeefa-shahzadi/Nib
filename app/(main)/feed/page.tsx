@@ -1,4 +1,3 @@
-import { Rss } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { getFollowingFeed } from "@/actions/social"
 import { cachedDiscoverFeed } from "@/lib/public-cache"
@@ -22,19 +21,11 @@ export default async function FeedPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="container-wide flex-1 pt-16 pb-12 md:pt-24">
-        <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="mb-2 inline-flex items-center gap-2 text-xs tracking-[0.2em] text-muted-foreground uppercase">
-              <Rss className="size-3.5" /> Feed
-            </p>
-            <h1 className="font-display text-4xl tracking-tight md:text-5xl">
-              What&apos;s new on Nib
-            </h1>
-            <p className="mt-2 max-w-xl text-muted-foreground">
-              The freshest pieces from authors you follow and the network at
-              large.
-            </p>
-          </div>
+        <header className="mb-8">
+          <h1 className="font-display text-4xl leading-[1.05] sm:text-5xl">What&apos;s new on Nib</h1>
+          <p className="mt-4 max-w-[38rem] text-lg leading-relaxed text-muted-foreground">
+            New pieces from writers you follow, and from everyone else.
+          </p>
         </header>
 
         <FeedClient
