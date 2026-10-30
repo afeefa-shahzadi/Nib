@@ -4,7 +4,7 @@ export function GET() {
   const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
   const body = `# Nib
 
-> Nib is a publishing platform for adaptive, mode-switching pieces — one work a reader can consume as a skim, a standard read, an expert deep-dive, a teaching scaffold, or a debate. Writers publish; readers tip, subscribe, and follow.
+> Nib is a publishing platform for adaptive, mode-switching pieces — one work a reader can consume as a skim, a standard read, an expert deep-dive, a teaching scaffold, or counterpoints. Writers publish; readers tip, subscribe, and follow.
 
 ## Public content
 - [Sitemap](${base}/sitemap.xml): every public, published piece

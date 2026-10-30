@@ -30,13 +30,13 @@ export const PILLARS = [
     id: "modes",
     label: "Reading modes",
     title: "Five views of the same source.",
-    body: "Skim, Standard, Expert, Teach, Debate. The reader switches modes via a sticky toggle and the piece literally re-composes from the underlying blocks.",
+    body: "Skim, Standard, Expert, Teach, Counterpoints. The reader switches modes via a sticky toggle and the piece literally re-composes from the underlying blocks.",
     bullets: [
       "Skim: thesis + spine, ~10% of the piece",
       "Standard: clean reading-first flow",
       "Expert: evidence, citations, footnotes inline",
-      "Teach: scaffolded with interactive prompts and self-checks",
-      "Debate: contested claims surfaced with counter-arguments",
+      "Teach: scaffolded with prompts and self-checks, plus Explain simply for beginners",
+      "Counterpoints: the strongest objection to each claim, answered, with a link to the piece's debate room",
     ],
   },
   {

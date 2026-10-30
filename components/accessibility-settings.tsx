@@ -12,7 +12,7 @@ export function AccessibilitySettings() {
       </p>
       <p className="text-sm text-muted-foreground">
         {launchFree
-          ? "Free launch — all features unlocked, including AI voice listening, ELI5 summaries and voice dictation."
+          ? "Free launch — all features unlocked, including AI voice listening, Explain simply and voice dictation."
           : "Accessibility verification is temporarily unavailable."}
       </p>
     </div>

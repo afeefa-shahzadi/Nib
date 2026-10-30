@@ -501,7 +501,7 @@ export default function DocsPage() {
                 <p className="mt-4 leading-relaxed text-foreground/85">
                   Click a block, then use the wand icon on it (or Inspector →
                   AI variants) and pick a reading mode: Skim condenses, Expert
-                  deepens, Teach adds an analogy and a check-question, Debate
+                  deepens, Teach adds an analogy and a check-question, Counterpoints
                   steel-mans the counter-argument. The rewrite opens as a diff
                   against your text — Apply replaces the block, Discard drops
                   it. Nothing changes until you choose.

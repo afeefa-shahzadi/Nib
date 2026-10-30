@@ -354,7 +354,7 @@ export const IMPORT_EXPORT = [
 export const FAQ_ITEMS = [
   {
     q: "Do I have to use all five reading modes?",
-    a: "No. Default to Standard. Turn on Skim or Expert per piece when the structure benefits. Teach and Debate are situational.",
+    a: "No. Default to Standard. Turn on Skim or Expert per piece when the structure benefits. Teach and Counterpoints are situational. Readers get Explain simply on every piece, at the top of Teach or, without Teach, of Standard.",
   },
   {
     q: "Do I need a paid plan?",

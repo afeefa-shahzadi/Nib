@@ -92,7 +92,7 @@ export const EXCERPT = {
     "Objection: writers already struggle to finish one version. Answer: you still write one. Modes choose which of your blocks to show; extra versions are optional.",
   skim: [
     "You write a piece once, as a sequence of blocks.",
-    "Readers pick Skim, Standard, Expert, Teach or Debate.",
+    "Readers pick Skim, Standard, Expert, Teach or Counterpoints.",
     "Writers decide which blocks appear in which mode.",
   ],
   expertHtml:
