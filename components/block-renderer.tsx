@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, createContext, useContext } from "react"
+import { markText } from "@/lib/mark-text"
 import { Lock } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -97,6 +98,9 @@ export function slugifyId(s: string): string {
   )
 }
 
+const escapeHtml = (t: string) =>
+  t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+
 export const HighlightsContext = createContext<any[]>([])
 export const InlineCommentsContext = createContext<any[]>([])
 
@@ -114,32 +118,25 @@ export function RichOrText({
   const highlights = useContext(HighlightsContext)
   const inlineComments = useContext(InlineCommentsContext)
 
-  // Apply highlights by string replacement (naive but effective for string highlights)
-  if (highlights?.length) {
-    highlights.forEach((hl) => {
-      if (!hl.text_content) return
-      const escaped = hl.text_content.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const rgx = new RegExp(`(${escaped})`, 'gi')
-      const isAnnotation = hl.annotations && hl.annotations.length > 0
-      const colorClass = isAnnotation ? 'bg-success/25 border-b-2 border-success' : 'bg-note/25'
-      const mark = `<mark class="${colorClass} text-foreground rounded-sm px-0.5 highlight-marker" data-highlight-id="${hl.id}">${hl.text_content}</mark>`
-      
-      if (html) html = html.replace(rgx, mark)
-      else if (text) text = text.replace(rgx, mark)
-    })
+  // Paint saved highlights and inline comments. Selections are plain text but
+  // the HTML can split them with tags, entities or line breaks; markText copes.
+  const paint = (src: string) => {
+    let out = src
+    for (const hl of highlights ?? []) {
+      if (!hl.text_content) continue
+      const cls = hl.annotations?.length ? "bg-success/25 border-b-2 border-success" : "bg-note/25"
+      out = markText(out, hl.text_content, (t) => `<mark class="${cls} text-foreground rounded-sm px-0.5 highlight-marker" data-highlight-id="${hl.id}">${t}</mark>`)
+    }
+    for (const c of inlineComments ?? []) {
+      if (!c.quoted_text) continue
+      out = markText(out, c.quoted_text, (t) => `<span class="inline-comment-marker bg-info/25 border-b-2 border-info cursor-pointer text-foreground" data-comment-id="${c.id}">${t}</span>`)
+    }
+    return out
   }
-
-  // Apply inline comments
-  if (inlineComments?.length) {
-    inlineComments.forEach((c: any) => {
-      if (!c.quoted_text) return
-      const escaped = c.quoted_text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const rgx = new RegExp(`(${escaped})`, 'gi')
-      const mark = `<span class="inline-comment-marker bg-info/25 border-b-2 border-info cursor-pointer text-foreground" data-comment-id="${c.id}">${c.quoted_text}</span>`
-      
-      if (html) html = html.replace(rgx, mark)
-      else if (text) text = text.replace(rgx, mark)
-    })
+  const painting = !!(highlights?.length || inlineComments?.length)
+  if (painting) {
+    if (html) html = paint(html)
+    else if (text) text = paint(escapeHtml(text))
   }
 
   if (html)
@@ -149,7 +146,7 @@ export function RichOrText({
         dangerouslySetInnerHTML={{ __html: sanitize(html) }}
       />
     )
-  if (text && highlights?.length) {
+  if (text && painting) {
     return (
       <As
         className={className}

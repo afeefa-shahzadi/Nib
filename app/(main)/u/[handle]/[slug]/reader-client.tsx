@@ -82,6 +82,9 @@ const DebateRoom = dynamic(() => import("@/components/debate-room").then((m) => 
 const AnnotationDialog = dynamic(() => import("@/components/reader/annotation-dialog").then((m) => m.AnnotationDialog), { ssr: false })
 const SubscribeModal = dynamic(() => import("@/components/reader/subscribe-modal").then((m) => m.SubscribeModal), { ssr: false })
 
+// Stable empty default so memoised children don't see a new array every render.
+const NONE: any[] = []
+
 export function ReaderClient({
   piece,
   blocks,
@@ -101,8 +104,8 @@ export function ReaderClient({
   originalAuthor,
   originalBlocks,
   commentSources = [],
-  initialHighlights = [],
-  initialComments = [],
+  initialHighlights = NONE,
+  initialComments = NONE,
 }: {
   piece: PieceData
   blocks: any[]
@@ -158,6 +161,12 @@ export function ReaderClient({
 
   const [inlineComments, setInlineComments] = useState(initialComments || [])
   const [optimisticHighlights, setOptimisticHighlights] = useState<any[]>([])
+  // Fresh saved highlights from the server replace the placeholder, so it isn't painted twice.
+  const [seenHighlights, setSeenHighlights] = useState(initialHighlights)
+  if (seenHighlights !== initialHighlights) {
+    setSeenHighlights(initialHighlights)
+    setOptimisticHighlights((prev) => prev.filter((h) => h.id !== "temp-new-highlight"))
+  }
   const [threadPopoverState, setThreadPopoverState] = useState<{
     open: boolean
     anchorRect: DOMRect | null
@@ -355,6 +364,28 @@ export function ReaderClient({
     }
     return arr
   }, [bodyBlocks, originalBlocks])
+
+  // The article body only re-renders when its content changes, not on every
+  // scroll tick: re-rendering repaints highlights and would wipe a reader's selection.
+  const unlockRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    unlockRef.current = piece.price_paise ? buy : subscribe
+  })
+  const body = useMemo(
+    () => (
+      <ReaderBody
+        blocks={bodyBlocks}
+        mode={mode}
+        hasAccess={hasAccess}
+        is_adult={isAdult}
+        has_dob={hasDob}
+        highlights={[...initialHighlights, ...optimisticHighlights]}
+        inlineComments={inlineComments.filter((c: any) => !c.parent_id && c.quoted_text)}
+        onUnlock={() => unlockRef.current()}
+      />
+    ),
+    [bodyBlocks, mode, hasAccess, isAdult, hasDob, initialHighlights, optimisticHighlights, inlineComments]
+  )
 
   const share = async () => {
     if (typeof window === "undefined") return
@@ -594,16 +625,7 @@ export function ReaderClient({
             {launchFree && bodyBlocks.some((b: any) => b.monetization_eligible) && (
               <Badge variant="secondary" className="mb-4">Free during launch</Badge>
             )}
-            <ReaderBody
-              blocks={bodyBlocks}
-              mode={mode}
-              hasAccess={hasAccess}
-              is_adult={isAdult}
-              has_dob={hasDob}
-              highlights={[...initialHighlights, ...optimisticHighlights]}
-              inlineComments={inlineComments.filter((c: any) => !c.parent_id && c.quoted_text)}
-              onUnlock={piece.price_paise ? buy : subscribe}
-            />
+            {body}
             {!hasAccess && bodyBlocks.some((b: any) => b.monetization_eligible) && (
               <PremiumTeaserOverlay 
                 onSubscribe={subscribe}

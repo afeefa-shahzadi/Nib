@@ -45,15 +45,26 @@ export function InlineThreadPopover({
   
   const editorRef = useRef<CommentEditorRef>(null)
 
+  // Latest onClose without re-subscribing: the parent passes a new function every render.
+  const closeRef = useRef(onClose)
+  useEffect(() => {
+    closeRef.current = onClose
+  })
+
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if ((e.target as Element).closest("#inline-thread-popover")) return
-      if ((e.target as Element).closest(".inline-comment-marker")) return
-      onClose()
+      const t = e.target as Element
+      // The selection toolbar opens this box; its click mustn't close it again.
+      if (t.closest("#inline-thread-popover, .inline-comment-marker, [role=toolbar]")) return
+      closeRef.current()
     }
-    setTimeout(() => { document.addEventListener("click", onClick) }, 10)
-    return () => document.removeEventListener("click", onClick)
-  }, [onClose])
+    // Attach after the opening click has finished; cancel if unmounted first.
+    const timer = setTimeout(() => document.addEventListener("click", onClick), 10)
+    return () => {
+      clearTimeout(timer)
+      document.removeEventListener("click", onClick)
+    }
+  }, [])
 
   if (!anchorRect) return null
 

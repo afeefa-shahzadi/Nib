@@ -35,7 +35,7 @@ export function HighlightBubble({
         setPos(null)
         return
       }
-      const s = sel.toString().trim()
+      const s = sel.toString().replace(/\s+/g, " ").trim()
       if (s.length < 3) {
         setPos(null)
         return
@@ -52,7 +52,9 @@ export function HighlightBubble({
       // Sit above the selection unless the sticky header/mode bar would cover it; then go below.
       const covered = document.querySelector("[data-reader-bar]")?.getBoundingClientRect().bottom ?? 64
       const h = window.innerWidth >= 1024 ? 44 : 56
-      const top = rect.top - h - 8 < covered ? rect.bottom + 8 : rect.top - h - 8
+      // Phones draw their own copy/paste menu above a selection, so ours goes below there.
+      const touch = window.matchMedia("(pointer: coarse)").matches
+      const top = touch || rect.top - h - 8 < covered ? rect.bottom + (touch ? 16 : 8) : rect.top - h - 8
       // Keep the whole toolbar on screen (it's centred on `left`, ~360px wide).
       const half = Math.min(180, window.innerWidth / 2 - 8)
       const left = Math.min(Math.max(rect.left + rect.width / 2, half + 8), window.innerWidth - half - 8)
@@ -76,14 +78,16 @@ export function HighlightBubble({
     const url =
       pieceUrl ?? (typeof window !== "undefined" ? window.location.href : "")
     const payload = `“${text}” — ${pieceTitle ?? ""} ${url}`.trim()
-    try {
-      if (navigator.share) await navigator.share({ text: payload, url })
-      else {
+    if (navigator.share) {
+      // Closing the share sheet rejects too; that's not an error worth showing.
+      await navigator.share({ text: payload }).catch(() => {})
+    } else {
+      try {
         await navigator.clipboard.writeText(payload)
         toast.success("Quote copied")
+      } catch {
+        toast.error("Couldn't copy the quote. Select the text and copy it instead.")
       }
-    } catch {
-      /* user cancelled */
     }
     setPos(null)
   }
@@ -93,12 +97,13 @@ export function HighlightBubble({
   return createPortal(
     <div
       role="toolbar"
+      aria-label="Selected text"
       style={{ top: pos.top, left: pos.left, transform: "translateX(-50%)" }}
       className="animate-fade-in absolute z-50 flex items-center gap-0.5 rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-xl select-none"
     >
       <button
-        onMouseDown={(e) => {
-          e.preventDefault()
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
           if (activeRect) onHighlight?.(text, activeRect)
           setPos(null)
           toast.success("Highlighted")
@@ -109,8 +114,8 @@ export function HighlightBubble({
         <Highlighter className="size-3.5 text-note" /> <span className="max-sm:sr-only">Highlight</span>
       </button>
       <button
-        onMouseDown={(e) => {
-          e.preventDefault()
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
           if (activeRect) onAnnotate?.(text, activeRect)
           setPos(null)
         }}
@@ -120,8 +125,8 @@ export function HighlightBubble({
         <PenLine className="size-3.5 text-info" /> <span className="max-sm:sr-only">Annotate</span>
       </button>
       <button
-        onMouseDown={(e) => {
-          e.preventDefault()
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
           if (activeRect) onComment?.(text, activeRect)
           setPos(null)
         }}
@@ -131,8 +136,8 @@ export function HighlightBubble({
         <MessageCircle className="size-3.5 text-info" /> <span className="max-sm:sr-only">Comment</span>
       </button>
       <button
-        onMouseDown={(e) => {
-          e.preventDefault()
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
           void shareQuote()
         }}
         className="inline-flex h-11 items-center gap-1.5 rounded px-2.5 text-sm hover:bg-accent max-sm:w-11 max-sm:justify-center lg:h-8"
