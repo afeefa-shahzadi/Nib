@@ -19,9 +19,8 @@ async function pollOptions(blockId: string, viewerId: string | null): Promise<st
 
 async function results(blockId: string, options: string[]) {
   const db = await createAdminClient()
-  // ponytail: tallies in JS; switch to a grouped count if a poll passes ~10k votes.
-  const { data } = await db.from("poll_votes").select("choice").eq("block_id", blockId).limit(10000)
-  return tallyPoll(options, (data ?? []).map((r: { choice: string }) => r.choice))
+  const { data } = await db.rpc("poll_tally", { p_block: blockId })
+  return tallyPoll(options, new Map((data ?? []).map((r: { choice: string; n: number }) => [r.choice, Number(r.n)])))
 }
 
 export async function getPollResults(blockId: string) {
