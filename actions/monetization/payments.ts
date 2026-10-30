@@ -276,7 +276,8 @@ export async function createSponsorshipOrder(args: { data?: unknown } = {}) {
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Must be logged in to sponsor")
-    if (data.amountPaise < 100000) throw new Error("Minimum sponsorship is ₹1,000")
+    if (data.amountPaise < 100000)
+      throw new Error("Minimum sponsorship is ₹1,000")
     const supabaseAdmin = await createAdminClient()
     await assertMonetizable(supabaseAdmin, data.contentObjectId)
 
@@ -371,10 +372,17 @@ export async function verifySponsorshipPayment(args: { data?: unknown } = {}) {
 
     // Author share per lib/revenue-split.ts (85% of net on Free)
     const gross = spons.amount_paise
-    const authorId = Array.isArray(spons.piece) ? spons.piece[0].author_id : spons.piece.author_id
+    const authorId = Array.isArray(spons.piece)
+      ? spons.piece[0].author_id
+      : spons.piece.author_id
 
     // Determine net via dynamic rules
-    const net = await calculateAuthorNetPaise(authorId, gross, "sponsorship", supabaseAdmin)
+    const net = await calculateAuthorNetPaise(
+      authorId,
+      gross,
+      "sponsorship",
+      supabaseAdmin
+    )
 
     // Transaction
     const { error } = await supabaseAdmin.rpc("activate_sponsorship_tx", {
@@ -495,7 +503,11 @@ export async function requestPayout(args: { data?: unknown } = {}) {
     data,
     context,
   }: {
-    data: { amountPaise: number; destination?: string; payout_method_id?: string }
+    data: {
+      amountPaise: number
+      destination?: string
+      payout_method_id?: string
+    }
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Unauthorized")
@@ -504,14 +516,13 @@ export async function requestPayout(args: { data?: unknown } = {}) {
     // Reputation gate: a restricted creator can't withdraw while penalized.
     // restricted_until is service-role-only (a user client reads null and the
     // gate opens); supabaseAdmin is the service role.
-    await assertNotRestricted(
-      supabaseAdmin,
-      context.userId!,
-      "payout"
-    )
+    await assertNotRestricted(supabaseAdmin, context.userId!, "payout")
     const { availablePaise, hasOpenRequest } =
       await computeWithdrawableBalancePaise(supabaseAdmin, context.userId!)
-    if (!Number.isInteger(data.amountPaise) || data.amountPaise < MIN_PAYOUT_PAISE)
+    if (
+      !Number.isInteger(data.amountPaise) ||
+      data.amountPaise < MIN_PAYOUT_PAISE
+    )
       throw new Error(`Minimum payout is ₹${MIN_PAYOUT_PAISE / 100}`)
     if (data.amountPaise > availablePaise)
       throw new Error(`Only ₹${(availablePaise / 100).toFixed(0)} available`)
@@ -532,7 +543,9 @@ export async function requestPayout(args: { data?: unknown } = {}) {
       if (!method || method.user_id !== context.userId)
         throw new Error("Payout method not found.")
       if (!method.pan)
-        throw new Error("Add your PAN to this payout method before withdrawing.")
+        throw new Error(
+          "Add your PAN to this payout method before withdrawing."
+        )
       payoutMethodId = method.id
       destination =
         method.method_type === "vpa"
@@ -545,7 +558,9 @@ export async function requestPayout(args: { data?: unknown } = {}) {
     // partial unique index (migration 20260717000000) is what actually prevents
     // two concurrent requests from both draining the same balance.
     if (hasOpenRequest)
-      throw new Error("You already have a pending payout. Wait for it to settle.")
+      throw new Error(
+        "You already have a pending payout. Wait for it to settle."
+      )
     const { error } = await supabaseAdmin.from("payout_requests").insert({
       user_id: context.userId!,
       amount_paise: data.amountPaise,
@@ -555,7 +570,9 @@ export async function requestPayout(args: { data?: unknown } = {}) {
     })
     if (error) {
       if (error.code === "23505")
-        throw new Error("You already have a pending payout. Wait for it to settle.")
+        throw new Error(
+          "You already have a pending payout. Wait for it to settle."
+        )
       console.error("[server]", error)
       throw new Error("Request failed. Please try again.")
     }
@@ -666,7 +683,12 @@ export async function settlePaidPurchase(
 export async function settleMembershipCharge(
   supabaseAdmin: SupabaseClient,
   subscriptionId: string,
-  payment: { id: string; order_id?: string | null; amount: number; fee?: number | null }
+  payment: {
+    id: string
+    order_id?: string | null
+    amount: number
+    fee?: number | null
+  }
 ): Promise<boolean> {
   const { data: sub } = await supabaseAdmin
     .from("payment_subscriptions")
@@ -698,7 +720,8 @@ export async function settleMembershipCharge(
     processing_paise: split.processing,
   })
   if (error) {
-    if (error.code !== "23505") console.error("[payments] membership charge insert failed", error)
+    if (error.code !== "23505")
+      console.error("[payments] membership charge insert failed", error)
     return false
   }
   await supabaseAdmin.from("earnings_ledger").insert({
@@ -711,9 +734,59 @@ export async function settleMembershipCharge(
   await supabaseAdmin.from("notifications").insert({
     user_id: sub.author_id,
     type: "sale",
-    payload: { sender_id: sub.user_id, amount_paise: payment.amount, kind: "membership" },
+    payload: {
+      sender_id: sub.user_id,
+      amount_paise: payment.amount,
+      kind: "membership",
+    },
   })
   return true
+}
+
+// Keep the reader's membership in step with its Razorpay subscription. The
+// webhook calls this on every subscription.* event: activation creates (or
+// revives) the membership, and the end states close it. A no-op for
+// Studio/Reader/Org subscriptions, which have no payment_subscriptions row.
+const MEMBERSHIP_STATUS: Record<string, string> = {
+  active: "active",
+  authenticated: "active",
+  cancelled: "canceled",
+  completed: "canceled",
+  expired: "expired",
+  halted: "past_due",
+}
+
+export async function syncMembershipFromSubscription(
+  supabaseAdmin: SupabaseClient,
+  subscriptionId: string,
+  status: string
+) {
+  const next = MEMBERSHIP_STATUS[status]
+  if (!next) return
+  const { data: sub } = await supabaseAdmin
+    .from("payment_subscriptions")
+    .select("id, user_id, author_id, tier_id")
+    .eq("razorpay_subscription_id", subscriptionId)
+    .maybeSingle()
+  if (!sub?.author_id || !sub.tier_id) return
+  if (next === "active") {
+    await supabaseAdmin.from("memberships").upsert(
+      {
+        user_id: sub.user_id,
+        author_id: sub.author_id,
+        tier_id: sub.tier_id,
+        payment_subscription_id: sub.id,
+        status: "active",
+      },
+      // started_at is left to its default so monthly charges keep "member since"
+      { onConflict: "payment_subscription_id", ignoreDuplicates: false }
+    )
+  } else {
+    await supabaseAdmin
+      .from("memberships")
+      .update({ status: next })
+      .eq("payment_subscription_id", sub.id)
+  }
 }
 
 // Reverse a refunded/disputed purchase exactly once. The Razorpay webhook
@@ -732,7 +805,9 @@ export async function reversePaidPurchase(
     .update({ status: "reversed" })
     .eq("razorpay_order_id", orderId)
     .eq("status", "paid")
-    .select("author_id, net_paise, processing_paise, amount_paise, curator_id, curator_net_paise")
+    .select(
+      "author_id, net_paise, processing_paise, amount_paise, curator_id, curator_net_paise"
+    )
     .maybeSingle()
   if (!reversed?.author_id) return false
 
@@ -750,7 +825,11 @@ export async function reversePaidPurchase(
     // Settled before purchases.net_paise existed — the exact credit is unknown.
     await alertOps(
       `[chargeback] order ${orderId} reversed but has no stored net — reverse the creator's ledger manually`,
-      { orderId, authorId: reversed.author_id, amountPaise: reversed.amount_paise }
+      {
+        orderId,
+        authorId: reversed.author_id,
+        amountPaise: reversed.amount_paise,
+      }
     )
     return false
   }
@@ -861,7 +940,9 @@ export async function calculateAuthorNetPaise(
   type: "tip" | "sponsorship" | "purchase",
   supabaseAdmin: SupabaseClient
 ): Promise<number> {
-  return (await calculateSaleSplit(authorId, grossPaise, type, false, supabaseAdmin)).author
+  return (
+    await calculateSaleSplit(authorId, grossPaise, type, false, supabaseAdmin)
+  ).author
 }
 
 // Author/curator/platform shares for one sale. Studio's ₹50k monthly cap counts
@@ -901,11 +982,24 @@ export async function calculateSaleSplit(
         .gte("created_at", startStr),
     ])
     studioMonthGmvPaise =
-      (tips ?? []).reduce((s: number, t: { amount_paise: number }) => s + t.amount_paise, 0) +
-      (ledger ?? []).reduce((s: number, l: { gross_paise: number }) => s + l.gross_paise, 0)
+      (tips ?? []).reduce(
+        (s: number, t: { amount_paise: number }) => s + t.amount_paise,
+        0
+      ) +
+      (ledger ?? []).reduce(
+        (s: number, l: { gross_paise: number }) => s + l.gross_paise,
+        0
+      )
   }
 
-  return splitSale({ grossPaise, kind: type, isStudio, studioMonthGmvPaise, curated, processingPaise })
+  return splitSale({
+    grossPaise,
+    kind: type,
+    isStudio,
+    studioMonthGmvPaise,
+    curated,
+    processingPaise,
+  })
 }
 
 // ============== Apply earnings to Studio (pay ₹499 from balance) ==============
@@ -1005,4 +1099,3 @@ export async function redeemStudioFromEarnings() {
   }
   return await __handler({ context })
 }
-

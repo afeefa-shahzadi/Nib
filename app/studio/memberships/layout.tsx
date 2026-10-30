@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 export const metadata: Metadata = {
-  title: "My memberships — Nib",
+  title: "Memberships — Nib",
 
   openGraph: {
-    title: "My memberships — Nib",
+    title: "Memberships — Nib",
 
     url: "/studio/memberships",
   },

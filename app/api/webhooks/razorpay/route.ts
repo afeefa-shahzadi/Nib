@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
           // Idempotent settlement: credits the creator's ledger and notifies
           // them exactly once, whether the client confirm or this webhook wins
           // the created->paid transition.
-          const { settlePaidPurchase } = await import(
-            "@/actions/monetization/payments"
-          )
+          const { settlePaidPurchase } =
+            await import("@/actions/monetization/payments")
           await settlePaidPurchase(supabaseAdmin, p.order_id, p.id, p.fee)
 
           // Activate a boost if this order was for one (guarded so a webhook
@@ -102,9 +101,8 @@ export async function POST(request: NextRequest) {
       // the order id is right on the payload.
       const orderId = payload.payload.payment?.entity?.order_id
       if (orderId) {
-        const { reversePaidPurchase } = await import(
-          "@/actions/monetization/payments"
-        )
+        const { reversePaidPurchase } =
+          await import("@/actions/monetization/payments")
         await reversePaidPurchase(supabaseAdmin, orderId)
       } else {
         await alertOps(
@@ -135,13 +133,16 @@ export async function POST(request: NextRequest) {
           .update({ status: newStatus, current_period_end: periodEnd })
           .eq("razorpay_subscription_id", s.id)
 
+        const { syncMembershipFromSubscription } =
+          await import("@/actions/monetization/payments")
+        await syncMembershipFromSubscription(supabaseAdmin, s.id, newStatus)
+
         // Each successful membership charge pays the author (exactly once per
         // payment id). A no-op for Studio/Reader/Org subscriptions.
         const charge = payload.payload.payment?.entity
         if (event === "subscription.charged" && charge?.id) {
-          const { settleMembershipCharge } = await import(
-            "@/actions/monetization/payments"
-          )
+          const { settleMembershipCharge } =
+            await import("@/actions/monetization/payments")
           await settleMembershipCharge(supabaseAdmin, s.id, charge)
         }
 
@@ -171,7 +172,7 @@ export async function POST(request: NextRequest) {
             .from("profiles")
             .update({ plan: isActive ? "reader" : "free" })
             .eq("id", reader.user_id)
-          
+
           // Monthly IP grant: claim this billing period by advancing
           // ip_granted_until atomically — webhook retries and
           // activated+charged double-fires match zero rows and credit nothing.
@@ -184,9 +185,7 @@ export async function POST(request: NextRequest) {
               .from("reader_subscriptions")
               .update({ ip_granted_until: periodEnd })
               .eq("razorpay_subscription_id", s.id)
-              .or(
-                `ip_granted_until.is.null,ip_granted_until.lt.${periodEnd}`
-              )
+              .or(`ip_granted_until.is.null,ip_granted_until.lt.${periodEnd}`)
               .select("user_id")
               .maybeSingle()
             if (claimed?.user_id) {

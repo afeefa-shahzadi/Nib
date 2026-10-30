@@ -115,3 +115,43 @@ test("payout sends gross minus 1% TDS minus the transfer fee", () => {
   assert.equal(payoutNetPaise(40_000), 40_000 - tdsOnPayoutPaise(40_000) - PAYOUT_FEE_PAISE)
   assert.equal(payoutNetPaise(100), 0)
 })
+
+// ---------- membership rows follow the Razorpay subscription ----------
+const subRow = { id: "ps1", user_id: "b1", author_id: "a1", tier_id: "t1" }
+const membershipWrites = (fake: any) =>
+  fake.calls.filter((c: any) => c.table === "memberships" && c.op !== "select")
+
+test("an activated membership subscription creates the membership", async () => {
+  const fake = makeFakeClient(({ table }: ResolveCtx): any =>
+    table === "payment_subscriptions" ? { data: subRow } : { data: null, error: null })
+  await payments.syncMembershipFromSubscription(fake as any, "sub_1", "active")
+  const [w] = membershipWrites(fake)
+  assert.equal(w.op, "upsert")
+  assert.deepEqual(
+    w.rows,
+    { user_id: "b1", author_id: "a1", tier_id: "t1", payment_subscription_id: "ps1", status: "active" }
+  )
+  assert.equal(w.opts.onConflict, "payment_subscription_id")
+})
+
+test("a cancelled, halted or expired subscription ends the membership", async () => {
+  for (const [status, expected] of [["cancelled", "canceled"], ["completed", "canceled"], ["expired", "expired"], ["halted", "past_due"]]) {
+    const fake = makeFakeClient(({ table }: ResolveCtx): any =>
+      table === "payment_subscriptions" ? { data: subRow } : { data: null, error: null })
+    await payments.syncMembershipFromSubscription(fake as any, "sub_1", status)
+    const [w] = membershipWrites(fake)
+    assert.equal(w.op, "update", status)
+    assert.equal(w.vals.status, expected)
+    assert.deepEqual(w.filters, [["payment_subscription_id", "ps1"]])
+  }
+})
+
+test("a subscription that isn't a membership touches no membership", async () => {
+  const fake = makeFakeClient(() => ({ data: null }))
+  await payments.syncMembershipFromSubscription(fake as any, "sub_x", "active")
+  assert.equal(membershipWrites(fake).length, 0)
+  const pending = makeFakeClient(({ table }: ResolveCtx): any =>
+    table === "payment_subscriptions" ? { data: subRow } : { data: null })
+  await payments.syncMembershipFromSubscription(pending as any, "sub_1", "pending")
+  assert.equal(membershipWrites(pending).length, 0)
+})
