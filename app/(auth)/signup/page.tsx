@@ -142,6 +142,10 @@ function SignupPageContent() {
   }
 
   const copy = COPY[role]
+  // The tab follows the chosen role (layout metadata covers the first paint).
+  useEffect(() => {
+    document.title = `${sent ? "Check your email" : copy.title} — Nib`
+  }, [copy.title, sent])
   const signIn = (
     <>
       Already have an account?{" "}

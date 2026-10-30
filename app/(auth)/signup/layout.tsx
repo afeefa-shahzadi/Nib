@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Create your studio — Nib",
-  description: "Start publishing knowledge, not pages.",
+  title: "Sign up — Nib",
+  description: "Join Nib to read, write or run a shared workspace. Free during launch.",
   openGraph: {
-    title: "Create your studio — Nib",
-    description: "Start publishing knowledge, not pages.",
+    title: "Sign up — Nib",
+    description: "Join Nib to read, write or run a shared workspace. Free during launch.",
     url: "/signup",
   },
   alternates: {
