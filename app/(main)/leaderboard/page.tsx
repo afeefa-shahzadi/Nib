@@ -226,7 +226,8 @@ export default async function LeaderboardPage({ searchParams }: { searchParams: 
             {v.me.toNext > 0 && (
               <span className="text-muted-foreground">
                 {" "}
-                · {fmt(v.me.toNext, board.key === "earningsPaise")} {board.unit === "earned" ? "" : board.unit} to #{v.me.rank - 1}
+                · {fmt(v.me.toNext, board.key === "earningsPaise")}
+                {board.unit === "points" ? " points" : ""} behind #{v.me.rank - 1}
               </span>
             )}
           </p>

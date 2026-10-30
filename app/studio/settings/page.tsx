@@ -429,8 +429,10 @@ export default function SettingsPage() {
           <Label htmlFor="set-website">Website</Label>
           <Input
             id="set-website"
-            type="url"
+            // Text, not type="url": "yoursite.com" is fine; the server adds https:// and checks it.
+            type="text"
             inputMode="url"
+            autoComplete="url"
             placeholder="yoursite.com"
             value={website}
             onChange={(e) => setWebsite(e.target.value)}
