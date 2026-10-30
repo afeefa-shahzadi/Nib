@@ -779,7 +779,7 @@ On Discover you can search, and filter by date (past day, week, month or year), 
 
 ## Reading a piece
 
-When the author has written mode-specific content for a piece, a **Mode** switcher appears above the text, offering only the modes that change something. **Skim** keeps the key claims, **Standard** is the whole piece, **Expert** adds precise detail, **Teach** adds plainer explanations and questions, and **Counterpoints** brings forward counter-arguments and trade-offs, with a link to the piece's debate room. **Teach** is always offered, because it includes **Explain simply**. Number keys **1**, **2** and so on pick the modes in the order shown. The address bar updates, so a link you share opens in the same mode.
+When the author has written mode-specific content for a piece, a **Mode** switcher appears above the text, offering only the modes that change something. **Skim** keeps the key claims, **Standard** is the whole piece, **Expert** adds precise detail, **Teach** adds plainer explanations and questions, and **Counterpoints** brings forward counter-arguments and trade-offs, with a link to the piece's debate room. A piece without mode content has no switcher. Number keys **1**, **2** and so on pick the modes in the order shown. The address bar updates, so a link you share opens in the same mode.
 
 ![Reading modes](reader-modes.png) The mode switcher on a piece.
 
@@ -979,7 +979,7 @@ Listen uses the voices built into your device and browser, so the voices you get
 
 ## Simple explanations
 
-In **Teach** mode, **Explain simply** asks AI for a short, plain-language explanation of the whole piece. It's useful for dense or technical writing, or for checking you've understood the main point.
+**Explain simply**, at the top of **Teach** mode (or of the piece, when it has no Teach mode), asks AI for a short, plain-language explanation of the whole piece. It's useful for dense or technical writing, or for checking you've understood the main point.
 
 ## Reading modes
 

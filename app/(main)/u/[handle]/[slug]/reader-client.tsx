@@ -146,12 +146,7 @@ export function ReaderClient({
   }
   const [showFollowDialog, setShowFollowDialog] = useState(false)
   // Only offer modes that actually change this piece; an unavailable requested mode reads as Standard.
-  // Teach is always offered: even without authored Teach variants it carries
-  // the "Explain simply" beginner step.
-  const modes = useMemo(() => {
-    const m = availableModes(blocks as Block[], MODES)
-    return m.includes("teach") ? m : MODES.filter((x) => m.includes(x) || x === "teach")
-  }, [blocks])
+  const modes = useMemo(() => availableModes(blocks as Block[], MODES), [blocks])
   const requestedMode = searchParams?.get("mode") as ReadingMode | null
   const mode: ReadingMode = requestedMode && modes.includes(requestedMode) ? requestedMode : "standard"
   const [authed, setAuthed] = useState(false)
@@ -594,7 +589,8 @@ export function ReaderClient({
           </Sheet>
 
           <div className="mt-8 relative">
-            {mode === "teach" && <ExplainSimply authed={authed} blocks={listenBlocks} articleRef={articleRef} />}
+            {/* "Explain simply" is Teach's beginner step; pieces without Teach show it in Standard. */}
+            {mode === (modes.includes("teach") ? "teach" : "standard") && <ExplainSimply authed={authed} blocks={listenBlocks} articleRef={articleRef} />}
             {launchFree && bodyBlocks.some((b: any) => b.monetization_eligible) && (
               <Badge variant="secondary" className="mb-4">Free during launch</Badge>
             )}
