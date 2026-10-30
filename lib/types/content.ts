@@ -306,7 +306,12 @@ export interface DebateMessage {
   stance: string
   body: string
   created_at: string
-  author?: { id?: string; handle: string | null; display_name: string } | null
+  author?: {
+    id?: string
+    handle: string | null
+    display_name: string
+    avatar_url?: string | null
+  } | null
   block_id?: string | null
 }
 

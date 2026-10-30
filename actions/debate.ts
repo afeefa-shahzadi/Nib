@@ -133,7 +133,7 @@ export async function listMessages(args: { data?: any } = {}) {
     const { data: profiles } = userIds.length
       ? await supabaseAdmin
           .from("profiles")
-          .select("id, handle, display_name")
+          .select("id, handle, display_name, avatar_url")
           .in("id", userIds)
       : { data: [] }
     const map = new Map(
