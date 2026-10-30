@@ -3,6 +3,7 @@ import StudioLayoutClient from "./layout-client"
 import { getMyRole } from "@/actions/content"
 import { StudioRole } from "@/hooks/use-my-role"
 import { RestrictionBanner } from "@/components/restriction-banner"
+import { ConsentBanner } from "@/components/auth/consent-banner"
 
 export const metadata: Metadata = {
   title: "Studio — Nib",
@@ -22,6 +23,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
   return (
     <StudioLayoutClient initialRole={primary as StudioRole}>
       <RestrictionBanner />
+      <ConsentBanner />
       {children}
     </StudioLayoutClient>
   )

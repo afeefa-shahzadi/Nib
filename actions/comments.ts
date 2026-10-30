@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { assertCanPost } from "@/lib/parental-consent"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import DOMPurify from "isomorphic-dompurify"
 import { getViewablePiece } from "@/actions/content/helpers"
@@ -86,6 +87,7 @@ export async function postComment(args: { data?: any } = {}) {
     data: { piece_id: string; body: string; parent_id?: string; quoted_text?: string; serialized_range?: any }
     userId: string
   }) => {
+    await assertCanPost(userId)
     if (!(await getViewablePiece(supabaseAdmin, data.piece_id, userId)))
       throw new Error("Piece not found")
     if (data.parent_id) {

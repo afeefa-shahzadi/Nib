@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { supabase } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/auth/password-input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { AuthShell } from "@/components/auth/auth-shell"
 
 export default function ResetPage() {
   const router = useRouter()
@@ -24,30 +25,16 @@ export default function ResetPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="container-wide grid flex-1 place-items-center py-16">
-        <div className="surface-elevated w-full max-w-sm rounded-lg p-8">
-          <h1 className="font-display text-3xl text-foreground">
-            Set a new password
-          </h1>
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div>
+    <AuthShell title="Choose a new password" intro="Pick something you haven't used here before.">
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div className="space-y-2">
               <Label htmlFor="pw">New password</Label>
-              <Input
-                id="pw"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <PasswordInput id="pw" isNew value={password} onChange={setPassword} />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Saving…" : "Update password"}
             </Button>
           </form>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

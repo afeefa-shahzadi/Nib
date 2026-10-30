@@ -7,7 +7,7 @@ export const SECTIONS = [
   },
   {
     h: "2. Accounts and roles",
-    b: "You may sign up as a Reader or an Author. You are responsible for your credentials and for activity under your account. You must be at least 13 years old (16 in the EU). One person, one account, unless we explicitly allow otherwise.",
+    b: "You may sign up as a Reader or an Author. You are responsible for your credentials and for activity under your account. You must be at least 13 years old. If you are under 18, a parent must approve your account before you can publish, comment or join debates. One person, one account, unless we explicitly allow otherwise.",
   },
   {
     h: "3. Your content",

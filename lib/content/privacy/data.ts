@@ -43,7 +43,7 @@ export const SECTIONS = [
   },
   {
     h: "11. Children",
-    b: "Nib is not directed at children under 13 (or 16 in the EU). We do not knowingly collect data from them.",
+    b: "You must be at least 13 to use Nib. If you are 13 to 17, we ask for a parent's email when you sign up and email them a link to approve your account; until they do, you can read and follow writers but cannot publish, comment or join debates. We keep the parent's email and a record of the approval (date, time and the network address it came from) as evidence of consent, never show either publicly, and delete them with the account. Mature content stays hidden until you turn 18. A parent can ask us to remove the account at any time. If we learn an account belongs to someone under 13, we delete it.",
   },
   {
     h: "12. Changes",

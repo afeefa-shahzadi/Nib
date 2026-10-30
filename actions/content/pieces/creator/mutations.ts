@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { assertCanPost } from "@/lib/parental-consent"
 import { normalizePiecePrice } from "@/lib/piece-price"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
@@ -278,6 +279,7 @@ export async function updatePiece(args: { data?: any } = {}) {
     let authorDetails: { display_name: string; handle: string } | null = null
 
     if (data.status === "published") {
+      await assertCanPost(context.userId!)
       // Reputation gate: a restricted creator cannot publish. restricted_until is
       // a service-role-only column; the user-scoped client reads null and the gate
       // silently opens, so check it with the true service role.
@@ -476,6 +478,7 @@ export async function bulkUpdatePieces(args: { data?: any } = {}) {
   }) => {
     const patch: Record<string, unknown> = { ...data.patch }
     if (data.patch.status === "published") {
+      await assertCanPost(context.userId!)
       // restricted_until is service-role-only; check the gate with the true
       // service role, not the user-scoped client (which reads null and opens it).
       await assertNotRestricted(

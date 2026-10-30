@@ -6,7 +6,7 @@ import { createHmac, timingSafeEqual } from "crypto"
 // and compare. Purpose-scoping stops an unsubscribe token being replayed as a
 // confirm token or vice-versa.
 
-type Purpose = "unsubscribe" | "confirm"
+type Purpose = "unsubscribe" | "confirm" | "parental_consent"
 
 function secret(): string {
   const s = process.env.EMAIL_TOKEN_SECRET || process.env.SUPABASE_SECRET_KEY

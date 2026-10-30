@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { AuthShell } from "@/components/auth/auth-shell"
 import Link from "next/link"
 
 export default function ForgotPage() {
@@ -25,24 +26,21 @@ export default function ForgotPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="container-wide grid flex-1 place-items-center py-16">
-        <div className="surface-elevated w-full max-w-sm rounded-lg p-8">
-          <h1 className="font-display text-3xl text-foreground">
-            Reset your password
-          </h1>
+    <AuthShell title="Reset your password" intro="Enter your account's email and we'll send you a link to choose a new password.">
           {sent ? (
-            <p className="mt-4 text-sm text-muted-foreground">
-              Check your inbox for a reset link.
+            <p className="text-muted-foreground">
+              If that email has an account, a reset link is on its way. Check your inbox and spam folder.
             </p>
           ) : (
-            <form onSubmit={onSubmit} className="mt-6 space-y-4">
-              <div>
+            <form onSubmit={onSubmit} className="space-y-5">
+              <div className="space-y-2">
                 <Label htmlFor="em">Email</Label>
                 <Input
                   id="em"
                   type="email"
                   required
+                  autoComplete="email"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -53,12 +51,10 @@ export default function ForgotPage() {
             </form>
           )}
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link href="/login" className="text-foreground underline">
+            <Link href="/login" className="font-medium text-primary hover:underline hover:underline-offset-4">
               Back to sign in
             </Link>
           </p>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }

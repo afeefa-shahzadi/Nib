@@ -2,20 +2,15 @@
 
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  RoleStep,
-  RoleBadge,
-  type AccountRole,
-} from "@/components/auth/role-step"
+import { AuthShell, FieldError } from "@/components/auth/auth-shell"
+import { PasswordInput } from "@/components/auth/password-input"
 import { toast } from "sonner"
 import { safeRedirect } from "@/lib/safe-redirect"
-
-import { Suspense } from "react"
 
 export default function LoginPage() {
   return (
@@ -28,19 +23,16 @@ export default function LoginPage() {
 function LoginPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = safeRedirect(
-    searchParams.get("redirect") || "",
-    undefined,
-    ""
-  )
+  const redirect = safeRedirect(searchParams.get("redirect") || "", undefined, "")
 
-  const [role, setRole] = useState<AccountRole | null>(null)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   const supabase = createClient()
-  const destination = redirect || (role === "reader" ? "/feed" : "/studio")
+  // Land where the account belongs: readers in the feed, authors and orgs in the studio.
+  const destinationFor = (meta?: { role?: string }) => redirect || (meta?.role === "reader" ? "/feed" : "/studio")
 
   const linkError = searchParams.get("error") === "link"
   useEffect(() => {
@@ -49,23 +41,27 @@ function LoginPageContent() {
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s?.user) router.replace(destination)
+      if (s?.user) router.replace(destinationFor(s.user.user_metadata))
     })
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) router.replace(destination)
+      if (user) router.replace(destinationFor(user.user_metadata))
     })
     return () => data.subscription.unsubscribe()
-  }, [destination, router, supabase.auth])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [redirect, router, supabase.auth])
 
   const onSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
+    setError("")
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    if (error) toast.error(error.message)
+    if (error)
+      setError(
+        error.message === "Invalid login credentials"
+          ? "That email and password don't match. Check them, or reset your password."
+          : error.message
+      )
   }
 
   const google = async () => {
@@ -73,89 +69,65 @@ function LoginPageContent() {
       provider: "google",
       options: { redirectTo: window.location.origin },
     })
-    if (error) toast.error("Google sign-in failed.")
+    if (error) toast.error("Google sign-in didn't work. Try again, or use your email.")
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="container-wide grid flex-1 place-items-center py-16">
-        <div className="surface-elevated w-full max-w-sm rounded-lg p-8">
-          {!role ? (
-            <RoleStep mode="signin" onSelect={setRole} />
-          ) : (
-            <>
-              <RoleBadge role={role} onChange={() => setRole(null)} />
-              <h1 className="font-display text-3xl text-foreground">Sign in</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {role === "reader"
-                  ? "We'll drop you into your feed."
-                  : "We'll take you to the studio."}
-              </p>
+    <AuthShell
+      title="Welcome back"
+      intro="Sign in to read, write and pick up where you left off."
+      aside={
+        <>
+          New to Nib?{" "}
+          <Link href="/signup" className="inline-flex min-h-11 items-center font-medium text-primary hover:underline hover:underline-offset-4 lg:min-h-0">
+            Create an account
+          </Link>
+        </>
+      }
+    >
+      <form onSubmit={onSubmit} className="space-y-5">
+        {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1" && (
+          <>
+            <Button type="button" variant="outline" className="w-full" onClick={google}>
+              Continue with Google
+            </Button>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or
+              <span className="h-px flex-1 bg-border" />
+            </div>
+          </>
+        )}
 
-              {/* Hidden until the Google provider is enabled in Supabase Auth. */}
-
-              {process.env.NEXT_PUBLIC_GOOGLE_AUTH === "1" && (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-6 w-full"
-                    onClick={google}
-                  >
-                    Continue with Google
-                  </Button>
-                  <div className="my-5 flex items-center gap-3 text-xs tracking-wider text-muted-foreground uppercase">
-                    <span className="h-px flex-1 bg-border" />
-                    or
-                    <span className="h-px flex-1 bg-border" />
-                  </div>
-                </>
-              )}
-
-              <form onSubmit={onSubmit} className="space-y-4">
-                <div>
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link
-                      href="/forgot-password"
-                      className="text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      Forgot?
-                    </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in…" : "Sign in"}
-                </Button>
-              </form>
-
-              <p className="mt-6 text-center text-sm text-muted-foreground">
-                No account?{" "}
-                <Link href="/signup" className="text-foreground underline">
-                  Create one
-                </Link>
-              </p>
-            </>
-          )}
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </div>
-      </main>
-    </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">Password</Label>
+            <Link
+              href="/forgot-password"
+              className="-my-2 inline-flex min-h-11 items-center text-sm text-muted-foreground hover:text-foreground lg:min-h-8"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <PasswordInput id="password" value={password} onChange={setPassword} invalid={!!error} describedBy={error ? "login-error" : undefined} />
+          <FieldError id="login-error">{error}</FieldError>
+        </div>
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+    </AuthShell>
   )
 }

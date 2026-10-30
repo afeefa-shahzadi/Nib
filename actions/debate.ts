@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { assertCanPost } from "@/lib/parental-consent"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { SupabaseClient } from "@supabase/supabase-js"
@@ -186,6 +187,7 @@ export async function createRoom(args: { data?: any } = {}) {
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Unauthorized")
+    await assertCanPost(context.userId)
     if (data.access_mode === "tier" && !data.required_tier_id) {
       throw new Error("required_tier_id is needed for tier-restricted rooms")
     }
@@ -322,6 +324,7 @@ export async function postMessage(args: { data?: any } = {}) {
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Unauthorized")
+    await assertCanPost(context.userId)
     // Gate posting on room access. Admin client bypasses RLS, so the same
     // access rules used for reading must be enforced here before an insert.
     const { data: room } = await context.supabase

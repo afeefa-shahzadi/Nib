@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
+import { AuthShell } from "@/components/auth/auth-shell"
 import { safeRedirect } from "@/lib/safe-redirect"
 
 // proxy.ts sends AAL1 sessions of users with a verified TOTP factor here.
@@ -53,18 +54,10 @@ function MfaChallenge() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="container-wide grid flex-1 place-items-center py-16">
-        <div className="surface-elevated w-full max-w-sm rounded-lg p-8">
-          <h1 className="font-display text-3xl text-foreground">
-            Two-factor authentication
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Enter the 6-digit code from your authenticator app.
-          </p>
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
-            <div>
-              <Label htmlFor="mfa-code">Code</Label>
+    <AuthShell title="Enter your sign-in code" intro="Open your authenticator app and type the 6-digit code for Nib.">
+          <form onSubmit={onSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="mfa-code">6-digit code</Label>
               <Input
                 id="mfa-code"
                 inputMode="numeric"
@@ -82,12 +75,11 @@ function MfaChallenge() {
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            <button type="button" onClick={signOut} className="text-foreground underline">
+            Can&apos;t get a code?{" "}
+            <button type="button" onClick={signOut} className="inline-flex min-h-11 items-center font-medium text-primary hover:underline hover:underline-offset-4 lg:min-h-0">
               Sign out
             </button>
           </p>
-        </div>
-      </main>
-    </div>
+    </AuthShell>
   )
 }
