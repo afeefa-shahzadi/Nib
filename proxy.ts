@@ -56,13 +56,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  // Signed-in readers skip the marketing page.
-  if (pathname === "/" && user) {
-    const feed = request.nextUrl.clone()
-    feed.pathname = "/feed"
-    return NextResponse.redirect(feed)
-  }
-
   // A password sign-in only reaches AAL1. Users with a verified TOTP factor
   // must pass the challenge before anything signed-in runs. (Reads the
   // session JWT — no network call.) Requests without a session (webhooks,
@@ -86,6 +79,14 @@ export async function proxy(request: NextRequest) {
       supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c))
       return res
     }
+  }
+
+  // Signed-in readers skip the marketing page (after the MFA gate, so an
+  // AAL1 action POST to / still gets a 401).
+  if (pathname === "/" && user) {
+    const feed = request.nextUrl.clone()
+    feed.pathname = "/feed"
+    return NextResponse.redirect(feed)
   }
 
   // --- CUSTOM DOMAIN LOGIC ---
