@@ -20,12 +20,12 @@ export function ConsentBanner() {
   return (
     <div role="status" className="hairline-b bg-note/10">
       <div className="container-wide flex flex-wrap items-center gap-x-4 gap-y-2 py-3 text-sm">
-        <p className="flex-1">
+        <p className="min-w-0 basis-full sm:basis-0 sm:flex-1">
           Waiting for a parent to approve your account. You can read and follow writers; publishing and posting open once they do.
         </p>
         <Button
           variant="outline"
-          size="sm"
+          className="min-h-11"
           disabled={busy}
           onClick={async () => {
             setBusy(true)
