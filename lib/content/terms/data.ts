@@ -23,11 +23,11 @@ export const SECTIONS = [
   },
   {
     h: "6. Tips, memberships, and payments",
-    b: "Tips and memberships are processed by our payment partners. Authors receive payouts net of platform and processor fees, as disclosed in pricing. Tips are voluntary; readers can tip without an account where allowed. Refunds are handled per the payment partner's policy and applicable law.",
+    b: "Tips, memberships, paid pieces and the Reader Pass are processed by Razorpay. You need an account to pay. Tips are voluntary. Earnings reach a writer's balance after a 7-day clearing period and can be withdrawn from ₹400. Payments are paused during the free launch. Refunds follow Razorpay's policy and applicable law; a refunded sale is reversed from the writer's earnings.",
   },
   {
     h: "7. Platform fees",
-    b: "Writing on Nib is free. We charge fees only when you sell — tips, memberships, paid pieces. Current rates are listed on the pricing page and may be updated with notice.",
+    b: "Reading and writing on Nib are free. Nib takes a share only of money you earn: tips, sales, sponsorships and memberships, after the payment processor's fee. Studio is an optional paid plan. Current rates are on the pricing page and may change with notice.",
   },
   {
     h: "8. Moderation and termination",

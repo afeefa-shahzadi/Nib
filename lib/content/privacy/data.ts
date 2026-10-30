@@ -7,15 +7,15 @@ export const SECTIONS = [
   },
   {
     h: "2. Data we collect",
-    b: "Account data: email, handle, display name, role (reader or author), and optional profile fields you provide. Content data: drafts, published pieces, outlines, AI-assisted variants, and metadata you create in the composer. Interaction data: follows, notifications, tips, debate participation, and analytics needed to render your dashboard. Technical data: device, browser, IP address, and basic logs needed to operate the service securely.",
+    b: "Account data: email, handle, display name, role (reader or author), and optional profile fields you provide. Content data: drafts, published pieces, outlines, AI-assisted variants, and metadata you create in the composer. Interaction data: follows, notifications, tips, debate participation, and analytics needed to render your dashboard. Payout data, if you withdraw earnings: your bank account or UPI ID and PAN, stored encrypted and shown back only masked. Technical data: device, browser, IP address, and basic logs needed to operate the service securely.",
   },
   {
     h: "3. How we use your data",
-    b: "To run your account and render the product (feed, profile, studio, reader). To deliver notifications you've opted into. To process tips and membership payments through our payment partners. To detect abuse, prevent fraud, and keep the platform safe. To improve the product through aggregated, non-identifying analytics.",
+    b: "To run your account and render the product (feed, profile, studio, reader). To deliver notifications you've opted into. To process payments and payouts through Razorpay, and to keep the tax records the law requires. To detect abuse, prevent fraud, and keep the platform safe. To improve the product through aggregated, non-identifying analytics.",
   },
   {
     h: "4. AI features",
-    b: "When you use AI assistance in the composer, your draft content is sent to our AI gateway to generate variants. Variants are stored alongside your draft — never overwriting it — and are never used to train third-party foundation models on your behalf.",
+    b: "When you use AI assistance in the composer, the text you ask about is sent to our AI provider to generate a suggestion. If you add your own AI key, it goes to the provider you chose instead, under their terms. Suggestions are stored beside your draft and never overwrite it. We don't use your content to train AI models.",
   },
   {
     h: "5. Sharing",
@@ -23,7 +23,7 @@ export const SECTIONS = [
   },
   {
     h: "6. Your rights",
-    b: "You can edit or delete your profile, unpublish or delete your pieces, and request full account deletion at any time. EU/UK users have rights of access, rectification, erasure, restriction, portability, and objection under GDPR; California residents have analogous rights under CCPA.",
+    b: "You can edit or delete your profile, unpublish or delete your pieces, and request full account deletion at any time. Indian users have rights under the Digital Personal Data Protection Act, 2023. EU/UK users have rights of access, rectification, erasure, restriction, portability, and objection under GDPR; California residents have analogous rights under CCPA.",
   },
   {
     h: "7. Data retention",

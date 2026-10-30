@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -19,6 +18,7 @@ import { fileDmcaNotice } from "@/actions/dmca"
 import type { NoticeInput } from "@/lib/dmca/validate"
 
 export function NoticeForm({ noticeType }: { noticeType: "dmca" | "grievance" }) {
+  const g = noticeType === "grievance"
   const [pending, start] = useTransition()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [done, setDone] = useState<string | null>(null)
@@ -37,12 +37,13 @@ export function NoticeForm({ noticeType }: { noticeType: "dmca" | "grievance" })
 
   if (done)
     return (
-      <Card>
-        <CardContent className="p-6 text-sm">
-          Your notice was received. Reference: <code>{done}</code>. We review every notice
-          before any action is taken.
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-border p-8" role="status">
+        <h2 className="font-display text-2xl">{g ? "Complaint received" : "Notice received"}</h2>
+        <p className="mt-2 leading-relaxed text-muted-foreground">
+          Your reference is <code className="font-mono text-foreground">{done}</code>. A person
+          reviews it before anything is changed.
+        </p>
+      </div>
     )
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -79,12 +80,11 @@ export function NoticeForm({ noticeType }: { noticeType: "dmca" | "grievance" })
   }
 
   const err = (k: string) =>
-    errors[k] && <p className="mt-1 text-xs text-destructive">{errors[k]}</p>
+    errors[k] && <p className="text-sm text-destructive">{errors[k]}</p>
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <form onSubmit={onSubmit} className="space-y-5">
+    <div className="rounded-lg border border-border p-6 sm:p-8">
+        <form onSubmit={onSubmit} className="space-y-6">
           {/* honeypot: visually hidden, bots fill it */}
           <input
             type="text"
@@ -96,13 +96,13 @@ export function NoticeForm({ noticeType }: { noticeType: "dmca" | "grievance" })
             onChange={(e) => setWebsite(e.target.value)}
           />
 
-          <div>
-            <Label htmlFor="infringing_urls">Content URL(s) being reported</Label>
+          <div className="space-y-2">
+            <Label htmlFor="infringing_urls">Links to the content</Label>
             <Textarea
               id="infringing_urls"
               required
               rows={2}
-              className="mt-1"
+              
               placeholder="One URL per line"
               value={infringingUrls}
               onChange={(e) => setInfringingUrls(e.target.value)}
@@ -110,118 +110,119 @@ export function NoticeForm({ noticeType }: { noticeType: "dmca" | "grievance" })
             {err("infringing_urls")}
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="content_object_id">
               Content ID <span className="text-muted-foreground">(optional)</span>
             </Label>
             <Input
               id="content_object_id"
-              className="mt-1"
-              placeholder="Leave blank — we identify the content from the URL above"
+              
+              placeholder="We find the content from the links above"
               value={contentObjectId}
               onChange={(e) => setContentObjectId(e.target.value)}
             />
             {err("target_content_object_id")}
           </div>
 
-          <div>
-            <Label htmlFor="work_identification">The copyrighted work you own</Label>
+          <div className="space-y-2">
+            <Label htmlFor="work_identification">{g ? "What's wrong with it" : "The work you own"}</Label>
             <Textarea
               id="work_identification"
               required
               rows={2}
-              className="mt-1"
+              
               value={workId}
               onChange={(e) => setWorkId(e.target.value)}
             />
             {err("work_identification")}
           </div>
 
-          <div>
-            <Label htmlFor="complainant_name">Your full legal name</Label>
+          <div className="space-y-2">
+            <Label htmlFor="complainant_name">Full legal name</Label>
             <Input
               id="complainant_name"
               required
-              className="mt-1"
+              
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             {err("complainant_name")}
           </div>
 
-          <div>
-            <Label htmlFor="complainant_email">Contact email</Label>
+          <div className="space-y-2">
+            <Label htmlFor="complainant_email">Email</Label>
             <Input
               id="complainant_email"
               type="email"
               required
-              className="mt-1"
+              
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             {err("complainant_email")}
           </div>
 
-          <div>
-            <Label htmlFor="complainant_address">Contact mailing address</Label>
+          <div className="space-y-2">
+            <Label htmlFor="complainant_address">Postal address</Label>
             <Input
               id="complainant_address"
               required
-              className="mt-1"
+              
               value={address}
               onChange={(e) => setAddress(e.target.value)}
             />
             {err("complainant_address")}
           </div>
 
-          <div>
-            <Label htmlFor="complainant_role">You are the</Label>
+          <div className="space-y-2">
+            <Label htmlFor="complainant_role">You are</Label>
             <Select value={role} onValueChange={(v) => setRole(v as "owner" | "agent")}>
-              <SelectTrigger id="complainant_role" className="mt-1">
+              <SelectTrigger id="complainant_role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="owner">copyright owner</SelectItem>
-                <SelectItem value="agent">authorized agent of the owner</SelectItem>
+                <SelectItem value="owner">{g ? "The person affected" : "The copyright owner"}</SelectItem>
+                <SelectItem value="agent">{g ? "Acting for the person affected" : "Authorized to act for the owner"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-relaxed">
             <Checkbox checked={goodFaith} onCheckedChange={(v) => setGoodFaith(v === true)} className="mt-0.5" />
             <span>
-              I have a good-faith belief that the use is not authorized by the owner, its
-              agent, or the law.{" "}
+              {g
+                ? "I believe in good faith that this content breaks the law or Nib's rules."
+                : "I believe in good faith that this use isn't authorized by the owner, their agent, or the law."}{" "}
               {errors.good_faith_statement && <span className="text-destructive">(required)</span>}
             </span>
           </label>
 
-          <label className="flex items-start gap-2 text-sm">
+          <label className="flex min-h-11 cursor-pointer items-start gap-3 text-sm leading-relaxed">
             <Checkbox checked={accuracy} onCheckedChange={(v) => setAccuracy(v === true)} className="mt-0.5" />
             <span>
-              The information in this notice is accurate, and under penalty of perjury I am
-              the owner or authorized to act for the owner.{" "}
+              {g
+                ? "The information in this complaint is accurate."
+                : "The information in this notice is accurate, and under penalty of perjury I am the owner or authorized to act for the owner."}{" "}
               {errors.accuracy_statement && <span className="text-destructive">(required)</span>}
             </span>
           </label>
 
-          <div>
-            <Label htmlFor="signature">Electronic signature (type your full name)</Label>
+          <div className="space-y-2">
+            <Label htmlFor="signature">Signature <span className="font-normal text-muted-foreground">(type your full name)</span></Label>
             <Input
               id="signature"
               required
-              className="mt-1"
+              
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
             />
             {err("signature")}
           </div>
 
-          <Button type="submit" disabled={pending}>
-            {pending ? "Submitting…" : "Submit notice"}
+          <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={pending}>
+            {pending ? "Sending…" : g ? "Send complaint" : "Send notice"}
           </Button>
         </form>
-      </CardContent>
-    </Card>
+    </div>
   )
 }
