@@ -1,16 +1,44 @@
 "use client"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { WaitlistButton } from "@/components/waitlist-button"
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
+import { subscribeToTier } from "@/lib/razorpay/checkout-client"
 import { useAuth } from "@/hooks/use-auth"
 import { Sparkles } from "lucide-react"
 import { TierItem } from "@/lib/types/content"
 
 export function MembershipTiers({
   tiers,
+  authorId,
+  authorName,
+  paymentsOpen,
 }: {
   tiers: TierItem[]
+  authorId: string
   authorName?: string
+  paymentsOpen: boolean
 }) {
   const { user } = useAuth()
+  const router = useRouter()
+  const [busy, setBusy] = useState<string | null>(null)
+
+  async function subscribe(tierId: string) {
+    if (!user) return router.push("/login")
+    setBusy(tierId)
+    try {
+      if (await subscribeToTier(tierId)) {
+        toast.success(`You're a member of ${authorName ?? "this author"}. Access opens in a moment.`)
+        setTimeout(() => router.refresh(), 3000)
+      }
+    } catch (e) {
+      toast.error((e as Error).message)
+    } finally {
+      setBusy(null)
+    }
+  }
 
   if (tiers.length === 0) return null
 
@@ -39,7 +67,13 @@ export function MembershipTiers({
                 ))}
               </ul>
             )}
-            {t.price_cents > 0 ? (
+            {t.price_cents > 0 && user?.id === authorId ? (
+              <p className="mt-4 text-sm text-muted-foreground">Your plan</p>
+            ) : t.price_cents > 0 && paymentsOpen ? (
+              <Button className="mt-4 min-h-11 lg:min-h-9" disabled={busy !== null} onClick={() => subscribe(t.id)}>
+                {busy === t.id ? <Spinner /> : "Subscribe"}
+              </Button>
+            ) : t.price_cents > 0 ? (
               <WaitlistButton className="mt-4" item="membership" source="membership_tiers" signedIn={!!user} />
             ) : (
               <p className="mt-4 text-sm text-muted-foreground">Free</p>

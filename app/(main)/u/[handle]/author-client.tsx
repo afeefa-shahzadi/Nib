@@ -3,6 +3,9 @@ import { getAuthorGraph } from "@/actions/debate"
 import { MembershipTiers } from "@/components/membership-tiers"
 import { RelationshipGraph } from "@/components/relationship-graph"
 import { FollowButton } from "@/components/follow-button"
+import { SubscribeDialog } from "@/components/subscribe-dialog"
+import { useAuth } from "@/hooks/use-auth"
+import { useRouter } from "next/navigation"
 import { SubscribeCard } from "@/components/reader/subscribe-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
@@ -24,6 +27,7 @@ export default function AuthorClient({
   author,
   pieces,
   tiers,
+  paymentsOpen,
   collections = [],
   recommendations,
 }: {
@@ -37,6 +41,7 @@ export default function AuthorClient({
   }
   pieces: Piece[]
   tiers: TierItem[]
+  paymentsOpen: boolean
   collections?: Array<{ id: string; title: string; description: string | null }>
   recommendations: Array<{
     id: string
@@ -68,6 +73,10 @@ export default function AuthorClient({
   const getFollowStatusFn = getFollowStatus
 
   const [query, setQuery] = useState("")
+  const { user } = useAuth()
+  const router = useRouter()
+  const [subscribeOpen, setSubscribeOpen] = useState(false)
+  const canSubscribe = paymentsOpen && user?.id !== author.id && tiers.some((t) => t.price_cents > 0)
   const [activeTag, setActiveTag] = useState<string | null>(null)
   const [followers, setFollowers] = useState<number | null>(null)
 
@@ -172,6 +181,23 @@ export default function AuthorClient({
                 onFollowChange={(_isFollowing, count) => setFollowers(count)}
                 className="w-full h-9"
               />
+              {canSubscribe && (
+                <>
+                  <Button
+                    className="w-full h-9"
+                    onClick={() => (user ? setSubscribeOpen(true) : router.push("/login"))}
+                  >
+                    <Crown className="mr-2 size-4" aria-hidden />
+                    Become a member
+                  </Button>
+                  <SubscribeDialog
+                    open={subscribeOpen}
+                    onOpenChange={setSubscribeOpen}
+                    authorId={author.id}
+                    authorName={author.display_name || author.handle}
+                  />
+                </>
+              )}
               <Button 
                 variant="outline" 
                 className="w-full text-sm h-9"
@@ -343,7 +369,7 @@ export default function AuthorClient({
 
           {tiers.length > 0 && (
             <TabsContent value="tiers" className="mt-2">
-              <MembershipTiers tiers={tiers} authorName={author.display_name} />
+              <MembershipTiers tiers={tiers} authorId={author.id} authorName={author.display_name} paymentsOpen={paymentsOpen} />
             </TabsContent>
           )}
 
