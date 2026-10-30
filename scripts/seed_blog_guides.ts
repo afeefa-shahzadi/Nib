@@ -4,7 +4,15 @@
  * Code, Mermaid and JSON chunks must not contain blank lines: blank lines split chunks.
  */
 
-type Post = { slug: string; title: string; summary: string; tags: string[]; body: string }
+// debate: an optional room seeded on the piece. reply.block is the 0-based index of a
+// paragraph block in the body (headings and other blocks don't count).
+export type SeedDebate = {
+  title: string
+  prompt: string
+  summary: string
+  replies: { block?: number; stance: "for" | "against" | "comment" | "question"; body: string }[]
+}
+type Post = { slug: string; title: string; summary: string; tags: string[]; body: string; debate?: SeedDebate }
 
 const block = (type: string, content: Record<string, unknown>) => `~~~block ${type}\n${JSON.stringify(content)}\n~~~`
 const chart = (content: Record<string, unknown>) => block("chart", content)
@@ -1055,6 +1063,52 @@ ${block("quote", rich("We didn't know the numbers until a reader sent them to us
 [The composer guide](/u/nib/composer-guide), [Importing your writing](/u/nib/importing-your-writing), and [Rich blocks](/u/nib/rich-blocks) for quotes and citations.
 `,
     },
+    {
+      slug: "debating-on-nib",
+      title: "Debating on Nib",
+      summary: "Counterpoints, debate rooms, replies tied to a paragraph, and the summary a room's creator pins when the argument settles.",
+      tags: ["guide", "community", "debate"],
+      body: `
+A comment section collects reactions. A debate room collects arguments, and each argument can point at the exact paragraph it disagrees with. This piece has a live room at the bottom; try it as you read.
+
+## Counterpoints: the piece argues with itself
+
+Switch to **Counterpoints** in the mode tabs. Writers can attach the strongest objection to any paragraph, so a reader sees the case against without leaving the page.
+>debate The fair objection to this whole feature: most writers won't write their own counterarguments. A piece without them simply hides the Counterpoints tab.
+
+## Debate rooms: readers argue with each other
+
+A room belongs to a piece. Anyone who can read the piece can join a public room; a room can also be limited to a paid tier or an organization. Every reply is tagged **For**, **Against**, **Comment** or **Question**, and replies stay in the order they were posted. There is no voting, so a late, careful reply isn't buried under an early, popular one.
+>debate Chronological order has a cost: in a busy room, the best reply can sit far down the thread. The pinned summary is the answer to that.
+
+## Reply to one paragraph
+
+Hover a paragraph on a desktop and click the debate icon at its right edge. The page jumps to the room with that paragraph already chosen, and your reply shows a quote of it. On a phone, choose the paragraph from the menu above the reply box.
+
+Paid paragraphs never appear in the menu, so a reply can't quote text behind the paywall.
+
+## Where it landed
+
+When an argument settles, the room's creator can pin a short summary at the top of the room. Late readers get the outcome first and the full thread after.
+
+!note Write the summary as the state of the argument, not as a verdict: what's agreed, what's still open.
+
+## Start here
+
+Open a room on your own piece from **Studio → Debates**, then send readers to it with the **Argue it live** link that appears in Counterpoints mode.
+`,
+      debate: {
+        title: "Is chronological order better than voting?",
+        prompt: "Rooms show replies in the order they were posted, with no upvotes. Good call or a mistake?",
+        summary: "Agreed: voting rewards early replies and invites pile-ons in small rooms. Still open: whether busy rooms need some way to surface the best reply beyond the creator's summary.",
+        replies: [
+          { block: 2, stance: "for", body: "Small rooms are where voting hurts most: the first reply gets the votes and everyone stops reading." },
+          { block: 2, stance: "against", body: "In a room with two hundred replies, nobody is reading to the end. Something has to rank them." },
+          { block: 5, stance: "comment", body: "The pinned summary covers most of that, as long as the creator actually writes one." },
+          { stance: "question", body: "Could readers mark one reply as the strongest for each side, instead of open voting?" },
+        ],
+      },
+    },
   ]
 }
 
@@ -1065,5 +1119,5 @@ export const roleCollections: { title: string; description: string; slugs: strin
   { title: "For marketers", description: "Launches, reports and customer stories with real numbers.", slugs: ["nib-for-marketers", "charts", "rich-blocks", "diagrams", "plans-explained"] },
   { title: "For presenters and speakers", description: "Turn a talk into a piece people read and share.", slugs: ["nib-for-presenters", "diagrams", "charts", "rich-blocks", "keyboard-shortcuts"] },
   { title: "For researchers and students", description: "Findings with citations, data and runnable analysis.", slugs: ["nib-for-researchers", "rich-blocks", "charts", "code-examples", "teaching-blocks"] },
-  { title: "For writers and journalists", description: "Essays, reporting and newsletters.", slugs: ["nib-for-writers", "composer-guide", "importing-your-writing", "rich-blocks", "community-features", "reading-and-discovery"] },
+  { title: "For writers and journalists", description: "Essays, reporting and newsletters.", slugs: ["nib-for-writers", "composer-guide", "importing-your-writing", "rich-blocks", "community-features", "debating-on-nib", "reading-and-discovery"] },
 ]

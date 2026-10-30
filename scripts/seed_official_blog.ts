@@ -16,7 +16,7 @@ import { createClient } from "@supabase/supabase-js"
 import { existsSync, readFileSync } from "node:fs"
 import { createHash } from "node:crypto"
 import { join } from "node:path"
-import { guidePosts, roleCollections } from "./seed_blog_guides"
+import { guidePosts, roleCollections, type SeedDebate } from "./seed_blog_guides"
 
 // ── Brand: rename here and re-run. ──────────────────────────────────────────
 const BRAND = "Nib"
@@ -153,7 +153,7 @@ function toBlocks(slug: string, md: string): Block[] {
 }
 
 // ── Posts ───────────────────────────────────────────────────────────────────
-type Post = { slug: string; title: string; summary: string; tags: string[]; body: string }
+type Post = { slug: string; title: string; summary: string; tags: string[]; body: string; debate?: SeedDebate }
 
 // Plan-specific claims live here so they're easy to edit when paid plans ship.
 const PLANS_SECTION = `
@@ -1336,6 +1336,30 @@ async function ensureWorkspace(userId: string): Promise<string> {
 }
 
 // ── Main ────────────────────────────────────────────────────────────────────
+// One room per piece, matched by title; replies are replaced on every run.
+async function seedDebate(slug: string, pieceId: string, authorId: string, d: SeedDebate, blocks: { id: string; type: string; order: number }[]) {
+  const paragraphs = blocks.filter((b) => b.type === "paragraph").sort((a, b) => a.order - b.order)
+  const { data: found } = await db.from("debate_rooms").select("id").eq("content_object_id", pieceId).eq("title", d.title).maybeSingle()
+  const room = { content_object_id: pieceId, title: d.title, prompt: d.prompt, summary: d.summary, is_public: true, access_mode: "public", created_by: authorId }
+  let roomId = found?.id as string | undefined
+  if (roomId) {
+    const { error } = await db.from("debate_rooms").update(room).eq("id", roomId)
+    if (error) throw new Error(`debate room ${slug}: ${error.message}`)
+  } else {
+    const { data, error } = await db.from("debate_rooms").insert(room).select("id").single()
+    if (error || !data) throw new Error(`debate room ${slug}: ${error?.message}`)
+    roomId = data.id as string
+  }
+  await db.from("debate_messages").delete().eq("room_id", roomId)
+  for (const r of d.replies) {
+    const blockId = r.block === undefined ? null : paragraphs[r.block]?.id
+    if (blockId === undefined) throw new Error(`debate ${slug}: no paragraph ${r.block}`)
+    const { error } = await db.from("debate_messages").insert({ room_id: roomId, user_id: authorId, stance: r.stance, body: r.body, block_id: blockId })
+    if (error) throw new Error(`debate reply ${slug}: ${error.message}`)
+    await new Promise((res) => setTimeout(res, 5)) // distinct created_at per reply
+  }
+}
+
 async function main() {
   const authorId = await ensureAccount()
   const workspaceId = await ensureWorkspace(authorId)
@@ -1392,8 +1416,9 @@ async function main() {
     await db.from("piece_crdt").delete().eq("piece_id", pieceId)
     const { error: dErr } = await db.from("blocks").delete().eq("content_object_id", pieceId)
     if (dErr) throw new Error(`clear blocks ${p.slug}: ${dErr.message}`)
-    const { error: bErr } = await db.from("blocks").insert(blocks)
-    if (bErr) throw new Error(`blocks ${p.slug}: ${bErr.message}`)
+    const { data: inserted, error: bErr } = await db.from("blocks").insert(blocks).select("id, type, order")
+    if (bErr || !inserted) throw new Error(`blocks ${p.slug}: ${bErr?.message}`)
+    if (p.debate) await seedDebate(p.slug, pieceId, authorId, p.debate, inserted)
 
     const words = blocks.reduce((n, b) => n + String(b.content.text ?? "").split(/\s+/).filter(Boolean).length, 0)
     const images = blocks.filter((b) => b.type === "image").length
