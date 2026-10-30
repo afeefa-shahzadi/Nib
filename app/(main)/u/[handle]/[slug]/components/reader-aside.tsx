@@ -1,16 +1,12 @@
 import Link from "next/link"
-import { List, Link2, ArrowUpRight, ThumbsUp, ThumbsDown, BookOpen } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { List, Link2, ThumbsUp, ThumbsDown, BookOpen } from "lucide-react"
 import { TipJar } from "@/components/tip-jar"
-import { ClapButton } from "@/components/clap-button"
-import { FollowButton } from "@/components/follow-button"
 import {
   PieceData,
   AuthorData,
   BranchData,
   RelatedPiece,
 } from "@/lib/types/content"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { submitRecommendationFeedback } from "@/actions/recommendations"
 import { useState } from "react"
 import { toast } from "sonner"
@@ -38,7 +34,6 @@ export function ReaderAside({
   branches,
   related,
   authed,
-  isAuthor,
   tipRef,
   onSignInRequired,
   isMobileSheet,
@@ -51,15 +46,12 @@ export function ReaderAside({
     effectiveVariant === "desktop" || effectiveVariant === "mobile-sheet"
   const showBranches =
     effectiveVariant === "desktop" || effectiveVariant === "mobile-sheet"
-  // Desktop already has the byline (with Follow) under the title.
-  const showAuthor = effectiveVariant === "mobile-footer"
   const showTipJar =
     effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
   const showRelated =
     effectiveVariant === "desktop" || effectiveVariant === "mobile-footer"
   // Keyboard tips live in the "More" sheet, not as small print beside the piece.
   const showTipText = effectiveVariant === "mobile-sheet"
-  const showClap = effectiveVariant === "desktop"
 
   const [feedbackState, setFeedbackState] = useState<Record<string, boolean>>({})
   const [feedbackLoading, setFeedbackLoading] = useState<Record<string, boolean>>({})
@@ -119,45 +111,6 @@ export function ReaderAside({
         </button>
       )}
 
-      {showAuthor && author && (
-        <div className="surface rounded-md p-5">
-          <p className="text-xs text-muted-foreground">
-            Author
-          </p>
-          <div className="mt-2 flex items-center gap-2">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={author.avatar_url as string} />
-              <AvatarFallback>{author.display_name.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <p className="font-display text-lg leading-tight text-foreground">
-                <Link
-                  href={`/u/${author.handle}`}
-                  className="group flex items-center text-foreground hover:text-primary"
-                >
-                  {author.display_name}
-                  <ArrowUpRight className="ml-1 hidden size-3 group-hover:block group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                </Link>
-              </p>
-              <span className="text-xs text-muted-foreground">@{author.handle}</span>
-            </div>
-          </div>
-          {author.bio && (
-            <p className="mt-2 line-clamp-3 text-sm text-muted-foreground">
-              {author.bio}
-            </p>
-          )}
-          <div className="mt-4 flex flex-col gap-2">
-            {!isAuthor && (
-              <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" className="w-full" />
-            )}
-            <Button asChild size="sm" variant="outline" className="w-full">
-              <Link href={`/u/${author.handle}`}>See all pieces →</Link>
-            </Button>
-          </div>
-        </div>
-      )}
-
       {showTipJar && author && (
         <div ref={tipRef}>
           <TipJar
@@ -168,18 +121,7 @@ export function ReaderAside({
         </div>
       )}
 
-      {showClap && (
-        <div className="block">
-          <ClapButton
-            pieceId={piece.id}
-            authed={authed}
-            disabled={isAuthor}
-            onSignInRequired={onSignInRequired}
-          />
-        </div>
-      )}
-
-      {showBranches && (
+      {showBranches && branches.length > 0 && (
         <div id="branches" className="surface scroll-mt-24 rounded-md p-5">
           <p className="mb-3 text-xs text-muted-foreground">
             Branches

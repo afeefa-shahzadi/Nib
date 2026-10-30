@@ -466,7 +466,7 @@ export function ReaderClient({
 
       {/* One clap state for the bar and the aside Applause card. */}
       <ClapProvider pieceId={piece.id} authed={authed} onSignInRequired={() => router.push("/login")}>
-      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-[minmax(0,42rem)_18rem] lg:gap-16 xl:grid-cols-[minmax(0,42rem)_20rem] xl:gap-24">
+      <main className="container-wide grid flex-1 items-start gap-12 py-12 lg:grid-cols-[minmax(0,42rem)_minmax(18rem,1fr)] lg:gap-16 xl:gap-24">
         <article ref={articleRef} className="w-full max-w-[42rem] min-w-0">
           <SponsoredBanner contentObjectId={piece.id} />
 
@@ -639,7 +639,12 @@ export function ReaderClient({
               <section className="mt-16 rounded-lg border border-border p-6" aria-labelledby="more-from">
                 <h2 id="more-from" className="font-display text-2xl">More from {author.display_name}</h2>
                 <p className="mt-2 text-muted-foreground">Follow to see new pieces in your feed, or get them by email.</p>
-                <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" className="mt-4" />
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <FollowButton authorId={piece.author_id} authorHandle={author.handle} size="default" />
+                  <Button asChild variant="outline">
+                    <Link href={`/u/${author.handle}`}>See all pieces</Link>
+                  </Button>
+                </div>
                 <div className="mt-6">
                   <SubscribeCard compact authorId={piece.author_id} authorName={author.display_name ?? author.handle} />
                 </div>
