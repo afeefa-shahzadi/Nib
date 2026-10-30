@@ -493,7 +493,7 @@ export function ReaderClient({
 
           {/* Sticky mode bar */}
           <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-            <div className="hairline-b sticky top-16 z-20 -mx-3 mt-10 flex items-center gap-2 bg-background/85 px-3 py-1 backdrop-blur">
+            <div data-reader-bar className="hairline-b sticky top-16 z-20 -mx-3 mt-10 flex items-center gap-2 bg-background/85 px-3 py-1 backdrop-blur">
               {/* Below md: one compact control instead of chips that would be cut off. */}
               {modes.length < 2 ? <div className="flex-1" /> : (<>
               <div className="min-w-0 flex-1 md:hidden">

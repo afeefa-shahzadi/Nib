@@ -49,20 +49,26 @@ export function HighlightBubble({
       const rect = range.getBoundingClientRect()
       setText(s)
       setActiveRect(rect)
-      setPos({
-        top: rect.top - 44 + window.scrollY,
-        left: rect.left + rect.width / 2 + window.scrollX,
-      })
+      // Sit above the selection unless the sticky header/mode bar would cover it; then go below.
+      const covered = document.querySelector("[data-reader-bar]")?.getBoundingClientRect().bottom ?? 64
+      const h = window.innerWidth >= 1024 ? 44 : 56
+      const top = rect.top - h - 8 < covered ? rect.bottom + 8 : rect.top - h - 8
+      // Keep the whole toolbar on screen (it's centred on `left`, ~360px wide).
+      const half = Math.min(180, window.innerWidth / 2 - 8)
+      const left = Math.min(Math.max(rect.left + rect.width / 2, half + 8), window.innerWidth - half - 8)
+      setPos({ top: top + window.scrollY, left: left + window.scrollX })
     }
     document.addEventListener("mouseup", onUp)
     document.addEventListener("touchend", onUp)
-    document.addEventListener("selectionchange", () => {
+    const onSelChange = () => {
       const sel = window.getSelection()
       if (!sel || sel.isCollapsed) setPos(null)
-    })
+    }
+    document.addEventListener("selectionchange", onSelChange)
     return () => {
       document.removeEventListener("mouseup", onUp)
       document.removeEventListener("touchend", onUp)
+      document.removeEventListener("selectionchange", onSelChange)
     }
   }, [containerRef])
 
@@ -97,10 +103,10 @@ export function HighlightBubble({
           setPos(null)
           toast.success("Highlighted")
         }}
-        className="inline-flex h-8 items-center gap-1 rounded px-2 text-xs hover:bg-accent"
+        className="inline-flex h-11 items-center gap-1.5 rounded px-2.5 text-sm hover:bg-accent max-sm:w-11 max-sm:justify-center lg:h-8"
         title="Highlight"
       >
-        <Highlighter className="size-3.5 text-note" /> Highlight
+        <Highlighter className="size-3.5 text-note" /> <span className="max-sm:sr-only">Highlight</span>
       </button>
       <button
         onMouseDown={(e) => {
@@ -108,10 +114,10 @@ export function HighlightBubble({
           if (activeRect) onAnnotate?.(text, activeRect)
           setPos(null)
         }}
-        className="inline-flex h-8 items-center gap-1 rounded px-2 text-xs hover:bg-accent"
+        className="inline-flex h-11 items-center gap-1.5 rounded px-2.5 text-sm hover:bg-accent max-sm:w-11 max-sm:justify-center lg:h-8"
         title="Add an annotation"
       >
-        <PenLine className="size-3.5 text-info" /> Annotate
+        <PenLine className="size-3.5 text-info" /> <span className="max-sm:sr-only">Annotate</span>
       </button>
       <button
         onMouseDown={(e) => {
@@ -119,20 +125,20 @@ export function HighlightBubble({
           if (activeRect) onComment?.(text, activeRect)
           setPos(null)
         }}
-        className="inline-flex h-8 items-center gap-1 rounded px-2 text-xs hover:bg-accent"
+        className="inline-flex h-11 items-center gap-1.5 rounded px-2.5 text-sm hover:bg-accent max-sm:w-11 max-sm:justify-center lg:h-8"
         title="Start a discussion"
       >
-        <MessageCircle className="size-3.5 text-info" /> Comment
+        <MessageCircle className="size-3.5 text-info" /> <span className="max-sm:sr-only">Comment</span>
       </button>
       <button
         onMouseDown={(e) => {
           e.preventDefault()
           void shareQuote()
         }}
-        className="inline-flex h-8 items-center gap-1 rounded px-2 text-xs hover:bg-accent"
+        className="inline-flex h-11 items-center gap-1.5 rounded px-2.5 text-sm hover:bg-accent max-sm:w-11 max-sm:justify-center lg:h-8"
         title="Share quote"
       >
-        <Share2 className="size-3.5" /> Quote
+        <Share2 className="size-3.5" /> <span className="max-sm:sr-only">Quote</span>
       </button>
     </div>,
     document.body
