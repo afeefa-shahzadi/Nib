@@ -198,7 +198,12 @@ export function AuthorDashboardClient({
                 href={"/studio/drafts/" + p.id}
                 className="flex min-h-12 items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-accent/40"
               >
-                <span className="min-w-0 truncate text-foreground">{p.title || "Untitled piece"}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-foreground">{p.title || "Untitled piece"}</span>
+                  {p.updated_at && (
+                    <span className="block text-sm text-muted-foreground">Edited {day(p.updated_at)}</span>
+                  )}
+                </span>
                 <StatusBadge status={p.status} />
               </Link>
             ))}
