@@ -1,12 +1,17 @@
 "use server"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
 import { HANDLE_RE } from "@/lib/handle"
+import { checkRateLimit } from "@/lib/rate-limit.server"
 
 // Live check for the settings handle field. Your own current handle counts as available.
 export async function checkHandle(raw: string): Promise<{ ok: boolean; reason?: string }> {
   const handle = String(raw ?? "").trim().toLowerCase()
   if (!HANDLE_RE.test(handle)) return { ok: false, reason: "3–30 letters, numbers or _" }
   const { data: auth } = await (await createClient()).auth.getUser()
+  // Settings-only (signed in), throttled so it can't be used to sweep handles.
+  if (!auth.user) return { ok: false, reason: "Sign in to change your handle" }
+  if (!(await checkRateLimit("handle-check", auth.user.id, 60, 60)).ok)
+    return { ok: false, reason: "Too many checks, wait a moment" }
   const db = await createServiceRoleClient()
   const { data } = await db.from("profiles").select("id").eq("handle", handle).maybeSingle()
   if (data && data.id !== auth.user?.id) return { ok: false, reason: "Taken" }
