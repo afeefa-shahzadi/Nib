@@ -97,7 +97,8 @@ export default function EarnPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1">
-        <section className="container-wide pt-16 pb-10 md:pt-24">
+        <section className="container-wide grid gap-8 pt-16 pb-12 md:pt-24 lg:grid-cols-12 lg:items-end lg:gap-16">
+          <div className="lg:col-span-7">
           <h1 className="max-w-3xl font-display text-4xl leading-[1.05] sm:text-5xl md:text-6xl">
             Get paid for your writing
           </h1>
@@ -110,7 +111,8 @@ export default function EarnPage() {
             <CurrencySelector />
             <span>Paid out in INR through Razorpay.</span>
           </div>
-          <LaunchPaymentsNotice className="mt-6 max-w-xl" />
+          </div>
+          <LaunchPaymentsNotice className="lg:col-span-5" />
         </section>
 
         <section className="container-wide pb-16 md:pb-24">
