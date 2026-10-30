@@ -43,7 +43,7 @@ export const SECTIONS = [
   },
   {
     h: "11. Children",
-    b: "You must be at least 13 to use Nib. If you are 13 to 17, we ask for a parent's email when you sign up and email them a link to approve your account; until they do, you can read and follow writers but cannot publish, comment or join debates. We keep the parent's email and a record of the approval (date, time and the network address it came from) as evidence of consent, never show either publicly, and delete them with the account. Mature content stays hidden until you turn 18. A parent can ask us to remove the account at any time. If we learn an account belongs to someone under 13, we delete it.",
+    b: "You must be at least 13 to use Nib. If you are 13 to 17, we ask for a parent's email when you sign up and email them a link to approve your account. The parent confirms they are your parent or guardian and 18 or older, and one parent email can approve at most three accounts. (Once paid features open, a parent can instead confirm their age with DigiLocker or a ₹1 card charge that we refund straight away.) until they do, you can read and follow writers but cannot publish, comment or join debates. We keep the parent's email and a record of the approval (how it was given, date, time, browser and the network address it came from) as evidence of consent, never show either publicly, and delete them with the account. Mature content stays hidden until you turn 18. A parent can ask us to remove the account at any time. If we learn an account belongs to someone under 13, we delete it.",
   },
   {
     h: "12. Changes",

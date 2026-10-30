@@ -1,7 +1,18 @@
 "use server"
+import { createHmac, timingSafeEqual } from "crypto"
 import { headers } from "next/headers"
-import { createAdminClient, createClient } from "@/lib/supabase/server"
-import { consentStatus, sendParentalConsentEmail, verifyConsentLink } from "@/lib/parental-consent"
+import { createClient } from "@/lib/supabase/server"
+import { consentStatus, grantConsent, sendParentalConsentEmail, verifyConsentLink } from "@/lib/parental-consent"
+import { CARD_CHECK_PAISE, cardCheckEnabled } from "@/lib/consent-methods"
+import { rzFetch } from "@/lib/razorpay/api"
+
+async function requestMeta() {
+  const h = await headers()
+  return {
+    ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || null,
+    userAgent: h.get("user-agent"),
+  }
+}
 
 export async function getMyConsentStatus() {
   const { data } = await (await createClient()).auth.getUser()
@@ -17,23 +28,47 @@ export async function resendParentalConsent() {
   return r
 }
 
-// Called from the emailed link's page. The link's HMAC proves it came from that email.
-export async function grantParentalConsent(userId: string, token: string) {
-  const p = await verifyConsentLink(userId, token)
-  if (!p) throw new Error("This approval link isn't valid.")
-  if (p.parental_consent !== "pending") return "already"
-  const db = await createAdminClient()
-  const h = await headers()
-  await db.from("parental_consents").insert({
-    user_id: userId,
-    parent_email: p.parent_email,
-    ip: (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || null,
-    user_agent: h.get("user-agent")?.slice(0, 300) ?? null,
+// Email link + adult declaration. The link's HMAC proves it came from that inbox.
+export async function grantParentalConsent(userId: string, token: string, declaredAdult: boolean) {
+  return grantConsent(userId, token, { method: "email", declaredAdult, ...(await requestMeta()) })
+}
+
+// ₹1 card check (dormant during launch): charge, verify, approve, refund.
+export async function startConsentCardCheck(userId: string, token: string) {
+  if (!cardCheckEnabled()) throw new Error("Card check isn't available yet.")
+  if (!(await verifyConsentLink(userId, token))) throw new Error("This approval link isn't valid.")
+  const order = (await rzFetch("/orders", {
+    method: "POST",
+    body: JSON.stringify({ amount: CARD_CHECK_PAISE, currency: "INR", notes: { purpose: "parental_consent", user_id: userId } }),
+  })) as { id: string }
+  return { orderId: order.id, amount: CARD_CHECK_PAISE, keyId: process.env.RAZORPAY_KEY_ID! }
+}
+
+export async function finishConsentCardCheck(
+  userId: string,
+  token: string,
+  r: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string },
+  declaredAdult: boolean
+) {
+  if (!cardCheckEnabled()) throw new Error("Card check isn't available yet.")
+  const expected = createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+    .update(`${r.razorpay_order_id}|${r.razorpay_payment_id}`)
+    .digest("hex")
+  const a = Buffer.from(expected)
+  const b = Buffer.from(r.razorpay_signature)
+  if (a.length !== b.length || !timingSafeEqual(a, b)) throw new Error("Payment couldn't be verified.")
+  const order = (await rzFetch(`/orders/${r.razorpay_order_id}`)) as { notes?: { user_id?: string; purpose?: string } }
+  if (order.notes?.purpose !== "parental_consent" || order.notes.user_id !== userId)
+    throw new Error("Payment couldn't be verified.")
+  const out = await grantConsent(userId, token, {
+    method: "card",
+    declaredAdult,
+    reference: r.razorpay_payment_id,
+    ...(await requestMeta()),
   })
-  await db
-    .from("profiles")
-    .update({ parental_consent: "granted", parental_consent_at: new Date().toISOString() })
-    .eq("id", userId)
-    .eq("parental_consent", "pending")
-  return "granted"
+  // The charge only proves an adult's card; give it straight back.
+  await rzFetch(`/payments/${r.razorpay_payment_id}/refund`, { method: "POST", body: JSON.stringify({ amount: CARD_CHECK_PAISE }) }).catch(
+    (e) => console.error("[consent] refund failed", r.razorpay_payment_id, e)
+  )
+  return out
 }

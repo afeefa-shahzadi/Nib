@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server"
 import { signEmailToken, verifyEmailToken } from "@/lib/email-tokens"
 import { sendEmail } from "@/lib/email"
 import { escapeHtml, nibButton } from "@/lib/email-layout"
+import { MAX_CHILDREN_PER_PARENT } from "@/lib/consent-methods"
 
 const RESEND_GAP_MS = 10 * 60_000
 
@@ -58,4 +59,42 @@ export async function verifyConsentLink(userId: string, token: string) {
     .maybeSingle()
   if (!p?.parent_email || !verifyEmailToken("parental_consent", p.parent_email, userId, token)) return null
   return p as { display_name: string; handle: string; parent_email: string; parental_consent: string }
+}
+
+export type ConsentMethod = "email" | "digilocker" | "card"
+
+// Records the approval and opens the account. One parent email can approve at
+// most MAX_CHILDREN_PER_PARENT accounts, so a teen's spare inbox can't vouch for many.
+export async function grantConsent(
+  userId: string,
+  token: string,
+  opts: { method: ConsentMethod; declaredAdult: boolean; reference?: string | null; ip?: string | null; userAgent?: string | null }
+): Promise<"granted" | "already"> {
+  const p = await verifyConsentLink(userId, token)
+  if (!p) throw new Error("This approval link isn't valid.")
+  if (p.parental_consent !== "pending") return "already"
+  if (!opts.declaredAdult) throw new Error("Confirm you're their parent or guardian and 18 or older.")
+  const db = await createAdminClient()
+  const { count } = await db
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_email", p.parent_email)
+    .eq("parental_consent", "granted")
+  if ((count ?? 0) >= MAX_CHILDREN_PER_PARENT)
+    throw new Error(`This email has already approved ${MAX_CHILDREN_PER_PARENT} accounts. Contact us if you need more.`)
+  await db.from("parental_consents").insert({
+    user_id: userId,
+    parent_email: p.parent_email,
+    method: opts.method,
+    declared_adult: true,
+    reference: opts.reference ?? null,
+    ip: opts.ip ?? null,
+    user_agent: opts.userAgent?.slice(0, 300) ?? null,
+  })
+  await db
+    .from("profiles")
+    .update({ parental_consent: "granted", parental_consent_at: new Date().toISOString() })
+    .eq("id", userId)
+    .eq("parental_consent", "pending")
+  return "granted"
 }

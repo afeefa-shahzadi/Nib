@@ -7,38 +7,12 @@ import { ActionContext } from "@/lib/types/actions"
 import { assertMonetizable } from "@/lib/nsfw"
 import { resolveCuratorAttribution } from "@/lib/curator-attribution"
 import { checkRateLimit } from "@/lib/rate-limit.server"
+import { rzFetch } from "@/lib/razorpay/api"
 
-const RZ_BASE = "https://api.razorpay.com/v1"
 // ₹20 tip floor: below this the gateway's per-txn fee (~2% + GST, min ~₹2–3)
 // can exceed the platform cut, so the payment clears at a loss. Piece/bundle
 // prices are author-set and floored elsewhere; only free-amount tips need this.
 const MIN_TIP_PAISE = 2_000
-
-function rzAuthHeader() {
-  const id = process.env.RAZORPAY_KEY_ID
-  const secret = process.env.RAZORPAY_KEY_SECRET
-  if (!id || !secret) throw new Error("Razorpay keys not configured")
-  return "Basic " + Buffer.from(`${id}:${secret}`).toString("base64")
-}
-
-async function rzFetch(path: string, init: RequestInit = {}) {
-  const res = await fetch(`${RZ_BASE}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: rzAuthHeader(),
-      ...(init.headers ?? {}),
-    },
-  })
-  const body = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    const msg =
-      (body as { error?: { description?: string } })?.error?.description ??
-      `Razorpay ${res.status}`
-    throw new Error(msg)
-  }
-  return body
-}
 
 // ============== Create one-time order (bundle / piece / tip) ==============
 export async function createRazorpayOrder(args: { data?: any } = {}) {
