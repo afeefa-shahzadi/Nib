@@ -89,12 +89,12 @@ test("createOrg rejected for free profile when LAUNCH_FREE=0", async () => {
   await assert.rejects(orgs.createOrg({ data: { name: "Acme" } }), /Organizations plan/)
 })
 
-test("aiPlanForLimit caps launch users at studio", () => {
+test("aiPlanForLimit gives launch users the free allowance, not a paid tier", () => {
   const lim = (p: string) => limits.aiDailyTokenLimit(limits.aiPlanForLimit(p))
-  assert.equal(lim("free"), 250_000)
-  assert.equal(lim("org"), 250_000)
+  assert.equal(lim("free"), 20_000)
+  assert.equal(lim("org"), 20_000)
   process.env.LAUNCH_FREE = "0"
-  assert.equal(lim("free"), 50_000)
+  assert.equal(lim("free"), 20_000)
   assert.equal(lim("org"), 1_000_000)
 })
 

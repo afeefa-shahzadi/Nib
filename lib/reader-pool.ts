@@ -6,14 +6,20 @@
 import { SupabaseClient } from "@supabase/supabase-js"
 import { alertOps } from "@/lib/alerts"
 
-// Reader Pass is ₹199/mo. Platform keeps 15%; the remaining 85% becomes the
-// reader's monthly pool budget, split among the creators they clapped for.
-// Config constants so the split can be tuned without a migration.
+// Reader Pass is ₹199/mo. What Nib actually receives is the price minus the
+// 18% GST inside it and the gateway fee; 85% of THAT becomes the reader's
+// monthly pool, split among the creators they clapped for. Basing it on the
+// sticker price paid out more than Nib received.
+import { GST_RATE } from "@/lib/tax"
+import { processingFeePaise } from "@/lib/revenue-split"
+
 const READER_PRICE_PAISE = 19_900
 export const PLATFORM_POOL_CUT = 0.15
-export const POOL_BUDGET_PAISE = Math.floor(
-  READER_PRICE_PAISE * (1 - PLATFORM_POOL_CUT)
-) // 16_915
+export function poolBudgetPaise(pricePaise: number): number {
+  const net = Math.floor(pricePaise / (1 + GST_RATE)) - processingFeePaise(pricePaise)
+  return Math.max(0, Math.floor(net * (1 - PLATFORM_POOL_CUT)))
+}
+export const POOL_BUDGET_PAISE = poolBudgetPaise(READER_PRICE_PAISE) // 13_935
 
 /**
  * Split `budget` paise across creators proportional to their weights.

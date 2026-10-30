@@ -55,7 +55,7 @@ test("distributePool never leaks paise on messy ratios", () => {
   assert.equal(
     out.reduce((s, o) => s + o.amount, 0),
     POOL_BUDGET_PAISE,
-    "full 16915 paise distributed, none lost to rounding"
+    "full budget distributed, none lost to rounding"
   )
 })
 
@@ -178,4 +178,18 @@ test("settleReaderPools: reader with no qualifying claps pays nobody", async () 
     0,
     "no ledger credit when budget stays with platform"
   )
+})
+
+// The pool is 85% of what Nib actually keeps from a ₹199 pass: after the 18%
+// GST inside the price and the gateway fee. Nib's 15% must stay positive.
+test("pool budget is computed from net receipts, never the sticker price", async () => {
+  const { poolBudgetPaise } = await import("@/lib/reader-pool")
+  const { GST_RATE } = await import("@/lib/tax")
+  const { processingFeePaise } = await import("@/lib/revenue-split")
+  for (const price of [19_900, 16_500, 100]) {
+    const net = Math.floor(price / (1 + GST_RATE)) - processingFeePaise(price)
+    assert.equal(poolBudgetPaise(price), Math.floor(net * 0.85))
+    assert.ok(net - poolBudgetPaise(price) >= 0)
+  }
+  assert.equal(POOL_BUDGET_PAISE, poolBudgetPaise(19_900))
 })

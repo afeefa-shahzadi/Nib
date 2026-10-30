@@ -18,7 +18,7 @@
 import { isLaunchFree } from "@/lib/plan"
 
 const DEFAULTS: Record<"free" | "studio" | "org", number> = {
-  free: 50_000,
+  free: 20_000,
   studio: 250_000,
   org: 1_000_000,
 }
@@ -49,8 +49,8 @@ export function aiDailyTokenLimit(plan: string | null | undefined): number {
   return envNum(`AI_TOKENS_${key.toUpperCase()}`) ?? DEFAULTS[key]
 }
 
-// Free launch: platform-funded AI is capped at the studio ceiling for everyone
-// (never org's), so unlocking every plan can't unlock the 1M/day tier.
+// Free launch earns nothing, so everyone gets the free allowance; heavy users
+// bring their own key (BYOK), which costs Nib nothing.
 export function aiPlanForLimit(plan: string | null | undefined): string {
-  return isLaunchFree() ? "studio" : (plan ?? "free")
+  return isLaunchFree() ? "free" : (plan ?? "free")
 }

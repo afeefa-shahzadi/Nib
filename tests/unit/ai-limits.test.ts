@@ -13,15 +13,15 @@ afterEach(() => {
 })
 
 test("aiDailyTokenLimit: per-plan defaults", () => {
-  assert.equal(aiDailyTokenLimit("free"), 50_000)
+  assert.equal(aiDailyTokenLimit("free"), 20_000)
   assert.equal(aiDailyTokenLimit("studio"), 250_000)
   assert.equal(aiDailyTokenLimit("org"), 1_000_000)
 })
 
 test("aiDailyTokenLimit: unknown / null plan falls back to free", () => {
-  assert.equal(aiDailyTokenLimit(undefined), 50_000)
-  assert.equal(aiDailyTokenLimit(null), 50_000)
-  assert.equal(aiDailyTokenLimit("enterprise-typo"), 50_000)
+  assert.equal(aiDailyTokenLimit(undefined), 20_000)
+  assert.equal(aiDailyTokenLimit(null), 20_000)
+  assert.equal(aiDailyTokenLimit("enterprise-typo"), 20_000)
 })
 
 test("aiDailyTokenLimit: env override wins over the default", () => {

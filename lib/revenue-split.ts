@@ -1,12 +1,25 @@
 // Who gets what from one paid sale, in paise. Pure, so settlement and tests share it.
-//   Free plan:  tips/purchases 90% author, sponsorships 80%.
-//   Studio:     100% author until the month's sales pass ₹50,000, then 95%.
-//   Curated:    a curator referral takes 15% of the gross. On Free the author gets
-//               70% (platform keeps 15%); on Studio it comes out of the author's share.
+//   Processing: the gateway fee (2% + 18% GST) comes off the top at cost, so
+//               Nib's percentage is margin and no sale can cost Nib money.
+//   Free plan:  author 93% of the net, sponsorships 85%.
+//   Studio:     100% of the net until the month's sales pass ₹50,000, then 95%.
+//   Curated:    the curator takes 15% of the net. On Free the author gets 78%
+//               (Nib keeps 7%); on Studio it comes out of the author's share.
+import { GST_RATE } from "@/lib/tax"
+
 export const STUDIO_CAP_PAISE = 5_000_000
 export const CURATOR_SHARE = 0.15
+export const GATEWAY_RATE = 0.02
+export const AUTHOR_SHARE_FREE = 0.93
+export const AUTHOR_SHARE_SPONSORSHIP = 0.85
+export const AUTHOR_SHARE_CURATED = 0.78
+export const STUDIO_OVER_CAP_SHARE = 0.95
 
 export type SaleKind = "tip" | "sponsorship" | "purchase"
+
+export function processingFeePaise(grossPaise: number): number {
+  return Math.min(grossPaise, Math.ceil(grossPaise * GATEWAY_RATE * (1 + GST_RATE)))
+}
 
 export function splitSale(args: {
   grossPaise: number
@@ -15,17 +28,19 @@ export function splitSale(args: {
   /** Studio author's gross sales so far this month, before this sale. */
   studioMonthGmvPaise: number
   curated: boolean
-}): { author: number; curator: number; platform: number } {
+}): { processing: number; author: number; curator: number; platform: number } {
   const { grossPaise: gross, kind, isStudio, studioMonthGmvPaise, curated } = args
-  const curator = curated ? Math.floor(gross * CURATOR_SHARE) : 0
+  const processing = processingFeePaise(gross)
+  const net = gross - processing
+  const curator = curated ? Math.floor(net * CURATOR_SHARE) : 0
   let author: number
   if (isStudio) {
-    const base = studioMonthGmvPaise + gross > STUDIO_CAP_PAISE ? Math.floor(gross * 0.95) : gross
+    const base = studioMonthGmvPaise + gross > STUDIO_CAP_PAISE ? Math.floor(net * STUDIO_OVER_CAP_SHARE) : net
     author = base - curator
   } else if (curated) {
-    author = Math.floor(gross * 0.7)
+    author = Math.floor(net * AUTHOR_SHARE_CURATED)
   } else {
-    author = Math.floor(gross * (kind === "sponsorship" ? 0.8 : 0.9))
+    author = Math.floor(net * (kind === "sponsorship" ? AUTHOR_SHARE_SPONSORSHIP : AUTHOR_SHARE_FREE))
   }
-  return { author, curator, platform: gross - author - curator }
+  return { processing, author, curator, platform: net - author - curator }
 }

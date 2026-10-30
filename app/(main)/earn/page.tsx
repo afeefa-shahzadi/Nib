@@ -31,14 +31,14 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
       payout: `From ${fmt(20)} per tip`,
       blurb: "Readers tip the pieces they value.",
       details: [
-        "Free plan: you keep 90%",
+        "Free plan: you keep 93%",
         `Studio: you keep 100% up to ${fmt(50000)} a month, then 95%`,
       ],
     },
     {
       icon: <Megaphone className="size-5 text-primary" aria-hidden />,
       title: "Sponsorships",
-      payout: "You keep 80%",
+      payout: "You keep 85%",
       blurb: "Organizations back a piece, with a clear disclosure on the page.",
       details: [
         `Minimum sponsorship ${fmt(1000)}`,
@@ -48,7 +48,7 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
     {
       icon: <Layers className="size-5 text-primary" aria-hidden />,
       title: "Bundles and supporters-only blocks",
-      payout: "You keep 90%, or 100% on Studio",
+      payout: "You keep 93%, or 100% on Studio",
       blurb: "Sell a bundle of pieces, or lock the parts of a piece worth paying for and set a price to unlock it.",
       details: [
         "Same split as tips",
@@ -79,7 +79,7 @@ function moneyStreams(fmt: (rupees: number) => string): Stream[] {
     {
       icon: <Users className="size-5 text-primary" aria-hidden />,
       title: "Reader Pass pool",
-      payout: "85% of every pass goes to writers",
+      payout: "85% of every pass goes to writers, after tax and fees",
       blurb: "Each month, a reader's pass is shared among the writers they clapped for.",
       details: [
         "Nothing to set up",
@@ -173,6 +173,11 @@ export default function EarnPage() {
             <div>
               <h2 className="font-display text-2xl md:text-3xl">Getting your money</h2>
               <ul className="mt-6 space-y-3 text-foreground/90">
+                <li className="flex gap-2">
+                  <Check className="mt-1 size-4 shrink-0 text-primary" aria-hidden />
+                  Shares are of the sale after the payment processor&apos;s fee
+                  (about 2.4% with GST), passed through at cost.
+                </li>
                 <li className="flex gap-2">
                   <Check className="mt-1 size-4 shrink-0 text-primary" aria-hidden />
                   Earnings reach your balance after a 7-day clearing period.

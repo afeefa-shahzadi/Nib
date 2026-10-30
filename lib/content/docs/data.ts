@@ -288,7 +288,7 @@ export const COMPOSER_TOOLS = [
   },
   {
     k: "Let curators earn a share",
-    v: "Meta → Let curators earn a share. When someone buys this piece, or a bundle that includes it, from a public collection, the collection's curator gets 15%. You get 70% on Free, or 85% on Studio (80% after ₹50,000 of sales that month). Off by default; applies once paid pieces go on sale.",
+    v: "Meta → Let curators earn a share. When someone buys this piece from a public collection, the collection's curator gets 15%. You get 78% on Free, or 85% on Studio (80% after ₹50,000 of sales that month). Shares are of the sale after the processing fee. Off by default; applies once paid pieces go on sale.",
   },
   {
     k: "Made with AI",

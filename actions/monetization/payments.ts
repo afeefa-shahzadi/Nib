@@ -369,7 +369,7 @@ export async function verifySponsorshipPayment(args: { data?: unknown } = {}) {
     // Active for 7 days
     const ends = new Date(Date.now() + 7 * 24 * 3600_000)
 
-    // 80% to author, 20% to platform
+    // Author share per lib/revenue-split.ts (85% of net on Free)
     const gross = spons.amount_paise
     const authorId = Array.isArray(spons.piece) ? spons.piece[0].author_id : spons.piece.author_id
 

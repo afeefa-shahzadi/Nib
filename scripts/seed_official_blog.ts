@@ -167,7 +167,7 @@ Free stays free after launch. You'll be able to read, write, publish, run branch
 
 ### Reader Pass (planned: ₹199/month)
 
-For people who read a lot. Most of the pass (85%) is pooled each month and shared among the writers you clapped for, and you get a statement showing where it went. Pass holders also get 2,500 bonus Insight Points a month.
+For people who read a lot. Most of the pass (85% of what remains after tax and payment fees) is pooled each month and shared among the writers you clapped for, and you get a statement showing where it went. Pass holders also get 2,500 bonus Insight Points a month.
 
 ### Studio (planned: ₹499/month)
 
