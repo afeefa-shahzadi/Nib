@@ -44,6 +44,13 @@ const ORG_TYPES = [
   ["other", "Other"],
 ] as const
 
+// Nobody younger than the minimum age can be picked at all.
+const latestDob = () => {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() - MIN_AGE)
+  return d
+}
+
 type Errors = Partial<Record<"dob" | "parent" | "agreed" | "form", string>>
 
 function SignupPageContent() {
@@ -214,7 +221,7 @@ function SignupPageContent() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="dob">Date of birth</Label>
-          <DatePicker id="dob" value={dob} onChange={setDob} min={new Date(1900, 0, 1)} max={new Date()} placeholder="Pick your date of birth" />
+          <DatePicker id="dob" value={dob} onChange={setDob} min={new Date(1900, 0, 1)} max={latestDob()} placeholder="Pick your date of birth" />
           {errors.dob ? (
             <FieldError id="dob-error">{errors.dob}</FieldError>
           ) : (
