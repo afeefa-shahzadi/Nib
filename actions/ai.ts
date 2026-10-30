@@ -145,7 +145,20 @@ const MODE_INSTRUCTION: Record<Mode, string> = {
     "Explain this concept as if I were a 5-year-old. Use extremely simple words, short sentences, and a very relatable everyday analogy. Remove all jargon, complex clauses, and assumed knowledge. The goal is pure, intuitive comprehension.",
 }
 
-export async function generateModeVariant(_args: { data?: any } = {}) {
+// Production hides messages thrown from server actions ("An error occurred in
+// the Server Components render…"), so readers never saw "try again in a
+// minute". Expected failures come back as { error } instead.
+export async function generateModeVariant(
+  _args: { data?: any } = {}
+): Promise<{ text: string; error?: undefined } | { text?: undefined; error: string }> {
+  try {
+    return await modeVariant(_args)
+  } catch (e) {
+    return { error: (e as Error).message || "The AI service didn't respond. Please try again in a moment." }
+  }
+}
+
+async function modeVariant(_args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
   const {
     data: { user },

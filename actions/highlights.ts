@@ -96,7 +96,7 @@ export async function getAllMyHighlights() {
     .select(`
       *, 
       annotations:reader_annotations(*),
-      piece:content_objects(title, slug, author:profiles(handle, display_name))
+      piece:content_objects(title, slug, author:profiles!content_objects_author_id_profiles_id_fk(handle, display_name))
     `)
     .eq("user_id", authData.user.id)
     .order("created_at", { ascending: false })

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const { data: readyPieces, error: fetchError } = await supabaseAdmin
       .from("content_objects")
       .select(
-        "id, title, summary, slug, author_id, author:profiles(display_name, handle)"
+        "id, title, summary, slug, author_id, author:profiles!content_objects_author_id_profiles_id_fk(display_name, handle)"
       )
       .eq("status", "scheduled")
       .lte("scheduled_for", new Date().toISOString())

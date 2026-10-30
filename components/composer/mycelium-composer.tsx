@@ -846,9 +846,11 @@ export function MyceliumComposer({ pieceId }: Props) {
       }
       setAiBlockBusy(true)
       try {
-        const { text } = await generateModeVariant({
+        const res = await generateModeVariant({
           data: { mode, source: src, blockType: b.kind },
         })
+        if (res.error !== undefined) throw new Error(res.error)
+        const { text } = res
         updateBlockContent(uid, {
           aiVariants: {
             ...(b.content.aiVariants ?? {}),

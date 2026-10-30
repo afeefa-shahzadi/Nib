@@ -44,7 +44,7 @@ test("a provider rate limit wrapped in a RetryError reads as a human message", a
     reason: "maxRetriesExceeded",
     lastError: Object.assign(new Error("Rate limit exceeded"), { statusCode: 429 }),
   })
-  await assert.rejects(eli5(), { message: "AI rate limit hit. Try again in a minute." })
+  assert.deepEqual(await eli5(), { error: "AI rate limit hit. Try again in a minute." })
 })
 
 test("an unknown provider failure does not leak the raw SDK message", async () => {
@@ -52,9 +52,7 @@ test("an unknown provider failure does not leak the raw SDK message", async () =
   thrown = Object.assign(new Error("Invalid JSON response from https://api.mistral.ai/v1"), {
     statusCode: 500,
   })
-  await assert.rejects(eli5(), (e: Error) => {
-    assert.doesNotMatch(e.message, /api\.mistral|JSON/)
-    assert.match(e.message, /try again/i)
-    return true
-  })
+  const { error } = await eli5()
+  assert.doesNotMatch(error ?? "", /api\.mistral|JSON/)
+  assert.match(error ?? "", /try again/i)
 })

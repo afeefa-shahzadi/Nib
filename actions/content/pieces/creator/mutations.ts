@@ -292,7 +292,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       const { data: currentPiece } = await context.supabase
         .from("content_objects")
         .select(
-          "status, visibility, title, summary, slug, author:profiles(display_name, handle)"
+          "status, visibility, title, summary, slug, author:profiles!content_objects_author_id_profiles_id_fk(display_name, handle)"
         )
         .eq("id", data.id)
         .single()

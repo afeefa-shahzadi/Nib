@@ -157,8 +157,6 @@ test("server rejects ollama in production", async () => {
   }))
   env.NODE_ENV = "production"
   const ai = await import("@/actions/ai")
-  await assert.rejects(
-    ai.generateModeVariant({ data: { mode: "skim", source: "hi" } }),
-    /Ollama is only available when running locally/
-  )
+  const res = await ai.generateModeVariant({ data: { mode: "skim", source: "hi" } })
+  assert.match(res.error ?? "", /Ollama is only available when running locally/)
 })

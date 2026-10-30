@@ -44,6 +44,7 @@ export function ExplainSimply({ authed, blocks, articleRef }: Props) {
       }
       // Cap the source to keep token use bounded.
       const res = await generateModeVariant({ data: { mode: "eli5", source: fullText.slice(0, 15000) } })
+      if (res.error !== undefined) throw new Error(res.error)
       setResult(res.text)
     } catch (e) {
       toast.error((e as Error).message)
