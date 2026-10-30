@@ -28,11 +28,11 @@ export default function About() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <main className="flex-1">
-        <section className="container-wide pt-16 pb-16 md:pt-24 md:pb-24">
-          <h1 className="max-w-3xl font-display text-4xl leading-[1.05] sm:text-5xl md:text-6xl">
+        <section className="container-wide grid items-start gap-10 pt-16 pb-16 lg:grid-cols-12 lg:gap-12 md:pt-24 md:pb-24">
+          <h1 className="font-display text-3xl leading-[1.05] sm:text-5xl lg:sticky lg:top-24 lg:col-span-6">
             The article is a 19th&#8209;century format.
           </h1>
-          <div className="mt-10 max-w-[38rem] space-y-6 text-lg leading-relaxed text-foreground/85">
+          <div className="max-w-[38rem] space-y-6 text-lg leading-relaxed text-foreground/85 lg:col-span-6 lg:pt-2">
             <p>
               For two centuries, publishing has meant pouring an idea into a
               fixed shape, a column or a page or a post, and hoping the right

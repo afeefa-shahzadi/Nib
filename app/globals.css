@@ -265,6 +265,11 @@
     text-wrap: balance;
   }
 
+  /* No one-word last lines in running text. */
+  p, li, dd, blockquote {
+    text-wrap: pretty;
+  }
+
   ::selection {
     background: color-mix(in oklab, var(--primary) 35%, transparent);
     color: var(--foreground);
