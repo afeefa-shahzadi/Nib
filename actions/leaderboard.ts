@@ -2,7 +2,6 @@
 "use server"
 import { createAdminClient } from "@/lib/supabase/server"
 import { SupabaseClient } from "@supabase/supabase-js"
-import { ipToPaise } from "@/lib/tier"
 import { utcMonthStart } from "@/lib/streak"
 
 type ProfileLite = {
@@ -94,8 +93,17 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
         longest: r.longest_streak ?? 0,
       })
 
+    // Real money a reader earns: the curator share on sales from their collections.
+    // Insight points are recognition only and never convert to cash.
+    let cuQ = supabaseAdmin.from("earnings_ledger").select("user_id, net_paise").eq("source", "curator_share")
+    if (start) cuQ = cuQ.gte("created_at", start)
+    const { data: cu } = await cuQ
+    const curated = new Map<string, number>()
+    for (const r of cu ?? []) curated.set(r.user_id, (curated.get(r.user_id) ?? 0) + r.net_paise)
+
     // Union user ids; only keep users with any activity in window
     const ids = new Set<string>([
+      ...curated.keys(),
       ...points.keys(),
       ...claps.keys(),
       ...ann.keys(),
@@ -117,7 +125,7 @@ export async function readerLeaderboard(args: { data?: any } = {}) {
         avatarUrl: p?.avatar_url ?? null,
         points: pt,
         tier: getReaderTier(pt),
-        earningsPaise: ipToPaise(pt),
+        earningsPaise: curated.get(id) ?? 0,
         claps: claps.get(id) ?? 0,
         annotations: ann.get(id) ?? 0,
         follows: follows.get(id) ?? 0,

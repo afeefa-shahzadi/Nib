@@ -60,6 +60,15 @@ const BOARDS: Record<Who, Record<string, Board>> = {
         { key: "currentStreak", label: "Streak" },
       ],
     },
+    earnings: {
+      label: "Earnings",
+      key: "earningsPaise",
+      unit: "earned",
+      cols: [
+        { key: "points", label: "Points" },
+        { key: "currentStreak", label: "Streak" },
+      ],
+    },
     points: {
       label: "Insight points",
       key: "points",
@@ -82,6 +91,7 @@ const HOW: Record<Who, string[]> = {
   readers: [
     "Activeness: your Insight points, plus 1 per clap, 3 per note and 2 per writer you follow.",
     "Insight points come from reading closely, notes, quizzes and streaks. They're recognition, not money.",
+    "Earnings: your 15% curator share when someone buys a piece through one of your public collections. Shown once paid features open.",
   ],
 }
 
