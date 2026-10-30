@@ -8,10 +8,14 @@ import { supabase } from "@/lib/supabase/client"
 import { getRoomContext, listMessages, postMessage, setRoomSummary } from "@/actions/debate"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { DebateMessage } from "@/lib/types/content"
 import { CommentEditor, type CommentEditorRef } from "@/components/composer/comment-editor"
 import { sanitize } from "@/components/block-renderer"
+
+// Radix Select items can't use "", so the whole-piece choice gets a sentinel.
+const WHOLE_PIECE = "__piece"
 
 interface Props {
   roomId: string
@@ -259,19 +263,19 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
             ))}
           </div>
           {blocks.length > 0 && (
-            <select
-              value={blockId}
-              onChange={(e) => setBlockId(e.target.value)}
-              aria-label="What this response is about"
-              className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-            >
-              <option value="">About the whole piece</option>
-              {blocks.map((b, i) => (
-                <option key={b.id} value={b.id}>
-                  ¶{i + 1}: {b.excerpt.length > 60 ? b.excerpt.slice(0, 60) + "…" : b.excerpt}
-                </option>
-              ))}
-            </select>
+            <Select value={blockId || WHOLE_PIECE} onValueChange={(v) => setBlockId(v === WHOLE_PIECE ? "" : v)}>
+              <SelectTrigger aria-label="What this response is about" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-80">
+                <SelectItem value={WHOLE_PIECE}>About the whole piece</SelectItem>
+                {blocks.map((b, i) => (
+                  <SelectItem key={b.id} value={b.id}>
+                    ¶{i + 1}: {b.excerpt.length > 60 ? b.excerpt.slice(0, 60) + "…" : b.excerpt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           )}
           <CommentEditor
             ref={editorRef}
