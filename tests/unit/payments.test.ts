@@ -166,8 +166,8 @@ test("createRazorpayOrder rejects a piece purchase (unpriced hole) and creates n
 
 test("createRazorpayOrder is rate-limited: a maxed-out window rejects and creates no order", async () => {
   currentFake = makeFakeClient(({ table, op }: ResolveCtx): any => {
-    if (table === "rate_limits" && op === "select")
-      return { data: { count: 20, window_start: new Date().toISOString() } }
+    if (table === "rate_limit_hit" && op === "rpc")
+      return { data: { count: 21, window_start: new Date().toISOString() } }
     return { data: [], error: null }
   })
   await assert.rejects(

@@ -14,7 +14,7 @@ mock.module("@/lib/supabase/server", {
   },
 })
 mock.module("next/cache", {
-  namedExports: { revalidatePath: () => {}, unstable_noStore: () => {} },
+  namedExports: { revalidatePath: () => {}, unstable_noStore: () => {}, updateTag: () => {} },
 })
 
 let orgs: typeof import("@/actions/orgs")

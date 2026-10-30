@@ -10,7 +10,7 @@ mock.module("@supabase/ssr", {
   namedExports: {
     createServerClient: () => ({
       auth: {
-        getUser: async () => ({ data: { user } }),
+        getClaims: async () => ({ data: user ? { claims: { sub: user.id } } : null }),
         mfa: { getAuthenticatorAssuranceLevel: async () => ({ data: aal, error: null }) },
       },
     }),
@@ -27,7 +27,8 @@ before(async () => {
 const req = (path: string, init: { method?: string; headers?: Record<string, string> } = {}) =>
   new NextRequest(new URL(path, "http://localhost:3000"), {
     method: init.method ?? "GET",
-    headers: { host: "localhost:3000", ...init.headers },
+    // A signed-in browser carries the auth cookie; the proxy skips auth without it.
+    headers: { host: "localhost:3000", ...(user ? { cookie: "sb-test-auth-token=x" } : {}), ...init.headers },
   })
 const action = (path: string) =>
   req(path, { method: "POST", headers: { "next-action": "abc123" } })

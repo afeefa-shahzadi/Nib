@@ -17,7 +17,7 @@ mock.module("@supabase/supabase-js", {
   namedExports: { createClient: () => currentFake },
 })
 mock.module("next/cache", {
-  namedExports: { revalidatePath: () => {}, unstable_noStore: () => {} },
+  namedExports: { revalidatePath: () => {}, unstable_noStore: () => {}, updateTag: () => {} },
 })
 
 function fakeWith(profile: any) {

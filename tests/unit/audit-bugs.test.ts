@@ -13,7 +13,7 @@ mock.module("@/lib/supabase/server", {
     createServiceRoleClient: async () => currentFake,
   },
 })
-mock.module("next/cache", { namedExports: { revalidatePath: () => {} } })
+mock.module("next/cache", { namedExports: { revalidatePath: () => {}, updateTag: () => {} } })
 
 const savedLaunch = process.env.LAUNCH_FREE
 const env = process.env as Record<string, string | undefined>

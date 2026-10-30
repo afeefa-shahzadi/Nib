@@ -119,9 +119,13 @@ export function makeFakeClient(
     from,
     // rpc(fn, args) resolves via resolve({ table: fn, op: "rpc", payload: args });
     // a resolve that returns undefined falls back to { error: null }.
-    rpc: async (fn: string, args?: any) => {
+    // Awaitable directly or via .single()/.maybeSingle() (which, like
+    // PostgREST, take the first row of an array result).
+    rpc: (fn: string, args?: any) => {
       calls.push({ table: fn, op: "rpc", args })
-      return resolve({ table: fn, op: "rpc", filters: [], payload: args }) ?? { error: null }
+      const result = Promise.resolve(resolve({ table: fn, op: "rpc", filters: [], payload: args }) ?? { error: null })
+      const one = () => result.then((r: any) => (Array.isArray(r?.data) ? { ...r, data: r.data[0] ?? null } : r))
+      return Object.assign(result, { single: one, maybeSingle: one })
     },
     auth: { getUser: async () => ({ data: { user: userId ? { id: userId, email } : null } }) },
     calls,
