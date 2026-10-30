@@ -41,7 +41,7 @@ const BTN =
   "text-xs px-1.5 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/60 inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 
 export function ReportButton({ pieceId, authed, className, targetType, targetId, open, onOpenChange }: Props) {
-  const noun = targetType === "comment" ? "comment" : targetType === "profile" ? "profile" : "piece"
+  const noun = targetType === "comment" ? "response" : targetType === "profile" ? "profile" : "piece"
   const router = useRouter()
   const [ownOpen, setOwnOpen] = useState(false)
   const [reportType, setReportType] = useState("")
@@ -84,7 +84,7 @@ export function ReportButton({ pieceId, authed, className, targetType, targetId,
         targetType && targetId ? { type: targetType, id: targetId } : undefined
       )
       if (res.success) {
-        toast.success("Report submitted successfully")
+        toast.success("Thanks. We'll review it.")
         setReportOpen(false)
       } else {
         toast.error(res.error || "Failed to submit report")
@@ -107,7 +107,7 @@ export function ReportButton({ pieceId, authed, className, targetType, targetId,
           <DialogHeader>
             <DialogTitle>Report this {noun}</DialogTitle>
             <DialogDescription>
-              Please let us know why you are reporting this content.
+              Tell us what's wrong. We review every report.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -148,7 +148,7 @@ export function ReportButton({ pieceId, authed, className, targetType, targetId,
               Cancel
             </Button>
             <Button onClick={doReport} disabled={reporting || !reportType} variant="destructive">
-              {reporting ? "Submitting…" : "Submit Report"}
+              {reporting ? "Submitting…" : "Send report"}
             </Button>
           </DialogFooter>
         </DialogContent>

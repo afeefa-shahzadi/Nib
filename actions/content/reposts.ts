@@ -48,14 +48,15 @@ export async function repostPiece(args: { data?: any } = {}) {
       throw new Error("Only published public pieces can be reposted")
     if (original.author_id === context.userId) throw new Error("You can't repost your own piece")
     // One repost per piece per reader: hand back the existing draft instead of piling up copies.
+    // The repost is recorded on the new piece itself (reposted_from).
     const { data: existing } = await supabaseAdmin
-      .from("reposts")
-      .select("repost_piece_id, credited")
-      .eq("user_id", context.userId)
-      .eq("original_piece_id", original.id)
+      .from("content_objects")
+      .select("id")
+      .eq("author_id", context.userId)
+      .eq("reposted_from", original.id)
       .limit(1)
       .maybeSingle()
-    if (existing?.repost_piece_id) return { id: existing.repost_piece_id, credited: !!existing.credited, existing: true }
+    if (existing) return { id: existing.id, credited: false, existing: true }
     const mustCredit = !!original.repost_credits_required
     const credited = mustCredit || data.add_credits
 
@@ -118,17 +119,9 @@ export async function repostPiece(args: { data?: any } = {}) {
       })
     }
     const { error: bErr } = blocks.length ? await supabaseAdmin.from("blocks").insert(blocks) : { error: null }
-    const { error: rErr } = bErr
-      ? { error: bErr }
-      : await supabaseAdmin.from("reposts").insert({
-          user_id: context.userId,
-          original_piece_id: original.id,
-          repost_piece_id: repost.id,
-          credited,
-        })
-    if (bErr || rErr) {
+    if (bErr) {
       // Don't leave a half-built (possibly uncredited) draft behind.
-      console.error("[repost]", bErr ?? rErr)
+      console.error("[repost]", bErr)
       await supabaseAdmin.from("content_objects").delete().eq("id", repost.id)
       throw new Error("Could not create repost")
     }
