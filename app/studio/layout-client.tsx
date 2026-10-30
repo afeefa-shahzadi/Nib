@@ -45,6 +45,8 @@ import {
   UserPlus,
   Lock,
 } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
+import { SETTINGS_SECTIONS, useSettingsSection, type SettingsSectionId } from "@/lib/settings-sections"
 import {
   Sheet,
   SheetContent,
@@ -55,6 +57,45 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
+// Settings swaps the studio links for its own sections, with a way back (like Vercel).
+function SettingsNav({ section, onPick }: { section: SettingsSectionId; onPick: () => void }) {
+  return (
+    <div className="space-y-4">
+      <Link
+        href="/studio"
+        onClick={onPick}
+        className="flex min-h-11 items-center gap-2 rounded-md px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground lg:min-h-9"
+      >
+        <ArrowLeft className="size-4" aria-hidden /> Back to studio
+      </Link>
+      <p className="px-3 font-display text-lg text-foreground">Settings</p>
+      <nav aria-label="Settings sections" className="space-y-0.5">
+        {SETTINGS_SECTIONS.map(({ id, label, icon: Icon }) => {
+          const active = section === id
+          return (
+            <a
+              key={id}
+              href={`#${id}`}
+              onClick={onPick}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-all duration-150 lg:min-h-9 ${
+                active
+                  ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground shadow-sm"
+                  : id === "delete"
+                    ? "text-destructive/80 hover:bg-sidebar-accent/50 hover:text-destructive"
+                    : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+              }`}
+            >
+              <Icon className={`size-4 ${active ? "text-primary" : ""}`} aria-hidden />
+              {label}
+            </a>
+          )
+        })}
+      </nav>
+    </div>
+  )
+}
+
 export default function StudioLayoutClient({
   children,
   initialRole,
@@ -63,6 +104,8 @@ export default function StudioLayoutClient({
   initialRole?: StudioRole | null
 }) {
   const pathname = usePathname()
+  const inSettings = pathname.startsWith("/studio/settings")
+  const settingsSection = useSettingsSection()
   const router = useRouter()
   const { isAuthor } = useMyRole(initialRole)
   const { plan } = useMyPlan()
@@ -257,7 +300,9 @@ export default function StudioLayoutClient({
       {/* Navigation Links */}
       {/* min-h-0 lets this flex child actually shrink+scroll instead of pushing the footer over it. */}
       <div ref={navRef} className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-6">
-        {groups.map((group, idx) => (
+        {inSettings ? (
+          <SettingsNav section={settingsSection} onPick={() => setMobileOpen(false)} />
+        ) : groups.map((group, idx) => (
           <div key={idx} className="space-y-1">
             {group.title && (
               <p className="mb-2 px-3 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">

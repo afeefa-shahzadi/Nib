@@ -45,6 +45,7 @@ import { useMyPlan } from "@/hooks/use-my-plan"
 import { hasStudioAccess } from "@/lib/plan"
 import { AccessibilitySettings } from "@/components/accessibility-settings"
 import { cn } from "@/lib/utils"
+import { useSettingsSection } from "@/lib/settings-sections"
 
 const DEFAULT_MODELS: Record<string, string[]> = {
   mistral: ["mistral-large-latest", "mistral-small-latest"],
@@ -64,18 +65,6 @@ const DEFAULT_MODELS: Record<string, string[]> = {
   nvidia: ["meta/llama3-70b-instruct", "mistralai/mistral-large"],
 }
 
-const SECTIONS = [
-  { id: "profile", label: "Profile" },
-  { id: "account", label: "Account and sign-in" },
-  { id: "notifications", label: "Notifications" },
-  { id: "reading", label: "Reading and display" },
-  { id: "writing", label: "Writing and AI" },
-  { id: "plan", label: "Plan and payouts" },
-  { id: "data", label: "Privacy and data" },
-  { id: "accessibility", label: "Accessibility" },
-  { id: "delete", label: "Delete account" },
-] as const
-type SectionId = (typeof SECTIONS)[number]["id"]
 
 const BIO_MAX = 500
 
@@ -118,64 +107,15 @@ export default function SettingsPage() {
     () => true,
     () => false
   )
-  const [section, setSection] = useState<SectionId>("profile")
-  // Deep links: /studio/settings#account
-  useEffect(() => {
-    const read = () => {
-      const h = window.location.hash.slice(1)
-      if (SECTIONS.some((s) => s.id === h)) setSection(h as SectionId)
-    }
-    read()
-    window.addEventListener("hashchange", read)
-    return () => window.removeEventListener("hashchange", read)
-  }, [])
-  const go = (id: SectionId) => {
-    setSection(id)
-    history.replaceState(null, "", `#${id}`)
-  }
+  // The section list lives in the studio sidebar; the URL hash picks the section.
+  const section = useSettingsSection()
 
   if (!mounted) return null
 
   return (
     <div className="mx-auto w-full max-w-350 px-4 py-6 md:p-8">
       <h1 className="font-display text-3xl text-foreground">Settings</h1>
-      <div className="mt-6 grid gap-8 lg:grid-cols-[14rem_minmax(0,1fr)]">
-        <nav aria-label="Settings sections">
-          {/* Phones: one menu. Desktop: the full list. */}
-          <div className="lg:hidden">
-            <Label htmlFor="settings-section" className="sr-only">Section</Label>
-            <Select value={section} onValueChange={(v) => go(v as SectionId)}>
-              <SelectTrigger id="settings-section" className="min-h-11 w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SECTIONS.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <ul className="sticky top-20 hidden space-y-1 lg:block">
-            {SECTIONS.map((s) => (
-              <li key={s.id}>
-                <button
-                  type="button"
-                  onClick={() => go(s.id)}
-                  aria-current={section === s.id ? "page" : undefined}
-                  className={cn(
-                    "flex min-h-11 w-full items-center rounded-md px-3 text-left text-sm transition-colors",
-                    section === s.id
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                    s.id === "delete" && section !== s.id && "text-destructive/80 hover:text-destructive"
-                  )}
-                >
-                  {s.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      <div className="mt-6">
         <div className="min-w-0 max-w-3xl">
           {section === "profile" && <ProfileSection />}
           {section === "account" && <AccountSection />}
