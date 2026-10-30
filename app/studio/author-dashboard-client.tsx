@@ -87,7 +87,7 @@ export function AuthorDashboardClient({
     { label: "Revenue, last 30 days", value: stats ? rupees(stats.revenue30dPaise) : "—", icon: IndianRupee, href: "/studio/analytics" },
     { label: "Active supporters", value: count(stats?.supporters), icon: Users, href: "/studio/tiers" },
     { label: "Published", value: count(stats?.published), icon: FileText, href: "/studio/drafts" },
-    { label: "Drafts", value: count(stats?.drafts), icon: FilePen, href: "/studio/drafts" },
+    { label: "Drafts", value: count(stats?.drafts), icon: FilePen, href: "/studio/drafts", sub: stats?.scheduled ? `${stats.scheduled} scheduled` : undefined },
   ]
 
   const work = [
@@ -149,7 +149,10 @@ export function AuthorDashboardClient({
                 {c.label}
                 <Icon className="size-4 shrink-0" aria-hidden />
               </span>
-              <span className="font-display text-2xl text-foreground tabular-nums">{c.value}</span>
+              <span className="flex items-baseline gap-2">
+                <span className="font-display text-2xl text-foreground tabular-nums">{c.value}</span>
+                {"sub" in c && c.sub && <span className="text-sm text-muted-foreground">{c.sub}</span>}
+              </span>
             </Link>
           )
         })}

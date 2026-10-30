@@ -4,7 +4,6 @@ import { StudioSkeleton } from "@/components/studio/studio-skeleton"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { DraftPiece } from "@/lib/types/content"
-import { PIECE_STATUS_ICON } from "@/lib/content/studio/data"
 import {
   listMyPieces,
   createPiece,
@@ -13,9 +12,37 @@ import {
   bulkDeletePieces,
 } from "@/actions/content"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -25,13 +52,15 @@ import {
   FileText,
   Trash2,
   Pencil,
-  CheckSquare,
-  Square,
   Globe,
   Archive,
   X,
   RotateCcw,
   MoreHorizontal,
+  ChevronDown,
+  Search,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -42,19 +71,71 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 
+const TABS = [
+  { id: "all", label: "All" },
+  { id: "draft", label: "Drafts" },
+  { id: "scheduled", label: "Scheduled" },
+  { id: "published", label: "Published" },
+  { id: "archived", label: "Archived" },
+  { id: "deleted", label: "Bin" },
+] as const
+type TabId = (typeof TABS)[number]["id"]
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Draft",
+  scheduled: "Scheduled",
+  published: "Published",
+  archived: "Archived",
+  deleted: "In bin",
+}
+
+const EMPTY: Record<TabId, string> = {
+  all: "No pieces yet. Start one, or bring your writing over with Import.",
+  draft: "No drafts. Pieces you haven't published show up here.",
+  scheduled:
+    "Nothing scheduled. Set a release date in the composer to schedule a piece.",
+  published: "Nothing published yet.",
+  archived: "No archived pieces. Archive hides a piece without deleting it.",
+  deleted:
+    "The bin is empty. Pieces you delete wait here until you restore or remove them.",
+}
+
+const PAGE = 20
+
+const SORTS = {
+  edited: {
+    label: "Last edited",
+    cmp: (a: DraftPiece, b: DraftPiece) =>
+      b.updated_at.localeCompare(a.updated_at),
+  },
+  published: {
+    label: "Newest published",
+    cmp: (a: DraftPiece, b: DraftPiece) =>
+      (b.published_at ?? "").localeCompare(a.published_at ?? ""),
+  },
+  title: {
+    label: "Title A–Z",
+    cmp: (a: DraftPiece, b: DraftPiece) =>
+      (a.title || "").localeCompare(b.title || ""),
+  },
+} as const
+type SortId = keyof typeof SORTS
+
+const fmt = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  })
+
 export default function DraftsPage() {
   const router = useRouter()
-  const listFn = listMyPieces
-  const createFn = createPiece
-  const importFn = importMarkdown
-  const bulkUpdateFn = bulkUpdatePieces
-  const bulkDeleteFn = bulkDeletePieces
 
-  const q = useQuery({ queryKey: ["my-pieces"], queryFn: () => listFn() })
+  const q = useQuery({ queryKey: ["my-pieces"], queryFn: () => listMyPieces() })
   const pieces: DraftPiece[] = (q.data ?? []) as DraftPiece[]
 
-  const [newTitle, setNewTitle] = useState("")
   const [showCreate, setShowCreate] = useState(false)
+  const [newTitle, setNewTitle] = useState("")
   const [creating, setCreating] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [importTitle, setImportTitle] = useState("")
@@ -64,21 +145,23 @@ export default function DraftsPage() {
   const [migrateUrl, setMigrateUrl] = useState("")
   const [migrating, setMigrating] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [filterStatus, setFilterStatus] = useState<string>("all")
+  const [tab, setTab] = useState<TabId>("all")
   const [search, setSearch] = useState("")
+  const [sort, setSort] = useState<SortId>("edited")
+  const [visibility, setVisibility] = useState("any")
+  const [page, setPage] = useState(0)
+  const [toDelete, setToDelete] = useState<DraftPiece | null>(null)
 
   const create = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!newTitle.trim()) return
     setCreating(true)
     try {
-      const piece = await createFn({ data: { title: newTitle.trim() } })
-      toast.success("Draft created")
-      setNewTitle("")
+      const piece = await createPiece({
+        data: { title: newTitle.trim() || "Untitled piece" },
+      })
       router.push(`/studio/drafts/${piece.id}`)
     } catch (err) {
       toast.error((err as Error).message)
-    } finally {
       setCreating(false)
     }
   }
@@ -88,7 +171,7 @@ export default function DraftsPage() {
     if (!importTitle.trim() || !importMd.trim()) return
     setImporting(true)
     try {
-      const piece = await importFn({
+      const piece = await importMarkdown({
         data: { title: importTitle.trim(), markdown: importMd },
       })
       toast.success("Imported")
@@ -150,81 +233,29 @@ export default function DraftsPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
-    const name = file.name.replace(/\.md$/i, '')
+    const name = file.name.replace(/\.md$/i, "")
     if (!importTitle) setImportTitle(name)
-    
     const reader = new FileReader()
     reader.onload = (ev) => {
-      if (typeof ev.target?.result === "string") {
-        setImportMd(ev.target.result)
-      }
+      if (typeof ev.target?.result === "string") setImportMd(ev.target.result)
     }
     reader.readAsText(file)
   }
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string) =>
     setSelected((s) => {
       const n = new Set(s)
-      if (n.has(id)) {
-        n.delete(id)
-      } else {
-        n.add(id)
-      }
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
       return n
     })
-  }
 
-  const toggleAll = () => {
-    if (selected.size === filtered.length) setSelected(new Set())
-    else setSelected(new Set(filtered.map((p) => p.id)))
-  }
-
-  const bulkPublish = async () => {
+  const bulkStatus = async (status: string, done: string) => {
     try {
-      await bulkUpdateFn({
-        data: { ids: [...selected], patch: { status: "published" } },
+      await bulkUpdatePieces({
+        data: { ids: [...selected], patch: { status } },
       })
-      toast.success("Published")
-      setSelected(new Set())
-      q.refetch()
-    } catch (e) {
-      toast.error((e as Error).message)
-    }
-  }
-
-  const bulkArchive = async () => {
-    try {
-      await bulkUpdateFn({
-        data: { ids: [...selected], patch: { status: "archived" } },
-      })
-      toast.success("Archived")
-      setSelected(new Set())
-      q.refetch()
-    } catch (e) {
-      toast.error((e as Error).message)
-    }
-  }
-
-  const bulkTrash = async () => {
-    try {
-      await bulkUpdateFn({
-        data: { ids: [...selected], patch: { status: "deleted" } },
-      })
-      toast.success("Sent to recycle bin")
-      setSelected(new Set())
-      q.refetch()
-    } catch (e) {
-      toast.error((e as Error).message)
-    }
-  }
-
-  const bulkRestore = async () => {
-    try {
-      await bulkUpdateFn({
-        data: { ids: [...selected], patch: { status: "draft" } },
-      })
-      toast.success("Restored to drafts")
+      toast.success(done)
       setSelected(new Set())
       q.refetch()
     } catch (e) {
@@ -234,7 +265,7 @@ export default function DraftsPage() {
 
   const bulkDelete = async () => {
     try {
-      await bulkDeleteFn({ data: { ids: [...selected] } })
+      await bulkDeletePieces({ data: { ids: [...selected] } })
       toast.success("Permanently deleted")
       setSelected(new Set())
       q.refetch()
@@ -245,8 +276,12 @@ export default function DraftsPage() {
 
   const updateSinglePiece = async (id: string, status: string) => {
     try {
-      await bulkUpdateFn({ data: { ids: [id], patch: { status } } })
-      toast.success(status === "deleted" ? "Moved to bin" : `Status updated to ${status}`)
+      await bulkUpdatePieces({ data: { ids: [id], patch: { status } } })
+      toast.success(
+        status === "deleted"
+          ? "Moved to bin"
+          : `Moved to ${STATUS_LABEL[status].toLowerCase()}`
+      )
       q.refetch()
     } catch (e) {
       toast.error((e as Error).message)
@@ -254,9 +289,8 @@ export default function DraftsPage() {
   }
 
   const deleteSinglePiece = async (id: string) => {
-    if (!confirm("Are you sure you want to permanently delete this? This cannot be undone.")) return
     try {
-      await bulkDeleteFn({ data: { ids: [id] } })
+      await bulkDeletePieces({ data: { ids: [id] } })
       toast.success("Permanently deleted")
       q.refetch()
     } catch (e) {
@@ -264,449 +298,595 @@ export default function DraftsPage() {
     }
   }
 
-  const filtered = pieces.filter((p) => {
-    if (filterStatus === "all") {
-      return p.status !== "deleted" && (!search || p.title.toLowerCase().includes(search.toLowerCase()))
-    }
-    const matchStatus = p.status === filterStatus
-    const matchSearch =
-      !search || p.title.toLowerCase().includes(search.toLowerCase())
-    return matchStatus && matchSearch
-  })
+  const countOf = (t: TabId) =>
+    t === "all"
+      ? pieces.filter((p) => p.status !== "deleted").length
+      : pieces.filter((p) => p.status === t).length
 
-  const fmt = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    })
+  const term = search.trim().toLowerCase()
+  // ponytail: filters and pages run client-side over listMyPieces; move to a ranged query if authors pass a few thousand pieces.
+  const filtered = pieces
+    .filter(
+      (p) =>
+        (tab === "all" ? p.status !== "deleted" : p.status === tab) &&
+        (visibility === "any" || p.visibility === visibility) &&
+        (!term || (p.title || "").toLowerCase().includes(term))
+    )
+    .sort(SORTS[sort].cmp)
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE))
+  const current = Math.min(page, pages - 1)
+  const shown = filtered.slice(current * PAGE, current * PAGE + PAGE)
+  const allSelected = shown.length > 0 && shown.every((p) => selected.has(p.id))
+  const toggleAll = () =>
+    setSelected(allSelected ? new Set() : new Set(shown.map((p) => p.id)))
+  const filtering = !!term || visibility !== "any"
+
+  const meta = (p: DraftPiece) => {
+    if (p.status === "scheduled" && p.scheduled_for)
+      return `Goes live ${fmt(p.scheduled_for)}`
+    if (p.status === "published" && p.published_at)
+      return `Published ${fmt(p.published_at)}`
+    return `Edited ${fmt(p.updated_at)}`
+  }
 
   return (
-    <div className="mx-auto w-full max-w-350 p-6 md:p-8">
+    <div className="mx-auto w-full max-w-350 px-4 py-6 pb-28 sm:px-6 md:px-8 md:py-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-            Studio
-          </p>
           <h1 className="font-display text-3xl text-foreground">Pieces</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {pieces.length} total ·{" "}
-            {pieces.filter((p) => p.status === "published").length} published
+            {countOf("all")} total · {countOf("published")} published
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCreate(!showCreate)}
-          >
-            {showCreate ? (
-              <>
-                <X className="mr-2 size-4" /> Close
-              </>
-            ) : (
-              <>
-                <Plus className="mr-2 size-4" /> Create piece
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowImport(!showImport)}
-          >
-            {showImport ? (
-              <>
-                <X className="mr-2 size-4" /> Close Import
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 size-4" /> Import markdown
-              </>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowMigrate(!showMigrate)}
-          >
-            {showMigrate ? (
-              <>
-                <X className="mr-2 size-4" /> Close
-              </>
-            ) : (
-              <>
-                <Globe className="mr-2 size-4" /> Import from Substack/Medium
-              </>
-            )}
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="min-h-11">
+                <Upload className="size-4" aria-hidden /> Import
+                <ChevronDown
+                  className="size-4 text-muted-foreground"
+                  aria-hidden
+                />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="min-h-11"
+                onSelect={() => setShowImport(true)}
+              >
+                <FileText className="size-4" aria-hidden /> Markdown file or
+                text
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="min-h-11"
+                onSelect={() => setShowMigrate(true)}
+              >
+                <Globe className="size-4" aria-hidden /> Substack, Medium or a
+                link
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button className="min-h-11" onClick={() => setShowCreate(true)}>
+            <Plus className="size-4" aria-hidden /> New piece
           </Button>
         </div>
       </div>
-
-      {/* Create new */}
-      {showCreate && (
-        <form
-          onSubmit={create}
-          className="surface mb-6 flex gap-3 rounded-md border border-border/60 p-4"
-        >
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="New piece title…"
-            className="flex-1 min-w-0"
-          />
-          <Button type="submit" disabled={creating || !newTitle.trim()}>
-            <Plus className="mr-2 size-4" />
-            {creating ? "Creating…" : "Create"}
-          </Button>
-        </form>
-      )}
-
-      {/* Import markdown */}
-      {showImport && (
-        <form
-          onSubmit={importDraft}
-          className="surface mb-6 space-y-3 rounded-md border border-border/60 p-5"
-        >
-          <p className="font-display text-lg">Import from markdown</p>
-          <div className="min-w-0">
-            <Label>Upload a <span className="text-primary bg-primary/10 px-1 rounded-sm font-semibold">.md</span> file</Label>
-            <Input
-              type="file"
-              accept=".md,text/markdown"
-              onChange={handleFileUpload}
-              className="mt-1"
-            />
-          </div>
-
-          <div className="flex items-center gap-4 py-2">
-            <div className="h-px flex-1 bg-border/60"></div>
-            <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">or paste manually</span>
-            <div className="h-px flex-1 bg-border/60"></div>
-          </div>
-          <div className="min-w-0">
-            <Label>Title</Label>
-            <Input
-              required
-              value={importTitle}
-              onChange={(e) => setImportTitle(e.target.value)}
-            />
-          </div>
-          <div className="min-w-0">
-            <Label>Markdown content</Label>
-            <Textarea
-              required
-              rows={8}
-              value={importMd}
-              onChange={(e) => setImportMd(e.target.value)}
-              placeholder="Paste your markdown here…"
-              className="font-mono text-xs"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" disabled={importing}>
-              {importing ? "Importing…" : "Import"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowImport(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {/* Import from Substack / Medium / URL */}
-      {showMigrate && (
-        <form
-          onSubmit={migrateFromUrl}
-          className="surface mb-6 space-y-4 rounded-md border border-border/60 p-5"
-        >
-          <p className="font-display text-lg">Bring your writing over</p>
-          <div className="min-w-0">
-            <Label>
-              Upload a Substack or Medium export{" "}
-              <span className="text-primary bg-primary/10 px-1 rounded-sm font-semibold">
-                .zip
-              </span>
-            </Label>
-            <Input
-              type="file"
-              accept=".zip,application/zip"
-              onChange={migrateFile}
-              disabled={migrating}
-              className="mt-1"
-            />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Substack: Settings → Exports. Medium: Settings → Download your
-              information. Every post becomes a draft you can edit before
-              publishing.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 py-1">
-            <div className="h-px flex-1 bg-border/60"></div>
-            <span className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-              or one article by URL
-            </span>
-            <div className="h-px flex-1 bg-border/60"></div>
-          </div>
-
-          <div className="flex gap-2 min-w-0">
-            <Input
-              value={migrateUrl}
-              onChange={(e) => setMigrateUrl(e.target.value)}
-              placeholder="https://author.substack.com/p/my-post"
-              className="flex-1 min-w-0"
-              disabled={migrating}
-            />
-            <Button type="submit" disabled={migrating || !migrateUrl.trim()}>
-              {migrating ? "Importing…" : "Import"}
-            </Button>
-          </div>
-          {migrating && (
-            <p className="text-xs text-muted-foreground">
-              Importing — large exports can take a moment…
-            </p>
-          )}
-        </form>
-      )}
 
       {/* Filters */}
-      <div className="mb-4 flex flex-wrap items-center gap-3">
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search pieces…"
-          className="max-w-60"
-        />
-        <div className="flex overflow-hidden rounded-md border border-border">
-          {["all", "draft", "published", "archived", "deleted"].map((s) => (
-            <button
-              key={s}
-              onClick={() => {
-                setFilterStatus(s)
-                setSelected(new Set())
-              }}
-              className={`px-3 py-1.5 text-xs capitalize ${filterStatus === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+      <div className="mb-4 flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+        <Tabs
+          value={tab}
+          onValueChange={(v) => {
+            setTab(v as TabId)
+            setSelected(new Set())
+            setPage(0)
+          }}
+          className="-mx-4 no-scrollbar overflow-x-auto px-4 sm:mx-0 sm:px-0"
+        >
+          <TabsList className="h-auto">
+            {TABS.map((t) => (
+              <TabsTrigger
+                key={t.id}
+                value={t.id}
+                className="min-h-10 gap-1.5 px-3"
+              >
+                {t.label}
+                <span className="text-muted-foreground tabular-nums">
+                  {countOf(t.id)}
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <div className="flex flex-wrap gap-2 md:flex-nowrap">
+          <Select
+            value={visibility}
+            onValueChange={(v) => {
+              setVisibility(v)
+              setPage(0)
+            }}
+          >
+            <SelectTrigger
+              className="min-h-11 w-[calc(50%-0.25rem)] md:w-40"
+              aria-label="Visibility"
             >
-              {s}
-            </button>
-          ))}
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="any">Anyone</SelectItem>
+              <SelectItem value="public">Public</SelectItem>
+              <SelectItem value="members_only">Members only</SelectItem>
+              <SelectItem value="private">Private</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
+            <SelectTrigger
+              className="min-h-11 w-[calc(50%-0.25rem)] md:w-44"
+              aria-label="Sort"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(SORTS) as SortId[]).map((k) => (
+                <SelectItem key={k} value={k}>
+                  {SORTS[k].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="relative w-full md:w-72 2xl:w-64">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPage(0)
+              }}
+              placeholder="Search by title"
+              aria-label="Search pieces"
+              className="min-h-11 pl-9"
+            />
+          </div>
         </div>
       </div>
-
-      {/* Bulk actions bar */}
-      {selected.size > 0 && (
-        <div className="surface-elevated mb-4 flex items-center gap-2 md:gap-3 rounded-md p-2 md:p-3">
-          <span className="text-sm text-muted-foreground mr-auto lg:mr-0">
-            {selected.size} selected
-          </span>
-          {filterStatus === "deleted" ? (
-            <>
-              <Button size="sm" variant="outline" onClick={bulkRestore} className="px-2 md:px-3">
-                <RotateCcw className="size-4 md:mr-2 md:size-3" /> <span className="hidden md:inline">Restore</span>
-              </Button>
-              <ConfirmDialog
-                trigger={
-                  <Button size="sm" variant="destructive" className="px-2 md:px-3">
-                    <Trash2 className="size-4 md:mr-1 md:size-3" /> <span className="hidden md:inline">Permanently Delete</span>
-                  </Button>
-                }
-                title={`Permanently delete ${selected.size} piece${selected.size > 1 ? "s" : ""}?`}
-                description="This cannot be undone."
-                destructive
-                confirmLabel="Delete forever"
-                onConfirm={bulkDelete}
-              />
-            </>
-          ) : (
-            <>
-              <Button size="sm" variant="outline" onClick={bulkPublish} className="px-2 lg:px-3">
-                <Globe className="size-4 lg:mr-2 lg:size-3" /> <span className="hidden lg:inline">Publish</span>
-              </Button>
-              <Button size="sm" variant="outline" onClick={bulkArchive} className="px-2 lg:px-3">
-                <Archive className="size-4 lg:mr-2 lg:size-3" /> <span className="hidden lg:inline">Archive</span>
-              </Button>
-              <ConfirmDialog
-                trigger={
-                  <Button size="sm" variant="outline" className="px-2 lg:px-3">
-                    <Trash2 className="size-4 lg:mr-1 lg:size-3" /> <span className="hidden lg:inline">Delete</span>
-                  </Button>
-                }
-                title={`Move ${selected.size} piece${selected.size > 1 ? "s" : ""} to recycle bin?`}
-                description="You can restore them later from the 'deleted' tab."
-                destructive
-                confirmLabel="Move to bin"
-                onConfirm={bulkTrash}
-              />
-            </>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setSelected(new Set())}
-            className="px-2 md:px-3"
-          >
-            <X className="size-4 md:mr-1 md:size-3 md:hidden" /> <span className="hidden md:inline">Clear</span>
-          </Button>
-        </div>
-      )}
 
       {/* Pieces list */}
       {q.isLoading ? (
         <StudioSkeleton header={false} />
       ) : filtered.length === 0 ? (
-        <div className="surface rounded-md py-16 text-center">
-          <FileText className="mx-auto mb-3 size-8 text-muted-foreground/40" />
-          <p className="text-muted-foreground">
-            {search || filterStatus !== "all"
-              ? "No pieces match."
-              : "No pieces yet. Create your first one above."}
+        <div className="surface rounded-lg px-4 py-16 text-center">
+          <FileText
+            className="mx-auto mb-3 size-8 text-muted-foreground/40"
+            aria-hidden
+          />
+          <p className="mx-auto max-w-sm text-muted-foreground">
+            {filtering ? "No pieces match these filters." : EMPTY[tab]}
           </p>
+          {!filtering && tab === "all" && (
+            <Button
+              className="mt-4 min-h-11"
+              onClick={() => setShowCreate(true)}
+            >
+              <Plus className="size-4" aria-hidden /> New piece
+            </Button>
+          )}
         </div>
       ) : (
-        <div className="surface divide-y divide-border rounded-md">
-          {/* Select all */}
-          <div className="flex items-center gap-3 px-4 py-2">
-            <button
-              onClick={toggleAll}
-              className="text-muted-foreground hover:text-foreground"
-              title={
-                selected.size === filtered.length
-                  ? "Deselect all"
-                  : "Select all"
-              }
-            >
-              {selected.size === filtered.length && filtered.length > 0 ? (
-                <CheckSquare className="size-4" />
-              ) : (
-                <Square className="size-4" />
-              )}
-            </button>
-            <span className="text-xs text-muted-foreground">
-              {filtered.length} piece{filtered.length !== 1 ? "s" : ""}
-            </span>
+        <div className="surface divide-y divide-border rounded-lg">
+          <div className="flex min-h-11 items-center gap-3 px-4 text-sm text-muted-foreground">
+            <Checkbox
+                  className="relative after:absolute after:-inset-3.5 after:content-['']"
+              checked={allSelected}
+              onCheckedChange={toggleAll}
+              aria-label="Select all"
+            />
+            Select all on this page
           </div>
 
-          {filtered.map((piece) => (
+          {shown.map((piece) => (
             <div
               key={piece.id}
-              className="flex items-center gap-3 px-4 py-4 transition-colors hover:bg-accent/30"
+              className="flex min-h-16 items-center gap-1 pr-2 transition-colors hover:bg-accent/30"
             >
-              <button
-                onClick={() => toggleSelect(piece.id)}
-                aria-label={selected.has(piece.id) ? `Deselect ${piece.title}` : `Select ${piece.title}`}
-                aria-pressed={selected.has(piece.id)}
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-              >
-                {selected.has(piece.id) ? (
-                  <CheckSquare className="size-4 text-primary" />
-                ) : (
-                  <Square className="size-4" />
-                )}
-              </button>
+              <div className="flex size-11 shrink-0 items-center justify-center pl-1">
+                <Checkbox
+                  className="relative after:absolute after:-inset-3.5 after:content-['']"
+                  checked={selected.has(piece.id)}
+                  onCheckedChange={() => toggleSelect(piece.id)}
+                  aria-label={`Select ${piece.title || "untitled piece"}`}
+                />
+              </div>
 
-              <div className="min-w-0 flex-1">
-                <Link
-                  href={`/studio/drafts/${piece.id}`}
-                  className="group flex items-center gap-2"
-                >
-                  <span className="truncate font-display text-base text-foreground transition-colors group-hover:text-primary">
-                    {piece.title || "Untitled"}
+              <Link
+                href={`/studio/drafts/${piece.id}`}
+                className="group min-w-0 flex-1 py-3"
+              >
+                <span className="flex items-center gap-2">
+                  <span className="truncate font-display text-base text-foreground group-hover:text-primary">
+                    {piece.title || "Untitled piece"}
                   </span>
-                  <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                    {PIECE_STATUS_ICON[piece.status]}
-                    <span className="capitalize">{piece.status}</span>
-                  </span>
-                </Link>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Updated {fmt(piece.updated_at)}
-                  {piece.published_at &&
-                    ` · Published ${fmt(piece.published_at)}`}
+                  <Badge
+                    variant={
+                      piece.status === "published" ? "secondary" : "outline"
+                    }
+                    className="shrink-0 font-normal"
+                  >
+                    {STATUS_LABEL[piece.status] ?? piece.status}
+                  </Badge>
+                </span>
+                <span className="mt-0.5 block truncate text-sm text-muted-foreground">
+                  {meta(piece)}
                   {piece.slug && (
-                    <span className="ml-2 font-mono">
-                      /{piece.slug}
+                    <span className="hidden font-mono sm:inline">
+                      {" "}
+                      · /{piece.slug}
                     </span>
                   )}
-                </p>
-              </div>
+                </span>
+              </Link>
 
-              <div className="flex shrink-0 items-center gap-1">
-                <Link href={`/studio/drafts/${piece.id}`}>
-                  <Button variant="ghost" size="icon" title="Open in composer">
-                    <Pencil className="size-4" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-11 shrink-0"
+                    aria-label={`Actions for ${piece.title || "untitled piece"}`}
+                  >
+                    <MoreHorizontal className="size-4" />
                   </Button>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" title="More options">
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/studio/drafts/${piece.id}`}>
-                        <Pencil className="mr-2 size-4" /> Edit
-                      </Link>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/studio/drafts/${piece.id}`}>
+                      <Pencil className="size-4" /> Edit
+                    </Link>
+                  </DropdownMenuItem>
+                  {(piece.status === "draft" ||
+                    piece.status === "scheduled") && (
+                    <DropdownMenuItem
+                      onClick={() => updateSinglePiece(piece.id, "published")}
+                    >
+                      <Globe className="size-4" /> Publish now
                     </DropdownMenuItem>
-
-                    {piece.status === "draft" && (
-                      <DropdownMenuItem onClick={() => updateSinglePiece(piece.id, "published")}>
-                        <Globe className="mr-2 size-4" /> Publish
-                      </DropdownMenuItem>
-                    )}
-
-                    {piece.status === "published" && (
-                      <DropdownMenuItem onClick={() => updateSinglePiece(piece.id, "draft")}>
-                        <FileText className="mr-2 size-4" /> Unpublish
-                      </DropdownMenuItem>
-                    )}
-
-                    {piece.status !== "archived" && piece.status !== "deleted" && (
-                      <DropdownMenuItem onClick={() => updateSinglePiece(piece.id, "archived")}>
-                        <Archive className="mr-2 size-4" /> Archive
-                      </DropdownMenuItem>
-                    )}
-
-                    {piece.status === "archived" && (
-                      <DropdownMenuItem onClick={() => updateSinglePiece(piece.id, "draft")}>
-                        <RotateCcw className="mr-2 size-4" /> Unarchive
-                      </DropdownMenuItem>
-                    )}
-
-                    {piece.status === "deleted" && (
-                      <DropdownMenuItem onClick={() => updateSinglePiece(piece.id, "draft")}>
-                        <RotateCcw className="mr-2 size-4" /> Restore
-                      </DropdownMenuItem>
-                    )}
-
-                    <DropdownMenuSeparator />
-
-                    {piece.status === "deleted" ? (
+                  )}
+                  {piece.status === "published" && (
+                    <DropdownMenuItem
+                      onClick={() => updateSinglePiece(piece.id, "draft")}
+                    >
+                      <FileText className="size-4" /> Unpublish
+                    </DropdownMenuItem>
+                  )}
+                  {piece.status !== "archived" &&
+                    piece.status !== "deleted" && (
                       <DropdownMenuItem
-                        onClick={() => deleteSinglePiece(piece.id)}
-                        className="text-destructive focus:bg-destructive focus:text-destructive dark:focus:bg-destructive"
+                        onClick={() => updateSinglePiece(piece.id, "archived")}
                       >
-                        <Trash2 className="mr-2 size-4" /> Delete permanently
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        onClick={() => updateSinglePiece(piece.id, "deleted")}
-                        className="text-destructive focus:bg-destructive focus:text-destructive dark:focus:bg-destructive"
-                      >
-                        <Trash2 className="mr-2 size-4" /> Move to bin
+                        <Archive className="size-4" /> Archive
                       </DropdownMenuItem>
                     )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                  {piece.status === "archived" && (
+                    <DropdownMenuItem
+                      onClick={() => updateSinglePiece(piece.id, "draft")}
+                    >
+                      <RotateCcw className="size-4" /> Unarchive
+                    </DropdownMenuItem>
+                  )}
+                  {piece.status === "deleted" && (
+                    <DropdownMenuItem
+                      onClick={() => updateSinglePiece(piece.id, "draft")}
+                    >
+                      <RotateCcw className="size-4" /> Restore
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  {piece.status === "deleted" ? (
+                    <DropdownMenuItem
+                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                      onSelect={() => setToDelete(piece)}
+                    >
+                      <Trash2 className="size-4" /> Delete permanently
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem
+                      className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                      onClick={() => updateSinglePiece(piece.id, "deleted")}
+                    >
+                      <Trash2 className="size-4" /> Move to bin
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
+          <nav
+            aria-label="Pages"
+            className="flex min-h-12 flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm text-muted-foreground"
+          >
+            <span>
+              {current * PAGE + 1}–{current * PAGE + shown.length} of{" "}
+              {filtered.length}
+            </span>
+            {pages > 1 && (
+              <span className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-11"
+                  aria-label="Previous page"
+                  disabled={current === 0}
+                  onClick={() => setPage(current - 1)}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <span className="tabular-nums">
+                  Page {current + 1} of {pages}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-11"
+                  aria-label="Next page"
+                  disabled={current >= pages - 1}
+                  onClick={() => setPage(current + 1)}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </span>
+            )}
+          </nav>
         </div>
       )}
+
+      {/* Bulk actions: pinned to the bottom while anything is selected */}
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-4 z-30 flex justify-center px-4 lg:left-64">
+          <div className="surface-elevated flex max-w-full flex-wrap items-center gap-2 rounded-lg border border-border p-2 shadow-lg">
+            <span className="px-2 text-sm text-muted-foreground">
+              {selected.size} selected
+            </span>
+            {tab === "deleted" ? (
+              <>
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => bulkStatus("draft", "Restored to drafts")}
+                >
+                  <RotateCcw className="size-4" aria-hidden /> Restore
+                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button variant="destructive" className="min-h-11">
+                      <Trash2 className="size-4" aria-hidden /> Delete forever
+                    </Button>
+                  }
+                  title={`Permanently delete ${selected.size} ${selected.size === 1 ? "piece" : "pieces"}?`}
+                  description="This can't be undone."
+                  destructive
+                  confirmLabel="Delete forever"
+                  onConfirm={bulkDelete}
+                />
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => bulkStatus("published", "Published")}
+                >
+                  <Globe className="size-4" aria-hidden /> Publish
+                </Button>
+                <Button
+                  variant="outline"
+                  className="min-h-11"
+                  onClick={() => bulkStatus("archived", "Archived")}
+                >
+                  <Archive className="size-4" aria-hidden /> Archive
+                </Button>
+                <ConfirmDialog
+                  trigger={
+                    <Button variant="outline" className="min-h-11">
+                      <Trash2 className="size-4" aria-hidden /> Delete
+                    </Button>
+                  }
+                  title={`Move ${selected.size} ${selected.size === 1 ? "piece" : "pieces"} to the bin?`}
+                  description="You can restore them later from the Bin tab."
+                  destructive
+                  confirmLabel="Move to bin"
+                  onConfirm={() => bulkStatus("deleted", "Moved to bin")}
+                />
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-11"
+              aria-label="Clear selection"
+              onClick={() => setSelected(new Set())}
+            >
+              <X className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* New piece */}
+      <Dialog open={showCreate} onOpenChange={setShowCreate}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={create} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>New piece</DialogTitle>
+              <DialogDescription>
+                Give it a title now or leave it blank and name it later.
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor="new-title">Title</Label>
+              <Input
+                id="new-title"
+                autoFocus
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Untitled piece"
+                className="mt-1 min-h-11"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="min-h-11" disabled={creating}>
+                {creating ? "Creating…" : "Start writing"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import markdown */}
+      <Dialog open={showImport} onOpenChange={setShowImport}>
+        <DialogContent className="sm:max-w-lg">
+          <form onSubmit={importDraft} className="min-w-0 space-y-4">
+            <DialogHeader>
+              <DialogTitle>Import markdown</DialogTitle>
+              <DialogDescription>
+                Upload a .md file or paste the text. It becomes a draft.
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor="md-file">Markdown file</Label>
+              <Input
+                id="md-file"
+                type="file"
+                accept=".md,text/markdown"
+                onChange={handleFileUpload}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or paste it
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <div>
+              <Label htmlFor="md-title">Title</Label>
+              <Input
+                id="md-title"
+                required
+                value={importTitle}
+                onChange={(e) => setImportTitle(e.target.value)}
+                className="mt-1 min-h-11"
+              />
+            </div>
+            <div>
+              <Label htmlFor="md-body">Markdown</Label>
+              <Textarea
+                id="md-body"
+                required
+                rows={8}
+                value={importMd}
+                onChange={(e) => setImportMd(e.target.value)}
+                placeholder="Paste your markdown here…"
+                className="mt-1 max-h-[40vh] font-mono text-sm"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="min-h-11" disabled={importing}>
+                {importing ? "Importing…" : "Import"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import from Substack / Medium / URL */}
+      <Dialog
+        open={showMigrate}
+        onOpenChange={(o) => !migrating && setShowMigrate(o)}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <form onSubmit={migrateFromUrl} className="min-w-0 space-y-4">
+            <DialogHeader>
+              <DialogTitle>Bring your writing over</DialogTitle>
+              <DialogDescription>
+                Every post becomes a draft you can edit before publishing.
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <Label htmlFor="zip-file">Substack or Medium export (.zip)</Label>
+              <Input
+                id="zip-file"
+                type="file"
+                accept=".zip,application/zip"
+                onChange={migrateFile}
+                disabled={migrating}
+                className="mt-1"
+              />
+              <p className="mt-1.5 text-sm text-muted-foreground">
+                Substack: Settings → Exports. Medium: Settings → Download your
+                information.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span className="h-px flex-1 bg-border" />
+              or one article by link
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <div className="flex min-w-0 gap-2">
+              <Input
+                type="text"
+                inputMode="url"
+                aria-label="Article link"
+                value={migrateUrl}
+                onChange={(e) => setMigrateUrl(e.target.value)}
+                placeholder="https://author.substack.com/p/my-post"
+                className="min-h-11 min-w-0 flex-1"
+                disabled={migrating}
+              />
+              <Button
+                type="submit"
+                className="min-h-11"
+                disabled={migrating || !migrateUrl.trim()}
+              >
+                {migrating ? "Importing…" : "Import"}
+              </Button>
+            </div>
+            {migrating && (
+              <p className="text-sm text-muted-foreground">
+                Importing. Large exports can take a moment…
+              </p>
+            )}
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Permanent delete of one piece */}
+      <AlertDialog
+        open={!!toDelete}
+        onOpenChange={(o) => !o && setToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete &ldquo;{toDelete?.title || "Untitled piece"}&rdquo;
+              forever?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="min-h-11">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="min-h-11 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => toDelete && deleteSinglePiece(toDelete.id)}
+            >
+              Delete forever
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

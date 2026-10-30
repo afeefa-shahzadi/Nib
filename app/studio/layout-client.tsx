@@ -191,7 +191,7 @@ export default function StudioLayoutClient({
         title: "Workspace",
         links: [
           { href: "/studio", label: "Dashboard", icon: LayoutDashboard },
-          { href: "/studio/drafts", label: "Drafts", icon: FileText },
+          { href: "/studio/drafts", label: "Pieces", icon: FileText },
           {
             href: "/studio/network",
             label: "Creator Network",

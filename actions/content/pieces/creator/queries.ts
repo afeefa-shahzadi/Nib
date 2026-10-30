@@ -18,7 +18,7 @@ export async function listMyPieces() {
   const __handler = async ({ context }: { context: ActionContext }) => {
     const { data, error } = await context.supabase
       .from("content_objects")
-      .select("id, title, slug, status, visibility, updated_at, published_at")
+      .select("id, title, slug, status, visibility, updated_at, published_at, scheduled_for")
       .eq("author_id", context.userId!)
       .order("updated_at", { ascending: false })
     if (error) {
@@ -153,12 +153,12 @@ export async function getStudioStats(args: { data?: any } = {}) {
       { count: supporters },
       { data: revenueRows },
       { count: debateRooms },
+      { count: scheduled },
     ] = await Promise.all([
       context.supabase
         .from("content_objects")
         .select("*", { count: "exact", head: true })
-        // Scheduled pieces are unpublished drafts with a release date.
-        .in("status", ["draft", "scheduled"])
+        .eq("status", "draft")
         .or(
           data.org_id
             ? `org_id.eq.${data.org_id}`
@@ -198,6 +198,16 @@ export async function getStudioStats(args: { data?: any } = {}) {
         .from("debate_rooms")
         .select("*", { count: "exact", head: true })
         .eq("created_by", context.userId),
+      // Scheduled: unpublished pieces with a release date.
+      context.supabase
+        .from("content_objects")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "scheduled")
+        .or(
+          data.org_id
+            ? `org_id.eq.${data.org_id}`
+            : `author_id.eq.${context.userId!}`
+        )
     ])
 
     let currentRevenue = 0
@@ -217,6 +227,7 @@ export async function getStudioStats(args: { data?: any } = {}) {
 
     return {
       drafts: drafts ?? 0,
+      scheduled: scheduled ?? 0,
       published: published ?? 0,
       branches: branches ?? 0,
       bundles: bundles ?? 0,

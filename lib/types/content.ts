@@ -121,6 +121,7 @@ export interface AuthorStats {
   supporters: number
   published: number
   drafts: number
+  scheduled?: number
   branches: number
   bundles: number
   debateRooms: number
@@ -336,4 +337,5 @@ export interface DraftPiece {
   visibility: string
   updated_at: string
   published_at: string | null
+  scheduled_for?: string | null
 }
