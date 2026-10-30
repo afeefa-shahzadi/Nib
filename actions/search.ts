@@ -36,7 +36,7 @@ export async function searchPieces(args: { data?: any } = {}) {
       const { data: ftsData, error } = await excludeNsfw(
         supabaseAdmin
           .from("content_objects")
-          .select("id, title, slug, summary, author_id, published_at")
+          .select("id, title, slug, summary, author_id, published_at, tags, cover_image_url")
           .eq("status", "published")
           .eq("visibility", "public")
       )
@@ -51,7 +51,7 @@ export async function searchPieces(args: { data?: any } = {}) {
       const { data: ilikeData } = await excludeNsfw(
         supabaseAdmin
           .from("content_objects")
-          .select("id, title, slug, summary, author_id, published_at")
+          .select("id, title, slug, summary, author_id, published_at, tags, cover_image_url")
           .eq("status", "published")
           .eq("visibility", "public")
       )
@@ -68,12 +68,12 @@ export async function searchPieces(args: { data?: any } = {}) {
     const { data: authors } = authorIds.length
       ? await supabaseAdmin
           .from("profiles")
-          .select("id, handle, display_name")
+          .select("id, handle, display_name, avatar_url")
           .in("id", authorIds)
-      : { data: [] as { id: string; handle: string; display_name: string }[] }
+      : { data: [] as { id: string; handle: string; display_name: string; avatar_url: string | null }[] }
     const amap = new Map(
       (authors ?? []).map(
-        (a: { id: string; handle: string | null; display_name: string }) => [
+        (a: { id: string; handle: string | null; display_name: string; avatar_url: string | null }) => [
           a.id,
           a,
         ]
