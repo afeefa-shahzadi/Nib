@@ -265,9 +265,9 @@ export default function DocsPage() {
                   title="Editor reference"
                 />
                 <p className="mt-4 mb-6 leading-relaxed text-muted-foreground">
-                  Everything below works in any text block of the composer
-                  (paragraph, quote, callout, question, and the
-                  thesis/evidence/counter/footnote/gated kinds).
+                  Everything below works in every text block: paragraphs,
+                  quotes, callouts, questions, and thesis, evidence, counter,
+                  footnote and gated blocks.
                 </p>
 
                 <h3 className="mb-3 font-display text-2xl">Slash commands</h3>

@@ -5,6 +5,7 @@ import nodemailer from "nodemailer"
 import { queueIfRateLimited } from "@/lib/email-outbox"
 import { escapeHtml } from "@/lib/html"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rate-limit.server"
+import { validateContact, CONTACT_TOPICS, type ContactTopic } from "@/lib/contact"
 
 export async function POST(req: Request) {
   // Anonymous form that writes a row and sends email: throttle per client IP.
@@ -16,9 +17,10 @@ export async function POST(req: Request) {
     const body = await req.json()
     const { fullName, email, organizationName, phoneNumber, intent, expectedSeats, timeline, details } = body
 
-    if (!fullName || !email || !organizationName || !intent) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
-    }
+    const invalid = validateContact(body)
+    if (invalid) return NextResponse.json({ error: invalid }, { status: 400 })
+    const topic = CONTACT_TOPICS[intent as ContactTopic]
+    const from = String(organizationName || "").trim() || String(fullName).trim()
 
     const supabaseAdmin = await createAdminClient()
 
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
       .insert({
         full_name: fullName,
         email,
-        organization_name: organizationName,
+        organization_name: String(organizationName || "").trim(),
         phone_number: phoneNumber,
         intent,
         expected_seats: expectedSeats,
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
     // Lead fields are untrusted form input: escape before putting them in HTML.
     const e = (v: unknown) => escapeHtml(String(v || "N/A"))
     const htmlContent = `
-      <h2>New ${e(intent)} Lead</h2>
+      <h2>${e(topic)}</h2>
       <p><strong>Name:</strong> ${e(fullName)}</p>
       <p><strong>Email:</strong> ${e(email)}</p>
       <p><strong>Organization:</strong> ${e(organizationName)}</p>
@@ -74,7 +76,7 @@ export async function POST(req: Request) {
         await transporter.sendMail({
           from: `"Nib Leads" <${process.env.SMTP_USER}>`,
           to: CONTACT_EMAIL,
-          subject: `New Lead: ${organizationName} (${intent})`,
+          subject: `${topic}: ${from}`,
           html: htmlContent,
         })
       } else {
@@ -84,7 +86,7 @@ export async function POST(req: Request) {
       const queued = await queueIfRateLimited(emailError, {
         to_email: CONTACT_EMAIL,
         from_email: `"Nib Leads" <${process.env.SMTP_USER}>`,
-        subject: `New Lead: ${organizationName} (${intent})`,
+        subject: `${topic}: ${from}`,
         html: htmlContent,
       })
       if (!queued) console.error("[leads] Email sending failed", emailError)
