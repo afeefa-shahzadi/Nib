@@ -130,14 +130,13 @@ async function callAI(
   }
 }
 
-type Mode = "skim" | "standard" | "expert" | "teach" | "debate" | "eli5"
+// Standard is always the author's own text, so it has no AI variant.
+type Mode = "skim" | "expert" | "teach" | "debate" | "eli5"
 
 const MODE_INSTRUCTION: Record<Mode, string> = {
   skim: "Produce a highly condensed, high-signal summary of the text in 1–2 sentences. Exclude all filler, jargon, and secondary details. Focus strictly on the primary thesis, core claim, and key takeaway to maximize scanning velocity for busy readers.",
-  standard:
-    "Rewrite the source content as a single, beautifully structured, and highly readable paragraph. Use plain, elegant language that minimizes cognitive load while maintaining the full essence of the message. Avoid jargon, optimize flow, and present the ideas with outstanding clarity.",
   expert:
-    "Rewrite the text to elevate its analytical depth for an expert-level audience in 2–4 sentences. Utilize precise, industry-standard terminology, articulate subtle conceptual nuances, and include a concrete reference cue, historical precedent, or logical citation to support the argument.",
+    "Rewrite the text to elevate its analytical depth for an expert-level audience in 2–4 sentences. Use precise, industry-standard terminology and articulate subtle conceptual nuances. Keep any sources, figures or citations the source text already contains; never add a source, statistic, quote, name or citation that is not in the source.",
   teach:
     "Structure this block as an engaging pedagogical beat. First, lead with the essential key takeaway in bold. Second, provide a crystal-clear, intuitive explanation of the concept using a relatable analogy or step-by-step logic. Finally, conclude with a single, thought-provoking 'check-for-understanding' question to help solidify learning.",
   debate:
@@ -183,16 +182,17 @@ export async function generateModeVariant(_args: { data?: any } = {}) {
     data: {
       blockType?: string
       blockId?: string
-      mode: "skim" | "standard" | "expert" | "teach" | "debate" | "eli5"
+      mode: Mode
       source: string
     }
   }) => {
+    if (!MODE_INSTRUCTION[data.mode]) throw new Error("Unknown reading mode")
     const { text, tokens } = await callAI(
       [
         {
           role: "system",
           content:
-            "You are Nib's advanced editorial intelligence. Your task is to rewrite a single content block to match the specified reading mode instructions. Output ONLY the rewritten block content. Do not include introductory text, explanations, markdown code blocks, metadata, or commentary.",
+            "You are Nib's advanced editorial intelligence. Your task is to rewrite a single content block to match the specified reading mode instructions. Never introduce facts, sources, statistics, quotes or citations that are not in the source text. Output ONLY the rewritten block content. Do not include introductory text, explanations, markdown code blocks, metadata, or commentary.",
         },
         {
           role: "user",
@@ -250,7 +250,7 @@ export async function generateModeVariant(_args: { data?: any } = {}) {
     data: _args?.data as {
       blockType?: string
       blockId?: string
-      mode: "skim" | "standard" | "expert" | "teach" | "debate" | "eli5"
+      mode: Mode
       source: string
     },
   })

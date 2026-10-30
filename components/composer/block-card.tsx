@@ -423,7 +423,7 @@ export const BlockCard = memo(function BlockCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-32">
-              {MODES.map((m) => (
+              {MODES.filter((m) => m !== "standard").map((m) => (
                 <DropdownMenuItem
                   key={m}
                   onClick={(e) => {

@@ -149,7 +149,7 @@ export function InspectorPane({
           <Sparkles className="size-3" /> AI variants
         </p>
         <div className="space-y-1">
-          {MODES.map((m) => {
+          {MODES.filter((m) => m !== "standard").map((m) => {
             const v = variants[m]
             return (
               <div key={m} className="rounded border border-border p-2">
