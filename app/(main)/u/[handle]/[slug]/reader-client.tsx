@@ -836,7 +836,7 @@ export function ReaderClient({
         </div>
 
         <div
-          className="custom-scrollbar sticky top-24 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto pb-8 lg:block"
+          className="custom-scrollbar sticky top-24 hidden max-h-[calc(100vh-6rem)] self-start overflow-y-auto lg:block"
         >
           <ReaderAside
             piece={piece}
