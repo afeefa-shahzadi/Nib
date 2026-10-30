@@ -1,11 +1,11 @@
 "use client"
 
 import { StudioSkeleton } from "@/components/studio/studio-skeleton"
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useEffect, useState } from "react"
+import { keepPreviousData, useQuery } from "@tanstack/react-query"
 import { DraftPiece } from "@/lib/types/content"
 import {
-  listMyPieces,
+  pageMyPieces,
   createPiece,
   importMarkdown,
   bulkUpdatePieces,
@@ -103,21 +103,9 @@ const EMPTY: Record<TabId, string> = {
 const PAGE = 20
 
 const SORTS = {
-  edited: {
-    label: "Last edited",
-    cmp: (a: DraftPiece, b: DraftPiece) =>
-      b.updated_at.localeCompare(a.updated_at),
-  },
-  published: {
-    label: "Newest published",
-    cmp: (a: DraftPiece, b: DraftPiece) =>
-      (b.published_at ?? "").localeCompare(a.published_at ?? ""),
-  },
-  title: {
-    label: "Title A–Z",
-    cmp: (a: DraftPiece, b: DraftPiece) =>
-      (a.title || "").localeCompare(b.title || ""),
-  },
+  edited: "Last edited",
+  published: "Newest published",
+  title: "Title A–Z",
 } as const
 type SortId = keyof typeof SORTS
 
@@ -130,9 +118,6 @@ const fmt = (iso: string) =>
 
 export default function DraftsPage() {
   const router = useRouter()
-
-  const q = useQuery({ queryKey: ["my-pieces"], queryFn: () => listMyPieces() })
-  const pieces: DraftPiece[] = (q.data ?? []) as DraftPiece[]
 
   const [showCreate, setShowCreate] = useState(false)
   const [newTitle, setNewTitle] = useState("")
@@ -151,6 +136,22 @@ export default function DraftsPage() {
   const [visibility, setVisibility] = useState("any")
   const [page, setPage] = useState(0)
   const [toDelete, setToDelete] = useState<DraftPiece | null>(null)
+
+  // Wait for a pause in typing before searching.
+  const [query, setQuery] = useState("")
+  useEffect(() => {
+    const t = setTimeout(() => setQuery(search.trim()), 250)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const q = useQuery({
+    queryKey: ["my-pieces-page", tab, visibility, sort, query, page],
+    queryFn: () =>
+      pageMyPieces({ tab, visibility, sort, search: query, page, perPage: PAGE }),
+    placeholderData: keepPreviousData,
+  })
+  const shown = (q.data?.rows ?? []) as DraftPiece[]
+  const total = q.data?.total ?? 0
 
   const create = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -298,24 +299,10 @@ export default function DraftsPage() {
     }
   }
 
-  const countOf = (t: TabId) =>
-    t === "all"
-      ? pieces.filter((p) => p.status !== "deleted").length
-      : pieces.filter((p) => p.status === t).length
-
-  const term = search.trim().toLowerCase()
-  // ponytail: filters and pages run client-side over listMyPieces; move to a ranged query if authors pass a few thousand pieces.
-  const filtered = pieces
-    .filter(
-      (p) =>
-        (tab === "all" ? p.status !== "deleted" : p.status === tab) &&
-        (visibility === "any" || p.visibility === visibility) &&
-        (!term || (p.title || "").toLowerCase().includes(term))
-    )
-    .sort(SORTS[sort].cmp)
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE))
-  const current = Math.min(page, pages - 1)
-  const shown = filtered.slice(current * PAGE, current * PAGE + PAGE)
+  const countOf = (t: TabId) => q.data?.counts[t] ?? 0
+  const term = search.trim()
+  const pages = Math.max(1, Math.ceil(total / PAGE))
+  const current = page
   const allSelected = shown.length > 0 && shown.every((p) => selected.has(p.id))
   const toggleAll = () =>
     setSelected(allSelected ? new Set() : new Set(shown.map((p) => p.id)))
@@ -381,7 +368,7 @@ export default function DraftsPage() {
             setSelected(new Set())
             setPage(0)
           }}
-          className="-mx-4 no-scrollbar overflow-x-auto px-4 sm:mx-0 sm:px-0"
+          className="no-scrollbar -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0"
         >
           <TabsList className="h-auto">
             {TABS.map((t) => (
@@ -419,7 +406,13 @@ export default function DraftsPage() {
               <SelectItem value="private">Private</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={sort} onValueChange={(v) => setSort(v as SortId)}>
+          <Select
+            value={sort}
+            onValueChange={(v) => {
+              setSort(v as SortId)
+              setPage(0)
+            }}
+          >
             <SelectTrigger
               className="min-h-11 w-[calc(50%-0.25rem)] md:w-44"
               aria-label="Sort"
@@ -429,7 +422,7 @@ export default function DraftsPage() {
             <SelectContent>
               {(Object.keys(SORTS) as SortId[]).map((k) => (
                 <SelectItem key={k} value={k}>
-                  {SORTS[k].label}
+                  {SORTS[k]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -457,7 +450,7 @@ export default function DraftsPage() {
       {/* Pieces list */}
       {q.isLoading ? (
         <StudioSkeleton header={false} />
-      ) : filtered.length === 0 ? (
+      ) : shown.length === 0 ? (
         <div className="surface rounded-lg px-4 py-16 text-center">
           <FileText
             className="mx-auto mb-3 size-8 text-muted-foreground/40"
@@ -479,7 +472,7 @@ export default function DraftsPage() {
         <div className="surface divide-y divide-border rounded-lg">
           <div className="flex min-h-11 items-center gap-3 px-4 text-sm text-muted-foreground">
             <Checkbox
-                  className="relative after:absolute after:-inset-3.5 after:content-['']"
+              className="relative after:absolute after:-inset-3.5 after:content-['']"
               checked={allSelected}
               onCheckedChange={toggleAll}
               aria-label="Select all"
@@ -609,7 +602,7 @@ export default function DraftsPage() {
           >
             <span>
               {current * PAGE + 1}–{current * PAGE + shown.length} of{" "}
-              {filtered.length}
+              {total}
             </span>
             {pages > 1 && (
               <span className="flex items-center gap-1">

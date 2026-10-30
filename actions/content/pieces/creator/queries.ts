@@ -30,6 +30,58 @@ export async function listMyPieces() {
   return await __handler({ context })
 }
 
+// ---------- CREATOR: one page of own pieces for the Pieces screen ----------
+const PIECE_STATUSES = ["draft", "scheduled", "published", "archived", "deleted"] as const
+const PIECE_SORTS = {
+  edited: { column: "updated_at", ascending: false },
+  published: { column: "published_at", ascending: false },
+  title: { column: "title", ascending: true },
+} as const
+
+export async function pageMyPieces(args: {
+  tab?: string
+  visibility?: string
+  sort?: string
+  search?: string
+  page?: number
+  perPage?: number
+} = {}) {
+  const supabase = await createClient()
+  const { data: _auth } = await supabase.auth.getUser()
+  const userId = _auth?.user?.id
+  if (!userId) throw new Error("Sign in first.")
+
+  const perPage = Math.min(Math.max(args.perPage ?? 20, 1), 100)
+  const page = Math.max(args.page ?? 0, 0)
+  const tab = (PIECE_STATUSES as readonly string[]).includes(args.tab ?? "") ? args.tab! : "all"
+  const sort = PIECE_SORTS[(args.sort ?? "edited") as keyof typeof PIECE_SORTS] ?? PIECE_SORTS.edited
+  const term = (args.search ?? "").trim().slice(0, 100).replace(/[%_\\]/g, (c) => "\\" + c)
+
+  let q = supabase
+    .from("content_objects")
+    .select("id, title, slug, status, visibility, updated_at, published_at, scheduled_for", { count: "exact" })
+    .eq("author_id", userId)
+  q = tab === "all" ? q.neq("status", "deleted") : q.eq("status", tab)
+  if (args.visibility && args.visibility !== "any") q = q.eq("visibility", args.visibility)
+  if (term) q = q.ilike("title", `%${term}%`)
+  q = q
+    .order(sort.column, { ascending: sort.ascending, nullsFirst: false })
+    .order("id")
+    .range(page * perPage, page * perPage + perPage - 1)
+
+  const countFor = (status: string) =>
+    supabase.from("content_objects").select("id", { count: "exact", head: true }).eq("author_id", userId).eq("status", status)
+
+  const [{ data, count, error }, ...counts] = await Promise.all([q, ...PIECE_STATUSES.map(countFor)])
+  if (error) {
+    console.error("[server]", error)
+    throw new Error("Request failed. Please try again.")
+  }
+  const byStatus = Object.fromEntries(PIECE_STATUSES.map((s, i) => [s, counts[i].count ?? 0])) as Record<string, number>
+  byStatus.all = PIECE_STATUSES.filter((s) => s !== "deleted").reduce((n, s) => n + byStatus[s], 0)
+  return { rows: data ?? [], total: count ?? 0, counts: byStatus }
+}
+
 // ---------- CREATOR: get own piece w/ blocks ----------
 export async function getMyPiece(args: { data?: any } = {}) {
   const supabase = await createClient()

@@ -12,6 +12,7 @@ export {
   getAuthorByHandle,
   getRelatedPieces,
   listMyPieces,
+  pageMyPieces,
   getMyPiece,
   getStudioStats,
   getRecentActivity,

@@ -1,5 +1,6 @@
 export {
   listMyPieces,
+  pageMyPieces,
   getMyPiece,
   getStudioStats,
   getRecentActivity,
