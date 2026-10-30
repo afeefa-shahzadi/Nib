@@ -78,6 +78,7 @@ import { FootnotesSection } from "./components/footnotes-section"
 import dynamic from "next/dynamic"
 
 // Conditional UI: fetch on first use, not with the reader shell.
+import { debateBlock } from "@/lib/debate-block"
 const DebateRoom = dynamic(() => import("@/components/debate-room").then((m) => m.DebateRoom), { ssr: false })
 const AnnotationDialog = dynamic(() => import("@/components/reader/annotation-dialog").then((m) => m.AnnotationDialog), { ssr: false })
 const SubscribeModal = dynamic(() => import("@/components/reader/subscribe-modal").then((m) => m.SubscribeModal), { ssr: false })
@@ -382,9 +383,10 @@ export function ReaderClient({
         highlights={[...initialHighlights, ...optimisticHighlights]}
         inlineComments={inlineComments.filter((c: any) => !c.parent_id && c.quoted_text)}
         onUnlock={() => unlockRef.current()}
+        onDebate={rooms.length > 0 ? (blockId) => debateBlock(rooms[0].id, blockId) : undefined}
       />
     ),
-    [bodyBlocks, mode, hasAccess, isAdult, hasDob, initialHighlights, optimisticHighlights, inlineComments]
+    [bodyBlocks, mode, hasAccess, isAdult, hasDob, initialHighlights, optimisticHighlights, inlineComments, rooms]
   )
 
   const share = async () => {

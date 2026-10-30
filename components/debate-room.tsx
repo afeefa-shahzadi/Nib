@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 import { useEffect, useRef, useState } from "react"
+import { DEBATE_BLOCK_EVENT } from "@/lib/debate-block"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
@@ -74,6 +75,17 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
       supabase.removeChannel(channel)
     }
   }, [roomId, fetchMsgs])
+
+  useEffect(() => {
+    const onPick = (e: Event) => {
+      const d = (e as CustomEvent<{ roomId: string; blockId: string }>).detail
+      if (d.roomId !== roomId) return
+      setBlockId(d.blockId)
+      editorRef.current?.focus()
+    }
+    window.addEventListener(DEBATE_BLOCK_EVENT, onPick)
+    return () => window.removeEventListener(DEBATE_BLOCK_EVENT, onPick)
+  }, [roomId])
 
   useEffect(() => {
     if (containerRef.current) {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ReactNode, createContext, useContext } from "react"
 import { markText } from "@/lib/mark-text"
-import { Lock } from "lucide-react"
+import { Lock, MessagesSquare } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import DOMPurify from "isomorphic-dompurify"
@@ -203,6 +203,7 @@ export function ReaderBody({
   highlights,
   inlineComments,
   onUnlock,
+  onDebate,
 }: {
   blocks: Block[]
   mode: ReadingMode
@@ -212,6 +213,7 @@ export function ReaderBody({
   highlights?: any[]
   inlineComments?: any[]
   onUnlock?: () => void
+  onDebate?: (blockId: string) => void
 }) {
   const visible = blocks.filter((b) => isVisibleInMode(b, mode))
   return (
@@ -223,7 +225,18 @@ export function ReaderBody({
         const isNsfwBlocked = b.is_nsfw && !is_adult
 
         return (
-          <div key={b.id ?? i} id={b.id ? `block-${b.id}` : undefined} className="relative">
+          <div key={b.id ?? i} id={b.id ? `block-${b.id}` : undefined} className="group/block relative">
+            {onDebate && b.id && !isPremiumBlocked && !isNsfwBlocked && (
+              <button
+                type="button"
+                onClick={() => onDebate(b.id!)}
+                aria-label="Debate this paragraph"
+                title="Debate this"
+                className="absolute -right-8 top-1 hidden rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover/block:opacity-100 md:block"
+              >
+                <MessagesSquare className="h-4 w-4" />
+              </button>
+            )}
             {isNsfwBlocked && (
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-md bg-background/80 backdrop-blur-xl">
                 <span className="text-4xl">🔞</span>
