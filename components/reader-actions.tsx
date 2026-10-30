@@ -302,9 +302,17 @@ export function ReaderActions({
   const openSave = async () => {
     if (!requireAuth()) return
     if (saved) {
-      await unsaveFn({ data: { content_object_id: pieceId } })
-      setSavedState(false)
-      toast.success("Removed from saved")
+      if (busy) return
+      setBusy(true)
+      try {
+        await unsaveFn({ data: { content_object_id: pieceId } })
+        setSavedState(false)
+        toast.success("Removed from saved")
+      } catch (e) {
+        toast.error((e as Error).message)
+      } finally {
+        setBusy(false)
+      }
       return
     }
     try {
@@ -343,12 +351,13 @@ export function ReaderActions({
     setBusy(true)
     try {
       const { id: collection_id } = await createCollection({
-        data: { title: newCollectionName.trim() || "Untitled Collection" },
+        // A reader's new list starts private; they can make it public from their studio.
+        data: { title: newCollectionName.trim() || "Reading list", is_public: false },
       })
       await saveFn({ data: { content_object_id: pieceId, collection_id } })
       setSavedState(true)
       setSaveOpen(false)
-      toast.success("Saved to new collection!", {
+      toast.success("Saved to your new private list", {
         action: { label: "View", onClick: () => router.push(`/collections/${collection_id}`) },
       })
     } catch (e) {
@@ -376,7 +385,11 @@ export function ReaderActions({
         },
       })
       setRepostOpen(false)
-      toast.success(r.credited ? "Reposted with credit" : "Reposted")
+      toast.success(
+        r.existing
+          ? "You already reposted this. Opening your draft."
+          : "Repost draft created. Publish it from your studio when it's ready."
+      )
       router.push(`/studio/drafts/${r.id}`)
     } catch (e) {
       toast.error((e as Error).message)

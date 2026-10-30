@@ -2,6 +2,7 @@
 "use server"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
+import { checkRateLimit } from "@/lib/rate-limit.server"
 
 // ---------- FOLLOW: counts + status ----------
 export async function getFollowStatus(args: { data?: any } = {}) {
@@ -33,6 +34,7 @@ export async function isFollowing(args: { data?: any } = {}) {
     data: { author_id: string }
     context: ActionContext
   }) => {
+    if (!context.userId) return { following: false }
     const { data: row } = await context.supabase
       .from("follows")
       .select("id")
@@ -66,6 +68,10 @@ export async function followAuthor(args: { data?: any } = {}) {
     if (!context.userId) throw new Error("Unauthorized")
     if (data.author_id === context.userId)
       throw new Error("You can't follow yourself.")
+    const rl = await checkRateLimit("follow", context.userId, 30, 3600)
+    if (!rl.ok) throw new Error("You're following and unfollowing a lot. Try again later.")
+    const { data: target } = await supabaseAdmin.from("profiles").select("id").eq("id", data.author_id).maybeSingle()
+    if (!target) throw new Error("That writer doesn't exist.")
     // The follows insert fires a follower-count trigger that writes profiles;
     // under the cookie client (authenticated role) that write is grant-denied and
     // rolls back the whole insert, so the follow never persists. follower_id is
@@ -79,8 +85,17 @@ export async function followAuthor(args: { data?: any } = {}) {
       throw new Error("Request failed. Please try again.")
     }
     
-    // Revenue Strategy & Email logic (only if this was a new follow)
-    if (!error) {
+    // Welcome email + notification only the first time this reader follows this
+    // writer, so follow/unfollow loops can't spam either of them.
+    const { count: notifiedBefore } = error
+      ? { count: 1 }
+      : await svc
+          .from("notifications")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", data.author_id)
+          .eq("type", "new_follower")
+          .eq("payload->>follower_id", context.userId)
+    if (!error && !notifiedBefore) {
       try {
         // notifications has no INSERT policy by design (system-written only);
         // write with the service role (reused from the insert above).
@@ -133,8 +148,10 @@ export async function followAuthor(args: { data?: any } = {}) {
       }
     }
 
-    const { tickQuest } = await import("@/lib/quests.server")
-    await tickQuest(context.userId!, "follow_1")
+    if (!error) {
+      const { tickQuest } = await import("@/lib/quests.server")
+      await tickQuest(context.userId!, "follow_1")
+    }
     return { ok: true }
   }
   return await __handler({
@@ -159,6 +176,9 @@ export async function unfollowAuthor(args: { data?: any } = {}) {
     data: { author_id: string }
     context: ActionContext
   }) => {
+    if (!context.userId) throw new Error("Sign in first.")
+    const rl = await checkRateLimit("follow", context.userId, 30, 3600)
+    if (!rl.ok) throw new Error("You're following and unfollowing a lot. Try again later.")
     // Same follower-count trigger as follow: route the delete through the service
     // role so the trigger's profiles write isn't grant-denied. Scoped to the
     // verified caller's own follow row.

@@ -3,14 +3,21 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { getViewablePiece } from "@/actions/content/helpers"
+import { assertCanPost } from "@/lib/parental-consent"
+import { checkRateLimit } from "@/lib/rate-limit.server"
+
+const MAX_BODY = 2000
 
 export async function listBlockAnnotations(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
+  const { data: _auth } = await (await createClient()).auth.getUser()
   const __handler = async ({
     data,
   }: {
     data: { content_object_id: string }
   }) => {
+    // Notes on drafts and members-only pieces stay with people who can open them.
+    if (!(await getViewablePiece(supabaseAdmin, data.content_object_id, _auth?.user?.id ?? null))) return []
     const { data: rows, error } = await supabaseAdmin
       .from("block_annotations")
       .select("id, block_id, body, user_id, created_at")
@@ -65,6 +72,10 @@ export async function createBlockAnnotation(args: { data?: any } = {}) {
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Unauthorized")
+    await assertCanPost(context.userId)
+    const body = String(data.body ?? "").trim()
+    if (!body) throw new Error("Write something first.")
+    if (body.length > MAX_BODY) throw new Error(`Keep it under ${MAX_BODY} characters.`)
     if (!(await getViewablePiece(supabaseAdmin, data.content_object_id, context.userId)))
       throw new Error("Piece not found")
     const { data: block } = await supabaseAdmin
@@ -74,13 +85,15 @@ export async function createBlockAnnotation(args: { data?: any } = {}) {
       .maybeSingle()
     if (!block || block.content_object_id !== data.content_object_id)
       throw new Error("Block not found")
+    const rl = await checkRateLimit("annotate", context.userId, 30, 600)
+    if (!rl.ok) throw new Error("You're posting a lot. Try again in a few minutes.")
     const { data: row, error } = await context.supabase
       .from("block_annotations")
       .insert({
         content_object_id: data.content_object_id,
         block_id: data.block_id,
         user_id: context.userId,
-        body: data.body,
+        body,
       })
       .select("id, block_id, body, user_id, created_at")
       .single()

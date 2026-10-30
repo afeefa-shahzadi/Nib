@@ -30,7 +30,8 @@ export function HighlightHoverTrash({ viewerId, highlights, onDelete }: Props) {
   }, [])
 
   useEffect(() => {
-    const onOver = (e: MouseEvent) => {
+    // Hover (mouse), tap (touch) and focus (keyboard) all open the note.
+    const onOver = (e: Event) => {
       const target = e.target as HTMLElement
       const marker = target.closest(".highlight-marker") as HTMLElement | null
       if (!marker) return
@@ -64,11 +65,26 @@ export function HighlightHoverTrash({ viewerId, highlights, onDelete }: Props) {
       scheduleHide()
     }
 
+    const onDown = (e: Event) => {
+      const t = e.target as HTMLElement
+      if (!t.closest(".highlight-marker") && !t.closest("#highlight-tooltip")) setState(null)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setState(null)
+
     document.addEventListener("mouseover", onOver)
     document.addEventListener("mouseout", onOut)
+    document.addEventListener("click", onOver)
+    document.addEventListener("focusin", onOver)
+    document.addEventListener("pointerdown", onDown)
+    document.addEventListener("keydown", onKey)
     return () => {
       document.removeEventListener("mouseover", onOver)
       document.removeEventListener("mouseout", onOut)
+      document.removeEventListener("click", onOver)
+      document.removeEventListener("focusin", onOver)
+      document.removeEventListener("pointerdown", onDown)
+      document.removeEventListener("keydown", onKey)
+      clearHide()
     }
   }, [highlights, viewerId, scheduleHide])
 
@@ -77,6 +93,7 @@ export function HighlightHoverTrash({ viewerId, highlights, onDelete }: Props) {
   return createPortal(
     <div
       id="highlight-tooltip"
+      role="tooltip"
       onMouseEnter={clearHide}
       onMouseLeave={scheduleHide}
       style={{
@@ -96,10 +113,11 @@ export function HighlightHoverTrash({ viewerId, highlights, onDelete }: Props) {
             onDelete(state.highlightId)
             setState(null)
           }}
-          className="flex items-center gap-1 text-destructive hover:text-destructive/70 transition-colors shrink-0"
-          title="Delete"
+          className="inline-flex size-11 shrink-0 items-center justify-center text-destructive transition-colors hover:text-destructive/70 lg:size-7"
+          title="Delete highlight"
+          aria-label="Delete highlight"
         >
-          <Trash2 className="size-3" />
+          <Trash2 className="size-4" aria-hidden />
         </button>
       )}
     </div>,

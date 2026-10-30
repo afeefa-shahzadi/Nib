@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { createHighlight, createAnnotation } from "@/actions/highlights"
+import { createHighlight, createAnnotation, deleteHighlight } from "@/actions/highlights"
 import { toast } from "sonner"
 
 interface Props {
@@ -25,7 +25,7 @@ export function AnnotationDialog({ open, onOpenChange, pieceId, selectedText, on
 
   const handleSave = async () => {
     if (!note.trim()) {
-      toast.error("Please add a note")
+      toast.error("Write a note first.")
       return
     }
     setSaving(true)
@@ -45,10 +45,12 @@ export function AnnotationDialog({ open, onOpenChange, pieceId, selectedText, on
         onOpenChange(false)
         onAnnotationSaved()
       } else {
-        toast.error(aRes.error || "Failed to save annotation")
+        // Don't leave a highlight behind without the note it was made for.
+        await deleteHighlight(hRes.highlightId).catch(() => {})
+        toast.error(aRes.error || "Couldn't save your note.")
       }
     } catch {
-      toast.error("An error occurred")
+      toast.error("Couldn't save your note. Try again.")
     } finally {
       setSaving(false)
     }

@@ -88,6 +88,11 @@ export async function postComment(args: { data?: any } = {}) {
     userId: string
   }) => {
     await assertCanPost(userId)
+    if (!data.body?.trim()) throw new Error("Write something first.")
+    if (data.body.length > 10_000) throw new Error("Keep responses under 10,000 characters.")
+    if (data.quoted_text && data.quoted_text.length > 1_000) throw new Error("That quote is too long.")
+    if (data.serialized_range && JSON.stringify(data.serialized_range).length > 4_000)
+      throw new Error("That selection is too long.")
     if (!(await getViewablePiece(supabaseAdmin, data.piece_id, userId)))
       throw new Error("Piece not found")
     if (data.parent_id) {
@@ -117,7 +122,10 @@ export async function postComment(args: { data?: any } = {}) {
       *,
       author:profiles!user_id(handle, display_name, avatar_url)
     `).single()
-    if (error) throw new Error(error.message)
+    if (error) {
+      console.error("[comments]", error)
+      throw new Error("Couldn't post your response. Try again.")
+    }
     return { success: true, data: newComment }
   }
 
@@ -161,7 +169,10 @@ export async function deleteComment(commentId: string) {
     .delete()
     .eq("id", commentId)
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[comments]", error)
+    throw new Error("Couldn't delete that. Try again.")
+  }
   return { success: true }
 }
 
@@ -170,6 +181,18 @@ export async function toggleCommentVote(commentId: string, voteType: 1 | -1 | 0)
   const { data: authData } = await (await createClient()).auth.getUser()
   if (!authData?.user) throw new Error("Unauthorized")
   const userId = authData.user.id
+  if (![1, -1, 0].includes(voteType)) throw new Error("Invalid vote")
+  // Same rules as claps: the response must exist on a piece you can see, and not be yours.
+  const { data: target } = await supabaseAdmin
+    .from("piece_responses")
+    .select("user_id, piece_id")
+    .eq("id", commentId)
+    .maybeSingle()
+  if (!target || !(await getViewablePiece(supabaseAdmin, target.piece_id, userId)))
+    throw new Error("Response not found")
+  if (target.user_id === userId) throw new Error("You can't vote on your own response.")
+  if (!(await checkRateLimit("comment_vote", userId, 60, 600)).ok)
+    throw new Error("You're voting a lot. Try again in a few minutes.")
 
   if (voteType === 0) {
     // Remove vote
@@ -183,7 +206,10 @@ export async function toggleCommentVote(commentId: string, voteType: 1 | -1 | 0)
     const { error } = await supabaseAdmin
       .from("piece_response_votes")
       .upsert({ response_id: commentId, user_id: userId, vote_type: voteType }, { onConflict: "response_id,user_id" })
-    if (error) throw new Error(error.message)
+    if (error) {
+      console.error("[comments]", error)
+      throw new Error("Couldn't save your vote.")
+    }
   }
   return { success: true }
 }
@@ -213,7 +239,10 @@ export async function togglePinComment(commentId: string, isPinned: boolean) {
     .update({ is_pinned: isPinned })
     .eq("id", commentId)
 
-  if (error) throw new Error(error.message)
+  if (error) {
+    console.error("[comments]", error)
+    throw new Error("Couldn't update that response.")
+  }
   return { success: true }
 }
 

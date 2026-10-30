@@ -3,6 +3,12 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { ensureUserWorkspace } from "./helpers"
+import { checkRateLimit } from "@/lib/rate-limit.server"
+
+// Titles, handles and notes come from users; never put them into stored HTML raw.
+const esc = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;")
+const MAX_NOTE = 2000
 
 // ---------- READER ACTIONS: repost with credits ----------
 export async function repostPiece(args: { data?: any } = {}) {
@@ -26,6 +32,10 @@ export async function repostPiece(args: { data?: any } = {}) {
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Unauthorized")
+    const note = (data.note ?? "").trim()
+    if (note.length > MAX_NOTE) throw new Error(`Keep the note under ${MAX_NOTE} characters.`)
+    const rl = await checkRateLimit("repost", context.userId, 10, 3600)
+    if (!rl.ok) throw new Error("You've reposted a lot this hour. Try again later.")
     const { data: original } = await supabaseAdmin
       .from("content_objects")
       .select("id, title, slug, author_id, repost_credits_required, summary, status, visibility")
@@ -36,6 +46,16 @@ export async function repostPiece(args: { data?: any } = {}) {
     // title/summary leak into a new public repost.
     if (original.status !== "published" || original.visibility !== "public")
       throw new Error("Only published public pieces can be reposted")
+    if (original.author_id === context.userId) throw new Error("You can't repost your own piece")
+    // One repost per piece per reader: hand back the existing draft instead of piling up copies.
+    const { data: existing } = await supabaseAdmin
+      .from("reposts")
+      .select("repost_piece_id, credited")
+      .eq("user_id", context.userId)
+      .eq("original_piece_id", original.id)
+      .limit(1)
+      .maybeSingle()
+    if (existing?.repost_piece_id) return { id: existing.repost_piece_id, credited: !!existing.credited, existing: true }
     const mustCredit = !!original.repost_credits_required
     const credited = mustCredit || data.add_credits
 
@@ -84,29 +104,36 @@ export async function repostPiece(args: { data?: any } = {}) {
         order: 0,
         content: {
           text: `Originally by @${authorProfile.handle} — "${original.title}"`,
-          html: `<p>Originally by <a href="/u/${authorProfile.handle}/${original.slug}"><strong>@${authorProfile.handle}</strong></a> — <em>${original.title}</em></p>`,
+          html: `<p>Originally by <a href="/u/${encodeURIComponent(authorProfile.handle)}/${encodeURIComponent(original.slug)}"><strong>@${esc(authorProfile.handle)}</strong></a> — <em>${esc(original.title)}</em></p>`,
         },
         semantic_role: "context",
       })
     }
-    if (data.note?.trim()) {
+    if (note) {
       blocks.push({
         content_object_id: repost.id,
         type: "paragraph",
         order: blocks.length,
-        content: { text: data.note.trim(), html: `<p>${data.note.trim()}</p>` },
+        content: { text: note, html: `<p>${esc(note)}</p>` },
       })
     }
-    if (blocks.length) await supabaseAdmin.from("blocks").insert(blocks)
+    const { error: bErr } = blocks.length ? await supabaseAdmin.from("blocks").insert(blocks) : { error: null }
+    const { error: rErr } = bErr
+      ? { error: bErr }
+      : await supabaseAdmin.from("reposts").insert({
+          user_id: context.userId,
+          original_piece_id: original.id,
+          repost_piece_id: repost.id,
+          credited,
+        })
+    if (bErr || rErr) {
+      // Don't leave a half-built (possibly uncredited) draft behind.
+      console.error("[repost]", bErr ?? rErr)
+      await supabaseAdmin.from("content_objects").delete().eq("id", repost.id)
+      throw new Error("Could not create repost")
+    }
 
-    await supabaseAdmin.from("reposts").insert({
-      user_id: context.userId,
-      original_piece_id: original.id,
-      repost_piece_id: repost.id,
-      credited,
-    })
-
-    return { id: repost.id, credited }
+    return { id: repost.id, credited, existing: false }
   }
   return await __handler({
     data: args?.data as {

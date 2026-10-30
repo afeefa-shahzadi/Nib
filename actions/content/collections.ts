@@ -2,6 +2,7 @@
 "use server"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
+import { getViewablePiece } from "./helpers"
 
 // ---------- READER ACTIONS: save to collection ----------
 export async function listMyCollections() {
@@ -14,6 +15,7 @@ export async function listMyCollections() {
   }
 
   const __handler = async ({ context }: { context: ActionContext }) => {
+    if (!context.userId) return []
     const { data, error } = await supabaseAdmin
       .from("collections")
       .select("id, title, is_personal, is_public")
@@ -58,6 +60,15 @@ export async function ensurePersonalCollection() {
       .select("id")
       .single()
     if (error) {
+      // Two saves at once: the unique index stopped a second "Saved" list; use the first.
+      const { data: again } = await supabaseAdmin
+        .from("collections")
+        .select("id")
+        .eq("curator_id", context.userId)
+        .eq("is_personal", true)
+        .limit(1)
+        .maybeSingle()
+      if (again) return { id: again.id }
       console.error("[server]", error)
       throw new Error("Request failed. Please try again.")
     }
@@ -94,6 +105,9 @@ export async function savePiece(args: { data?: any } = {}) {
       if (!collection || collection.curator_id !== context.userId)
         throw new Error("Not authorized")
     }
+    // Only pieces the reader can actually open can be saved.
+    if (!(await getViewablePiece(supabaseAdmin, data.content_object_id, context.userId)))
+      throw new Error("This piece can't be saved.")
 
     // de-dupe: remove existing save for the same piece in the same collection
     {
@@ -161,6 +175,7 @@ export async function unsavePiece(args: { data?: any } = {}) {
     data: { content_object_id: string }
     context: ActionContext
   }) => {
+    if (!context.userId) throw new Error("Sign in first.")
     const { data: rows } = await supabaseAdmin
       .from("saves")
       .select("collection_id")
@@ -222,6 +237,7 @@ export async function isSaved(args: { data?: any } = {}) {
     data: { content_object_id: string }
     context: ActionContext
   }) => {
+    if (!context.userId) return { saved: false }
     const { data: rows } = await supabaseAdmin
       .from("saves")
       .select("id")

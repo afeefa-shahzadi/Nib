@@ -1,6 +1,8 @@
 "use server"
 
 import { createAdminClient, createClient } from "@/lib/supabase/server"
+import { getViewablePiece } from "@/actions/content/helpers"
+import { checkRateLimit } from "@/lib/rate-limit.server"
 
 export async function createHighlight(pieceId: string, text: string) {
   const supabase = await createAdminClient()
@@ -9,6 +11,12 @@ export async function createHighlight(pieceId: string, text: string) {
   if (!authData?.user?.id) {
     return { success: false, error: "Unauthorized" }
   }
+  const clean = String(text ?? "").replace(/\s+/g, " ").trim()
+  if (clean.length < 3 || clean.length > 5_000) return { success: false, error: "Select between a few words and a few paragraphs." }
+  if (!(await getViewablePiece(supabase, pieceId, authData.user.id))) return { success: false, error: "Piece not found" }
+  if (!(await checkRateLimit("highlight", authData.user.id, 60, 600)).ok)
+    return { success: false, error: "You're highlighting a lot. Try again in a few minutes." }
+  text = clean
 
   const { data, error } = await supabase
     .from("reader_highlights")
@@ -44,6 +52,7 @@ export async function createAnnotation(highlightId: string, note: string) {
   if (!highlight || highlight.user_id !== authData.user.id) {
     return { success: false, error: "Not authorized" }
   }
+  if (!note?.trim() || note.length > 5_000) return { success: false, error: "Keep notes under 5,000 characters." }
 
   const { error } = await supabase
     .from("reader_annotations")

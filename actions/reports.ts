@@ -24,6 +24,18 @@ export async function reportContent(
     return { success: false, error: "Too many reports. Please try again later." }
   }
 
+  reason = String(reason ?? "").trim()
+  if (!reason) return { success: false, error: "Tell us what's wrong." }
+  if (reason.length > 1_000) return { success: false, error: "Keep the reason under 1,000 characters." }
+  // A comment report must point at a comment on this piece; a piece report at the piece.
+  if (target?.type === "comment") {
+    const { data: c } = await supabase.from("piece_responses").select("piece_id").eq("id", target.id).maybeSingle()
+    if (!c || c.piece_id !== contentObjectId) return { success: false, error: "That response no longer exists." }
+  } else if (!target || target.type === "piece") {
+    const { data: p } = await supabase.from("content_objects").select("id").eq("id", contentObjectId).maybeSingle()
+    if (!p) return { success: false, error: "That piece no longer exists." }
+  }
+
   const row: Record<string, unknown> = {
     content_object_id: contentObjectId,
     user_id: userId,
@@ -49,7 +61,7 @@ export async function reportContent(
   } else {
     dedupe.eq("content_object_id", contentObjectId)
   }
-  const { data: existing } = await dedupe.maybeSingle()
+  const { data: existing } = await dedupe.limit(1).maybeSingle()
   if (existing) {
     return { success: true }
   }

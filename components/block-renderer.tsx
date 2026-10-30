@@ -125,7 +125,7 @@ export function RichOrText({
     for (const hl of highlights ?? []) {
       if (!hl.text_content) continue
       const cls = hl.annotations?.length ? "bg-success/25 border-b-2 border-success" : "bg-note/25"
-      out = markText(out, hl.text_content, (t) => `<mark class="${cls} text-foreground rounded-sm px-0.5 highlight-marker" data-highlight-id="${hl.id}">${t}</mark>`)
+      out = markText(out, hl.text_content, (t) => `<mark class="${cls} text-foreground rounded-sm px-0.5 highlight-marker" tabindex="0" data-highlight-id="${hl.id}">${t}</mark>`)
     }
     for (const c of inlineComments ?? []) {
       if (!c.quoted_text) continue
