@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { normalizeLink, normalizeLinks } from "@/lib/profile-links"
 import { createAdminClient, createServiceRoleClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { encryptSecret } from "@/lib/crypto"
@@ -99,10 +100,29 @@ export async function updateMyProfile(args: { data?: any } = {}) {
       disability_cognitive?: boolean
       disability_hearing?: boolean
       disability_motor?: boolean
+      website?: string | null
+      links?: string[]
+      pinned_piece_id?: string | null
     }
     context: ActionContext
   }) => {
     const patch: Record<string, unknown> = {}
+    if (data.website !== undefined) patch.website = normalizeLink(data.website)
+    if (data.links !== undefined) patch.links = normalizeLinks(data.links)
+    if (data.pinned_piece_id !== undefined) {
+      if (data.pinned_piece_id) {
+        // Only your own published piece can be pinned.
+        const { data: own } = await context.supabase
+          .from("content_objects")
+          .select("id")
+          .eq("id", data.pinned_piece_id)
+          .eq("author_id", context.userId!)
+          .eq("status", "published")
+          .maybeSingle()
+        if (!own) throw new Error("You can only pin one of your published pieces.")
+      }
+      patch.pinned_piece_id = data.pinned_piece_id || null
+    }
     for (const k of [
       "display_name",
       "handle",

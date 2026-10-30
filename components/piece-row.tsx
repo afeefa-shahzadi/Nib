@@ -8,7 +8,7 @@ const date = (iso: string) =>
   // Pinned locale + UTC keeps SSR and client output identical.
   new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })
 
-export function PieceRow({ p }: { p: Piece }) {
+export function PieceRow({ p, pinned }: { p: Piece; pinned?: boolean }) {
   const a = p.author
   return (
     <li className="hairline-t last:hairline-b">
@@ -24,7 +24,8 @@ export function PieceRow({ p }: { p: Piece }) {
                 {a.display_name}
               </span>
             )}
-            {p.published_at && <span>· {date(p.published_at)}</span>}
+            {pinned && <span className="font-medium text-foreground">Pinned</span>}
+            {p.published_at && <span>{a || pinned ? "· " : ""}{date(p.published_at)}</span>}
             {p.boosted && <span className="rounded-sm bg-muted px-1.5 text-xs">Promoted</span>}
           </div>
           <h2 className="mt-2 font-display text-xl leading-snug group-hover:text-primary">{p.title}</h2>

@@ -8,9 +8,11 @@ import { toast } from "sonner"
 interface SubscribeCardProps {
   authorId: string
   authorName: string
+  /** Sidebar version: left-aligned, no rules, smaller heading. */
+  compact?: boolean
 }
 
-export function SubscribeCard({ authorId, authorName }: SubscribeCardProps) {
+export function SubscribeCard({ authorId, authorName, compact }: SubscribeCardProps) {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
@@ -31,6 +33,38 @@ export function SubscribeCard({ authorId, authorName }: SubscribeCardProps) {
     } else {
       toast.error(error)
     }
+  }
+
+  if (subscribed && compact) {
+    return (
+      <p className="text-sm text-muted-foreground" role="status">
+        Subscribed. New pieces by {authorName} will arrive by email.
+      </p>
+    )
+  }
+
+  if (compact) {
+    return (
+      <form onSubmit={handleSubscribe} className="space-y-2">
+        <label htmlFor="profile-subscribe" className="block text-sm font-medium">
+          Get new pieces by email
+        </label>
+        <div className="flex gap-2">
+          <Input
+            id="profile-subscribe"
+            type="email"
+            autoComplete="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <Button type="submit" variant="outline" disabled={loading}>
+            {loading ? "…" : "Subscribe"}
+          </Button>
+        </div>
+      </form>
+    )
   }
 
   if (subscribed) {

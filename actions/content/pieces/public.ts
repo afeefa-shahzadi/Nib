@@ -229,7 +229,7 @@ export async function getAuthorByHandle(args: { data?: any } = {}) {
   const __handler = async ({ data }: { data: { handle: string } }) => {
     const { data: author, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, handle, display_name, bio, avatar_url, flair")
+      .select("id, handle, display_name, bio, avatar_url, flair, created_at, website, links, pinned_piece_id")
       .eq("handle", data.handle)
       .maybeSingle()
     if (error) {
@@ -240,7 +240,7 @@ export async function getAuthorByHandle(args: { data?: any } = {}) {
     const { data: pieces } = await excludeNsfw(
       supabaseAdmin
         .from("content_objects")
-        .select("id, title, slug, summary, tags, published_at")
+        .select("id, title, slug, summary, tags, published_at, cover_image_url")
         .eq("author_id", author.id)
         .eq("status", "published")
         .eq("visibility", "public")
@@ -251,7 +251,17 @@ export async function getAuthorByHandle(args: { data?: any } = {}) {
       .select("id, name, description, price_cents, perks")
       .eq("author_id", author.id)
       .order("price_cents", { ascending: true })
-    return { author, pieces: pieces ?? [], tiers: tiers ?? [] }
+    const [{ count: followers }, { count: following }] = await Promise.all([
+      supabaseAdmin.from("follows").select("id", { count: "exact", head: true }).eq("author_id", author.id),
+      supabaseAdmin.from("follows").select("id", { count: "exact", head: true }).eq("follower_id", author.id),
+    ])
+    return {
+      author,
+      pieces: pieces ?? [],
+      tiers: tiers ?? [],
+      followers: followers ?? 0,
+      following: following ?? 0,
+    }
   }
   return await __handler({ data: args?.data as { handle: string } })
 }

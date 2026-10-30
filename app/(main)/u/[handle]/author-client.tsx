@@ -4,29 +4,47 @@ import { MembershipTiers } from "@/components/membership-tiers"
 import { RelationshipGraph } from "@/components/relationship-graph"
 import { FollowButton } from "@/components/follow-button"
 import { SubscribeDialog } from "@/components/subscribe-dialog"
+import { SubscribeCard } from "@/components/reader/subscribe-card"
+import { PieceRow } from "@/components/piece-row"
 import { useAuth } from "@/hooks/use-auth"
 import { useRouter } from "next/navigation"
-import { SubscribeCard } from "@/components/reader/subscribe-card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useEffect, useMemo, useState } from "react"
-import { Search, FileText, Crown, Network, X, UserPlus, Share, Library } from "lucide-react"
+import { Crown, Globe, Link2, Rss, Search, Share, X } from "lucide-react"
 import Link from "next/link"
 import { Piece, TierItem } from "@/lib/types/content"
-import Image from "next/image"
 import { toast } from "sonner"
-import {
-  getFollowStatus,
-} from "@/actions/social"
-import { Button } from "@/components/ui/button"
-import { formatCompactNumber } from "@/lib/utils"
+import { cn, formatCompactNumber } from "@/lib/utils"
 import { flairClass } from "@/lib/flair"
+import { linkLabel } from "@/lib/profile-links"
+import { GithubIcon, InstagramIcon, LinkedinIcon, TwitterIcon, YoutubeIcon } from "@/components/brand/social-icons"
+
+const BRAND_ICONS: Record<string, typeof GithubIcon> = {
+  X: TwitterIcon,
+  GitHub: GithubIcon,
+  LinkedIn: LinkedinIcon,
+  Instagram: InstagramIcon,
+  YouTube: YoutubeIcon,
+}
+
+type Graph = {
+  pieces: Array<{ id: string; title: string; slug: string }>
+  branches: Array<{ id: string; parent_object_id: string; branch_type: string; purpose: string | null; summary: string | null }>
+  relationships: Array<{ id: string; from_object_id: string; to_object_id: string; type: string }>
+}
+
+const TAGS_COLLAPSED = 8
 
 export default function AuthorClient({
   author,
   pieces,
   tiers,
+  followers: initialFollowers,
+  following,
   paymentsOpen,
   collections = [],
   recommendations,
@@ -38,47 +56,33 @@ export default function AuthorClient({
     bio: string | null
     avatar_url: string | null
     flair?: string | null
+    created_at?: string | null
+    website?: string | null
+    links?: string[] | null
+    pinned_piece_id?: string | null
   }
   pieces: Piece[]
   tiers: TierItem[]
+  followers: number
+  following: number
   paymentsOpen: boolean
   collections?: Array<{ id: string; title: string; description: string | null }>
   recommendations: Array<{
     id: string
     blurb: string | null
-    profiles: {
-      display_name: string
-      handle: string
-      avatar_url: string | null
-    }
+    profiles: { display_name: string; handle: string; avatar_url: string | null }
   }>
 }) {
-  const [graph, setGraph] = useState<{
-    pieces: Array<{ id: string; title: string; slug: string }>
-    branches: Array<{
-      id: string
-      parent_object_id: string
-      branch_type: string
-      purpose: string | null
-      summary: string | null
-    }>
-    relationships: Array<{
-      id: string
-      from_object_id: string
-      to_object_id: string
-      type: string
-    }>
-  } | null>(null)
-
-  const getFollowStatusFn = getFollowStatus
-
-  const [query, setQuery] = useState("")
   const { user } = useAuth()
   const router = useRouter()
+  const [graph, setGraph] = useState<Graph | null>(null)
+  const [followers, setFollowers] = useState(initialFollowers)
   const [subscribeOpen, setSubscribeOpen] = useState(false)
-  const canSubscribe = paymentsOpen && user?.id !== author.id && tiers.some((t) => t.price_cents > 0)
+  const [query, setQuery] = useState("")
   const [activeTag, setActiveTag] = useState<string | null>(null)
-  const [followers, setFollowers] = useState<number | null>(null)
+  const [sort, setSort] = useState<"newest" | "oldest">("newest")
+  const [allTagsOpen, setAllTagsOpen] = useState(false)
+  const canSubscribe = paymentsOpen && user?.id !== author.id && tiers.some((t) => t.price_cents > 0)
 
   useEffect(() => {
     getAuthorGraph({ data: { author_id: author.id } })
@@ -86,21 +90,20 @@ export default function AuthorClient({
       .catch(() => setGraph(null))
   }, [author.id])
 
-  useEffect(() => {
-    getFollowStatusFn({ data: { author_id: author.id } })
-      .then((r) => setFollowers(r.followers))
-      .catch(() => { })
-  }, [author.id, getFollowStatusFn])
-
-  const allTags = useMemo(() => {
-    const s = new Set<string>()
-    for (const p of pieces) for (const t of p.tags ?? []) s.add(t)
-    return Array.from(s)
+  // Topics with counts, most used first.
+  const tags = useMemo(() => {
+    const n = new Map<string, number>()
+    for (const p of pieces) for (const t of p.tags ?? []) n.set(t, (n.get(t) ?? 0) + 1)
+    return [...n.entries()].sort((a, b) => b[1] - a[1])
   }, [pieces])
 
-  const filtered = useMemo(() => {
+  const pinned = pieces.find((p) => p.id === author.pinned_piece_id) ?? null
+  const filtering = !!(query.trim() || activeTag)
+
+  const list = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return pieces.filter((p) => {
+    const out = pieces.filter((p) => {
+      if (!filtering && p.id === pinned?.id) return false
       if (activeTag && !(p.tags ?? []).includes(activeTag)) return false
       if (!q) return true
       return (
@@ -109,294 +112,213 @@ export default function AuthorClient({
         (p.tags ?? []).some((t) => t.toLowerCase().includes(q))
       )
     })
-  }, [pieces, query, activeTag])
+    return sort === "oldest" ? [...out].reverse() : out
+  }, [pieces, query, activeTag, sort, filtering, pinned])
 
-  const initials = author.display_name
-    .split(/\s+/)
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+  const initials = author.display_name.split(/\s+/).map((n) => n[0]).join("").slice(0, 2).toUpperCase()
+  const joined = author.created_at
+    ? new Date(author.created_at).toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" })
+    : null
+  const links = author.links ?? []
+
+  const share = () => {
+    const url = window.location.href
+    if (navigator.share) navigator.share({ title: `${author.display_name} on Nib`, url }).catch(() => {})
+    else navigator.clipboard.writeText(url).then(() => toast.success("Profile link copied"))
+  }
+
+  const shownTags = allTagsOpen ? tags : tags.slice(0, TAGS_COLLAPSED)
+  const chip = (label: string, active: boolean, onClick: () => void, count?: number) => (
+    <button
+      key={label}
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors lg:min-h-8",
+        active ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-accent"
+      )}
+    >
+      {label}
+      {active ? <X className="size-3.5" aria-hidden /> : count != null && <span className="text-muted-foreground">{count}</span>}
+    </button>
+  )
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <main className="container-wide max-w-4xl flex-1 pt-16 pb-16 md:pt-24">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <Avatar className="size-20 border border-border">
-              {author.avatar_url && (
-                <AvatarImage src={author.avatar_url} alt={author.display_name} />
-              )}
-              <AvatarFallback className="font-display text-xl">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs tracking-[0.2em] text-muted-foreground uppercase">
-                @{author.handle}
-              </p>
-              <h1 className={`mt-1 font-display text-4xl md:text-5xl ${flairClass(author.flair) || "text-foreground"}`}>
-                {author.display_name}
-              </h1>
-              {author.bio && (
-                <p className="mt-3 max-w-2xl text-lg leading-relaxed text-foreground/80">
-                  {author.bio}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-x-8 gap-y-4 text-sm text-muted-foreground shrink-0 items-center">
-            <div className="flex flex-col gap-3 justify-center">
-              <div className="flex items-center gap-2 h-9">
-                <span className="font-display text-xl text-foreground w-6 text-right leading-none">
-                  {formatCompactNumber(pieces.length)}
-                </span>
-                <span className="leading-none">{pieces.length === 1 ? "piece" : "pieces"}</span>
-              </div>
-              <div className="flex items-center gap-2 h-9">
-                <span className="font-display text-xl text-foreground w-6 text-right leading-none">
-                  {formatCompactNumber(tiers.length)}
-                </span>
-                <span className="leading-none">{tiers.length === 1 ? "tier" : "tiers"}</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 justify-center">
-              <div className="flex items-center gap-2 h-9">
-                <span className="font-display text-xl text-foreground w-8 text-right leading-none">
-                  {formatCompactNumber(allTags.length)}
-                </span>
-                <span className="leading-none">{allTags.length === 1 ? "topic" : "topics"}</span>
-              </div>
-              <div className="flex items-center gap-2 h-9">
-                <span className="font-display text-xl text-foreground w-8 text-right leading-none">
-                  {formatCompactNumber(followers ?? 0)}
-                </span>
-                <span className="leading-none">{followers === 1 ? "follower" : "followers"}</span>
-              </div>
-            </div>
-            <div className="flex flex-col gap-3 justify-center">
-              <FollowButton
-                authorId={author.id}
-                authorHandle={author.handle}
-                onFollowChange={(_isFollowing, count) => setFollowers(count)}
-                className="w-full h-9"
-              />
-              {canSubscribe && (
-                <>
-                  <Button
-                    className="w-full h-9"
-                    onClick={() => (user ? setSubscribeOpen(true) : router.push("/login"))}
-                  >
-                    <Crown className="mr-2 size-4" aria-hidden />
-                    Become a member
-                  </Button>
-                  <SubscribeDialog
-                    open={subscribeOpen}
-                    onOpenChange={setSubscribeOpen}
-                    authorId={author.id}
-                    authorName={author.display_name || author.handle}
-                  />
-                </>
-              )}
-              <Button 
-                variant="outline" 
-                className="w-full text-sm h-9"
-                onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: `${author.display_name} on Nib`,
-                      url: window.location.href,
-                    }).catch(() => {})
-                  } else {
-                    navigator.clipboard.writeText(window.location.href)
-                    toast.success("Profile link copied!")
-                  }
-                }}
-              >
-                <Share className="mr-2 size-3.5" /> Share
-              </Button>
-            </div>
-          </div>
-        </header>
+    <main className="container-wide grid items-start gap-10 pt-16 pb-16 md:pt-24 md:pb-24 lg:grid-cols-12 lg:gap-12">
+      {/* Who this is: stays in view on desktop while the work scrolls. */}
+      <aside className="lg:sticky lg:top-24 lg:col-span-4">
+        <Avatar className="size-24 border border-border">
+          {author.avatar_url && <AvatarImage src={author.avatar_url} alt="" />}
+          <AvatarFallback className="font-display text-2xl">{initials}</AvatarFallback>
+        </Avatar>
+        <h1 className={cn("mt-5 font-display text-4xl leading-[1.05]", flairClass(author.flair) || "text-foreground")}>
+          {author.display_name}
+        </h1>
+        <p className="mt-2 text-muted-foreground">
+          @{author.handle}
+          {joined && <> · Joined {joined}</>}
+        </p>
+        {author.bio && <p className="mt-4 text-lg leading-relaxed text-foreground/85">{author.bio}</p>}
 
-        <SubscribeCard authorId={author.id} authorName={author.display_name} />
+        <p className="mt-5 text-sm">
+          <span className="font-medium tabular-nums">{formatCompactNumber(pieces.length)}</span>
+          <span className="text-muted-foreground"> {pieces.length === 1 ? "piece" : "pieces"} · </span>
+          <span className="font-medium tabular-nums">{formatCompactNumber(followers)}</span>
+          <span className="text-muted-foreground"> {followers === 1 ? "follower" : "followers"} · </span>
+          <span className="font-medium tabular-nums">{formatCompactNumber(following)}</span>
+          <span className="text-muted-foreground"> following</span>
+        </p>
 
-        <Tabs defaultValue="pieces" className="mt-12">
-          <TabsList>
-            <TabsTrigger value="pieces">
-              <FileText className="mr-1 size-3.5" /> Pieces
-            </TabsTrigger>
-            {tiers.length > 0 && (
-              <TabsTrigger value="tiers">
-                <Crown className="mr-1 size-3.5" /> Memberships
-              </TabsTrigger>
-            )}
-            {collections.length > 0 && (
-              <TabsTrigger value="collections">
-                <Library className="mr-1 size-3.5" /> Collections
-              </TabsTrigger>
-            )}
-            {graph && graph.pieces.length > 0 && (
-              <TabsTrigger value="graph">
-                <Network className="mr-1 size-3.5" /> Graph
-              </TabsTrigger>
-            )}
-            {recommendations && recommendations.length > 0 && (
-              <TabsTrigger value="network">
-                <UserPlus className="mr-1 size-3.5" /> Network
-              </TabsTrigger>
-            )}
-          </TabsList>
+        {(author.website || links.length > 0) && (
+          <ul className="mt-4 space-y-1">
+            {[author.website, ...links].filter(Boolean).map((url, i) => (
+              <li key={url}>
+                <a
+                  href={url!}
+                  target="_blank"
+                  rel="noopener noreferrer me"
+                  className="-my-1 inline-flex min-h-11 items-center gap-2 py-1 text-sm text-primary hover:underline hover:underline-offset-4 lg:min-h-8"
+                >
+                  {(() => {
+                    if (i === 0 && author.website) return <Globe className="size-4" aria-hidden />
+                    const Icon = BRAND_ICONS[linkLabel(url!)] ?? Link2
+                    return <Icon className="size-4" aria-hidden />
+                  })()}
+                  {i === 0 && author.website ? new URL(url!).hostname.replace(/^www\./, "") : linkLabel(url!)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-6 flex gap-2">
+          <FollowButton
+            authorId={author.id}
+            authorHandle={author.handle}
+            onFollowChange={(_isFollowing, count) => setFollowers(count)}
+            className="flex-1"
+          />
+          {canSubscribe && (
+            <Button className="flex-1" onClick={() => (user ? setSubscribeOpen(true) : router.push("/login"))}>
+              <Crown className="size-4" aria-hidden />
+              Become a member
+            </Button>
+          )}
+          <Button variant="outline" size="icon" onClick={share} aria-label="Share profile">
+            <Share className="size-4" aria-hidden />
+          </Button>
+        </div>
+        {canSubscribe && (
+          <SubscribeDialog
+            open={subscribeOpen}
+            onOpenChange={setSubscribeOpen}
+            authorId={author.id}
+            authorName={author.display_name || author.handle}
+          />
+        )}
+
+        <div className="mt-8">
+          <SubscribeCard compact authorId={author.id} authorName={author.display_name} />
+          <a
+            href={`/u/${author.handle}/feed.xml`}
+            className="-my-1 mt-2 inline-flex min-h-11 items-center gap-2 py-1 text-sm text-muted-foreground hover:text-foreground lg:min-h-8"
+          >
+            <Rss className="size-4" aria-hidden />
+            RSS feed
+          </a>
+        </div>
+      </aside>
+
+      <div className="min-w-0 lg:col-span-8">
+        <Tabs defaultValue="pieces">
+          <div className="-mx-5 overflow-x-auto px-5 no-scrollbar sm:mx-0 sm:px-0">
+            <TabsList>
+              <TabsTrigger value="pieces">Pieces</TabsTrigger>
+              {tiers.length > 0 && <TabsTrigger value="tiers">Memberships</TabsTrigger>}
+              {collections.length > 0 && <TabsTrigger value="collections">Collections</TabsTrigger>}
+              {graph && graph.pieces.length > 0 && <TabsTrigger value="graph">Graph</TabsTrigger>}
+              {recommendations?.length > 0 && <TabsTrigger value="network">Recommends</TabsTrigger>}
+            </TabsList>
+          </div>
 
           <TabsContent value="pieces" className="mt-6">
             {pieces.length > 0 && (
-              <div className="mb-5 space-y-3">
-                <div className="relative max-w-md">
-                  <Search
-                    className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden
-                  />
-                  <label htmlFor="author-search" className="sr-only">
-                    Search pieces
-                  </label>
-                  <Input
-                    id="author-search"
-                    type="search"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search title, summary, tags..."
-                    className="pr-9 pl-9"
-                  />
-                  {query && (
-                    <button
-                      type="button"
-                      onClick={() => setQuery("")}
-                      aria-label="Clear search"
-                      className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
-                    >
-                      <X className="size-3.5" />
-                    </button>
-                  )}
+              <div className="mb-4 space-y-4">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                    <Input
+                      type="search"
+                      aria-label={`Search ${author.display_name}'s pieces`}
+                      placeholder="Search pieces"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={sort} onValueChange={(v) => setSort(v as "newest" | "oldest")}>
+                    <SelectTrigger aria-label="Sort pieces" className="w-36 shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Newest first</SelectItem>
+                      <SelectItem value="oldest">Oldest first</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                {allTags.length > 0 && (
-                  <div
-                    className="no-scrollbar flex max-h-35 flex-wrap gap-1.5 overflow-y-auto pb-1"
-                    role="group"
-                    aria-label="Filter by tag"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setActiveTag(null)}
-                      aria-pressed={activeTag === null}
-                      className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${activeTag === null
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                      All
-                    </button>
-                    {allTags.map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setActiveTag(activeTag === t ? null : t)}
-                        aria-pressed={activeTag === t}
-                        className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${activeTag === t
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border text-muted-foreground hover:text-foreground"
-                          }`}
-                      >
-                        #{t}
-                      </button>
-                    ))}
+                {tags.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible" role="group" aria-label="Filter by topic">
+                    {activeTag && !shownTags.some(([t]) => t === activeTag) && chip(activeTag, true, () => setActiveTag(null))}
+                    {shownTags.map(([t, n]) => chip(t, activeTag === t, () => setActiveTag(activeTag === t ? null : t), n))}
+                    {tags.length > TAGS_COLLAPSED && (
+                      <Button variant="ghost" className="hidden shrink-0 sm:inline-flex lg:h-8" onClick={() => setAllTagsOpen(!allTagsOpen)}>
+                        {allTagsOpen ? "Fewer" : `${tags.length - TAGS_COLLAPSED} more`}
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
             )}
 
-            <div className="surface divide-y divide-border rounded-md">
-              {filtered.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/u/${author.handle}/${p.slug}`}
-                  className="group block px-5 py-4 transition-colors hover:bg-accent/40"
-                >
-                  <div className="flex flex-wrap items-baseline gap-3">
-                    <p className="font-display text-lg text-foreground group-hover:text-primary">
-                      {p.title}
-                    </p>
-                    {p.published_at && (
-                      <time className="text-[11px] tracking-wider text-muted-foreground uppercase">
-                        {new Date(p.published_at).toLocaleDateString("en-IN", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </time>
-                    )}
-                  </div>
-                  {p.summary && (
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                      {p.summary}
-                    </p>
-                  )}
-                  {p.tags && p.tags.length > 0 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {p.tags.slice(0, 4).map((t) => (
-                        <span
-                          key={t}
-                          className="text-[10px] tracking-wider text-muted-foreground uppercase"
-                        >
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </Link>
-              ))}
-              {pieces.length === 0 && (
-                <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                  Nothing published yet.
-                </p>
-              )}
-              {pieces.length > 0 && filtered.length === 0 && (
-                <p className="px-5 py-12 text-center text-sm text-muted-foreground">
-                  No pieces match your filters.
-                </p>
-              )}
-            </div>
+            {pieces.length === 0 ? (
+              <p className="hairline-t hairline-b py-12 text-muted-foreground">Nothing published yet.</p>
+            ) : list.length === 0 && !(pinned && !filtering) ? (
+              <p className="hairline-t hairline-b py-12 text-muted-foreground">No pieces match.</p>
+            ) : (
+              <ul>
+                {pinned && !filtering && <PieceRow p={pinned} pinned />}
+                {list.map((p) => (
+                  <PieceRow key={p.id} p={p} />
+                ))}
+              </ul>
+            )}
           </TabsContent>
 
           {tiers.length > 0 && (
-            <TabsContent value="tiers" className="mt-2">
+            <TabsContent value="tiers" className="mt-6">
               <MembershipTiers tiers={tiers} authorId={author.id} authorName={author.display_name} paymentsOpen={paymentsOpen} />
             </TabsContent>
           )}
 
           {collections.length > 0 && (
             <TabsContent value="collections" className="mt-6">
-              <div className="grid gap-4 md:grid-cols-2">
+              <ul>
                 {collections.map((c) => (
-                  <Link
-                    key={c.id}
-                    href={`/collections/${c.id}`}
-                    className="rounded-xl border bg-background p-4 shadow-sm transition-colors hover:bg-accent/40"
-                  >
-                    <div className="font-semibold text-foreground">{c.title}</div>
-                    {c.description && (
-                      <div className="mt-1 text-sm text-muted-foreground">{c.description}</div>
-                    )}
-                  </Link>
+                  <li key={c.id} className="hairline-t last:hairline-b">
+                    <Link href={`/collections/${c.id}`} className="group block py-6">
+                      <h2 className="font-display text-xl leading-snug group-hover:text-primary">{c.title}</h2>
+                      {c.description && <p className="mt-1 text-muted-foreground">{c.description}</p>}
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </TabsContent>
           )}
 
           {graph && graph.pieces.length > 0 && (
             <TabsContent value="graph" className="mt-6">
-              <h2 className="mb-4 font-display text-xl text-foreground">
-                Knowledge graph
-              </h2>
+              <p className="mb-4 text-muted-foreground">How {author.display_name}&apos;s pieces connect and branch.</p>
               <RelationshipGraph
                 handle={author.handle}
                 pieces={graph.pieces}
@@ -406,50 +328,30 @@ export default function AuthorClient({
             </TabsContent>
           )}
 
-          {recommendations && recommendations.length > 0 && (
+          {recommendations?.length > 0 && (
             <TabsContent value="network" className="mt-6">
-              <h2 className="mb-4 font-display text-xl text-foreground">
-                Creator Network
-              </h2>
-              <p className="mb-6 text-sm text-muted-foreground">
-                Creators endorsed by {author.display_name}.
-              </p>
-              <div className="grid gap-4 md:grid-cols-2">
+              <p className="mb-4 text-muted-foreground">Writers {author.display_name} recommends.</p>
+              <ul>
                 {recommendations.map((r) => (
-                  <Link
-                    key={r.id}
-                    href={`/u/${r.profiles.handle}`}
-                    className="flex items-start gap-3 rounded-xl border bg-background p-4 shadow-sm transition-colors hover:bg-accent/40"
-                  >
-                    {r.profiles.avatar_url ? (
-                      <Image
-                        src={r.profiles.avatar_url}
-                        className="size-12 rounded-full border border-border"
-                        alt=""
-                      />
-                    ) : (
-                      <div className="size-12 rounded-full border border-border bg-muted" />
-                    )}
-                    <div>
-                      <div className="font-semibold text-foreground">
-                        {r.profiles.display_name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        @{r.profiles.handle}
-                      </div>
-                      {r.blurb && (
-                        <div className="mt-2 text-sm text-muted-foreground italic">
-                          &quot;{r.blurb}&quot;
-                        </div>
-                      )}
-                    </div>
-                  </Link>
+                  <li key={r.id} className="hairline-t last:hairline-b">
+                    <Link href={`/u/${r.profiles.handle}`} className="group flex items-start gap-3 py-5">
+                      <Avatar className="size-10">
+                        {r.profiles.avatar_url && <AvatarImage src={r.profiles.avatar_url} alt="" />}
+                        <AvatarFallback>{r.profiles.display_name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="min-w-0">
+                        <span className="block font-medium group-hover:text-primary">{r.profiles.display_name}</span>
+                        <span className="block text-sm text-muted-foreground">@{r.profiles.handle}</span>
+                        {r.blurb && <span className="mt-2 block text-muted-foreground">“{r.blurb}”</span>}
+                      </span>
+                    </Link>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </TabsContent>
           )}
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }

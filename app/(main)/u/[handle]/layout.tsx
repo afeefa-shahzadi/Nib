@@ -30,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
       alternates: {
         canonical: `/u/${handle}`,
+        types: { "application/rss+xml": `/u/${handle}/feed.xml` },
       },
     }
   } catch {

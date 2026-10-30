@@ -25,6 +25,8 @@ export default async function AuthorPage({
       author={data.author}
       pieces={data.pieces as any as Piece[]}
       tiers={data.tiers as any as TierItem[]}
+      followers={data.followers ?? 0}
+      following={data.following ?? 0}
       paymentsOpen={!isLaunchFree()}
       collections={collections}
       recommendations={

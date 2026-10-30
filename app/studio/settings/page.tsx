@@ -30,6 +30,7 @@ import {
   deleteMyAccount,
   getMyRole,
   toggleAuthorMode,
+  listMyPieces,
 } from "@/actions/content"
 import { supabase } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
@@ -80,6 +81,11 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("")
   const [handle, setHandle] = useState("")
   const [bio, setBio] = useState("")
+  const [website, setWebsite] = useState("")
+  const [links, setLinks] = useState("")
+  const [pinned, setPinned] = useState("none")
+  const piecesQ = useQuery({ queryKey: ["my-pieces"], queryFn: () => listMyPieces() })
+  const published = (piecesQ.data ?? []).filter((p: { status: string }) => p.status === "published")
   const [avatar, setAvatar] = useState("")
   const [byokProvider, setByokProvider] = useState("mistral")
   const [byokModel, setByokModel] = useState("")
@@ -170,6 +176,9 @@ export default function SettingsPage() {
       setDisplayName(q.data.display_name ?? "")
       setHandle(q.data.handle ?? "")
       setBio(q.data.bio ?? "")
+      setWebsite(q.data.website ?? "")
+      setLinks((q.data.links ?? []).join("\n"))
+      setPinned(q.data.pinned_piece_id ?? "none")
       setAvatar(q.data.avatar_url ?? "")
 
       const provider = q.data.byok_provider ?? "mistral"
@@ -199,6 +208,9 @@ export default function SettingsPage() {
           display_name: displayName,
           handle: handle.toLowerCase().replace(/[^a-z0-9_]/g, ""),
           bio: bio || null,
+          website: website || null,
+          links: links.split("\n"),
+          pinned_piece_id: pinned === "none" ? null : pinned,
           avatar_url: avatar || null,
           byok_provider: byokProvider,
           byok_model: byokModel || null,
@@ -412,6 +424,43 @@ export default function SettingsPage() {
             maxLength={500}
           />
           <p className="mt-1 text-xs text-muted-foreground">{bio.length}/500</p>
+        </div>
+        <div>
+          <Label htmlFor="set-website">Website</Label>
+          <Input
+            id="set-website"
+            type="url"
+            inputMode="url"
+            placeholder="yoursite.com"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="set-links">Other links</Label>
+          <Textarea
+            id="set-links"
+            rows={3}
+            placeholder={"x.com/you\nlinkedin.com/in/you"}
+            value={links}
+            onChange={(e) => setLinks(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">One per line, up to 5. Shown on your profile.</p>
+        </div>
+        <div>
+          <Label htmlFor="set-pinned">Pinned piece</Label>
+          <Select value={pinned} onValueChange={setPinned}>
+            <SelectTrigger id="set-pinned" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">None</SelectItem>
+              {published.map((p: { id: string; title: string }) => (
+                <SelectItem key={p.id} value={p.id}>{p.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="mt-1 text-xs text-muted-foreground">Shown first on your profile.</p>
         </div>
         <div>
           <Label htmlFor="set-avatar">Avatar</Label>
