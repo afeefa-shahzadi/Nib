@@ -6,6 +6,7 @@ import DOMPurify from "isomorphic-dompurify"
 import { getViewablePiece } from "@/actions/content/helpers"
 import { checkRateLimit } from "@/lib/rate-limit.server"
 import { COMMENTS_PAGE } from "@/lib/comments"
+import { notifyActivity } from "@/lib/activity-notifications"
 import { enforceMentionPolicy } from "@/lib/mentions.server"
 
 export async function listComments(args: { data?: any } = {}) {
@@ -96,14 +97,16 @@ export async function postComment(args: { data?: any } = {}) {
       throw new Error("That selection is too long.")
     if (!(await getViewablePiece(supabaseAdmin, data.piece_id, userId)))
       throw new Error("Piece not found")
+    let replyToUserId: string | null = null
     if (data.parent_id) {
       const { data: parent } = await supabaseAdmin
         .from("piece_responses")
-        .select("piece_id")
+        .select("piece_id, user_id")
         .eq("id", data.parent_id)
         .maybeSingle()
       if (!parent || parent.piece_id !== data.piece_id)
         throw new Error("Reply target not found")
+      replyToUserId = parent.user_id
     }
     const sanitizedBody = DOMPurify.sanitize(data.body, {
       USE_PROFILES: { html: true },
@@ -127,6 +130,14 @@ export async function postComment(args: { data?: any } = {}) {
       console.error("[comments]", error)
       throw new Error("Couldn't post your response. Try again.")
     }
+    await notifyActivity(supabaseAdmin, {
+      actorId: userId,
+      pieceId: data.piece_id,
+      html: newComment.body,
+      anchor: `?response=${newComment.id}`,
+      replyToUserId,
+      notifyPieceAuthor: !data.parent_id,
+    })
     return { success: true, data: newComment }
   }
 

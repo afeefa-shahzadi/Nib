@@ -43,6 +43,7 @@ export function CommentsSheet({
   authed,
   viewerId,
   pieceAuthorId,
+  focusId,
 }: {
   pieceId: string
   open: boolean
@@ -50,6 +51,7 @@ export function CommentsSheet({
   authed: boolean
   viewerId?: string | null
   pieceAuthorId?: string | null
+  focusId?: string | null // scroll to and highlight this response once loaded
 }) {
   const [comments, setComments] = useState<CommentData[]>([])
   const [loading, setLoading] = useState(false)
@@ -79,6 +81,22 @@ export function CommentsSheet({
       setLoadingOlder(false)
     }
   }
+
+  // ponytail: only finds responses on the first page; older ones need "load older" first.
+  const [focused, setFocused] = useState<string | null>(null)
+  useEffect(() => {
+    if (!open || !focusId || focused === focusId) return
+    if (!comments.some((c) => c.id === focusId)) return
+    const t = setTimeout(() => {
+      const el = document.getElementById(`response-${focusId}`)
+      el?.scrollIntoView({ block: "center", behavior: "smooth" })
+      setFocused(focusId)
+    }, 150)
+    return () => clearTimeout(t)
+  }, [open, focusId, focused, comments])
+
+  // Keep the focused reply's thread open.
+  const focusParent = focusId ? comments.find((c) => c.id === focusId)?.parent_id : null
 
   if (open !== prevOpen) {
     setPrevOpen(open)
@@ -173,10 +191,10 @@ export function CommentsSheet({
 
   function renderComment(c: CommentData, depth: number = 0) {
     const children = childrenMap.get(c.id) || []
-    const isExpanded = expandedReplies[c.id]
+    const isExpanded = expandedReplies[c.id] || focusParent === c.id
     
     return (
-      <div key={c.id} className={`space-y-1 ${depth > 0 ? "ml-4 pl-4 border-l border-border" : ""}`}>
+      <div key={c.id} id={`response-${c.id}`} className={`space-y-1 rounded-md transition-colors duration-1000 ${depth > 0 ? "ml-4 pl-4 border-l border-border" : ""} ${focused === c.id ? "bg-primary/10" : ""}`}>
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm text-foreground">

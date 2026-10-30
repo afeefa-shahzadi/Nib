@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
+import { ActivityNotification } from "@/components/activity-notification"
+import { ACTIVITY_VERB } from "@/lib/activity-notifications"
 import { Bell, Check, UserPlus, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -195,6 +197,22 @@ export function NotificationsBell() {
             <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
           )}
         </Link>
+      )
+    }
+    if (n.type in ACTIVITY_VERB) {
+      const p = n.payload as { sender_id?: string }
+      return (
+        <ActivityNotification
+          key={n.id}
+          n={n}
+          actorName={p.sender_id ? actors[p.sender_id]?.display_name : undefined}
+          when={relTime(n.created_at)}
+          onClick={() => {
+            markOne(n.id)
+            setOpen(false)
+          }}
+          compact
+        />
       )
     }
     return null

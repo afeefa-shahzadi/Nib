@@ -724,13 +724,14 @@ export function ReaderClient({
                 Live debates
               </h2>
               {rooms.map((r) => (
-                <DebateRoom
-                  key={r.id}
-                  roomId={r.id}
-                  title={r.title}
-                  prompt={r.prompt}
-                  authed={authed}
-                />
+                <div key={r.id} id={`room-${r.id}`} className="scroll-mt-24">
+                  <DebateRoom
+                    roomId={r.id}
+                    title={r.title}
+                    prompt={r.prompt}
+                    authed={authed}
+                  />
+                </div>
               ))}
             </div>
           )}

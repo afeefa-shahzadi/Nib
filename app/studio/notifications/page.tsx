@@ -10,6 +10,8 @@ import { supabase } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Bell, Check, UserPlus, FileText, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { ActivityNotification } from "@/components/activity-notification"
+import { ACTIVITY_VERB } from "@/lib/activity-notifications"
 import { toast } from "sonner"
 import { Actor, Notif } from "@/lib/types/content"
 
@@ -213,6 +215,18 @@ export default function StudioNotificationsPage() {
                   <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
                 )}
               </Link>
+            )
+          }
+          if (n.type in ACTIVITY_VERB) {
+            const p = n.payload as { sender_id?: string }
+            return (
+              <ActivityNotification
+                key={n.id}
+                n={n}
+                actorName={p.sender_id ? actors[p.sender_id]?.display_name : undefined}
+                when={relTime(n.created_at)}
+                onClick={() => markOne(n.id)}
+              />
             )
           }
           return null

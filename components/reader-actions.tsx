@@ -179,6 +179,17 @@ export function ReaderActions({
 
   // Comments
   const [commentsOpen, setCommentsOpen] = useState(false)
+  // A notification links here with ?response=<id>: open the responses and jump to it.
+  const [focusResponse, setFocusResponse] = useState<string | null>(null)
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("response")
+    if (id) {
+      // Read once after hydration; the server render has no URL to match.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFocusResponse(id)
+      setCommentsOpen(true)
+    }
+  }, [])
   const [reportOpen, setReportOpen] = useState(false)
   const [listenSettingsOpen, setListenSettingsOpen] = useState(false)
 
@@ -624,6 +635,7 @@ export function ReaderActions({
         authed={authed}
         viewerId={viewerId}
         pieceAuthorId={pieceAuthorId}
+        focusId={focusResponse}
       />
     </>
   )

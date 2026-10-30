@@ -225,7 +225,7 @@ export function ReaderBody({
         const isNsfwBlocked = b.is_nsfw && !is_adult
 
         return (
-          <div key={b.id ?? i} id={b.id ? `block-${b.id}` : undefined} className="group/block relative">
+          <div key={b.id ?? i} id={b.id ? `block-${b.id}` : undefined} className="group/block relative scroll-mt-24 rounded-md target:bg-primary/5">
             {onDebate && b.id && !isPremiumBlocked && !isNsfwBlocked && (
               <button
                 type="button"

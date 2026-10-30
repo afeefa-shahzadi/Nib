@@ -6,6 +6,7 @@ import { ActionContext } from "@/lib/types/actions"
 import { enforceMentionPolicy } from "@/lib/mentions.server"
 import { SupabaseClient } from "@supabase/supabase-js"
 import { isLaunchFree } from "@/lib/plan"
+import { notifyActivity } from "@/lib/activity-notifications"
 
 type RoomAccess = {
   id: string
@@ -346,17 +347,24 @@ export async function postMessage(args: { data?: any } = {}) {
       if (!free.some((b) => b.id === blockId))
         throw new Error("That paragraph isn't part of this piece")
     }
+    const body = await enforceMentionPolicy(context.supabase, data.body, context.userId!)
     const { error } = await context.supabase.from("debate_messages").insert({
       room_id: data.room_id,
       user_id: context.userId,
       stance: data.stance,
-      body: await enforceMentionPolicy(context.supabase, data.body, context.userId!),
+      body,
       block_id: blockId,
     })
     if (error) {
       console.error("[server]", error)
       throw new Error("Request failed. Please try again.")
     }
+    await notifyActivity(context.supabase, {
+      actorId: context.userId,
+      pieceId: (room as { content_object_id: string }).content_object_id,
+      html: body,
+      anchor: `#room-${data.room_id}`,
+    })
     return { ok: true }
   }
   return await __handler({
