@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { AtSign, MessageCircle } from "lucide-react"
+import { AtSign, Hand, MessageCircle } from "lucide-react"
 import { ACTIVITY_VERB } from "@/lib/activity-notifications"
 import { Notif } from "@/lib/types/content"
 
@@ -17,8 +17,9 @@ export function ActivityNotification({
   onClick: () => void
   compact?: boolean
 }) {
-  const p = n.payload as { url?: string; title?: string; excerpt?: string }
-  const Icon = n.type === "mention" ? AtSign : MessageCircle
+  const p = n.payload as { url?: string; title?: string; excerpt?: string; count?: number }
+  const Icon = n.type === "mention" ? AtSign : n.type === "clap" ? Hand : MessageCircle
+  const others = (p.count ?? 1) - 1
   const unread = !n.read_at
   return (
     <Link
@@ -29,7 +30,8 @@ export function ActivityNotification({
       <Icon className={`${compact ? "mt-0.5" : "mt-1"} size-4 shrink-0 text-primary`} />
       <div className="min-w-0 flex-1">
         <p className={`text-sm ${compact ? "leading-snug" : ""}`}>
-          <span className="font-medium">{actorName ?? "Someone"}</span>{" "}
+          <span className="font-medium">{actorName ?? "Someone"}</span>
+          {others > 0 && <span className="text-muted-foreground"> and {others} {others === 1 ? "other" : "others"}</span>}{" "}
           <span className="text-muted-foreground">{ACTIVITY_VERB[n.type]}</span>{" "}
           <span>{p.title || "your piece"}</span>
         </p>

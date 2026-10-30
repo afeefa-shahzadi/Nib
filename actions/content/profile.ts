@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { MUTABLE_TYPES } from "@/lib/activity-notifications"
 import { normalizeLink, normalizeLinks } from "@/lib/profile-links"
 import { createAdminClient, createServiceRoleClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
@@ -101,6 +102,7 @@ export async function updateMyProfile(args: { data?: any } = {}) {
       show_birthday?: boolean
       hide_from_leaderboard?: boolean
       mention_policy?: "everyone" | "following" | "none"
+      muted_notifications?: string[]
       disability_visual?: boolean
       disability_cognitive?: boolean
       disability_hearing?: boolean
@@ -138,6 +140,11 @@ export async function updateMyProfile(args: { data?: any } = {}) {
         if (!own) throw new Error("You can only pin one of your published pieces.")
       }
       patch.pinned_piece_id = data.pinned_piece_id || null
+    }
+    if (data.muted_notifications !== undefined) {
+      if (!Array.isArray(data.muted_notifications) || data.muted_notifications.some((t) => !MUTABLE_TYPES.includes(t)))
+        throw new Error("Unknown notification type.")
+      patch.muted_notifications = [...new Set(data.muted_notifications)]
     }
     if (data.mention_policy !== undefined) {
       if (!["everyone", "following", "none"].includes(data.mention_policy))

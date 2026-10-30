@@ -2,6 +2,7 @@
 "use server"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
+import { notifyPieceMentions } from "@/lib/activity-notifications"
 
 export async function saveBlocks(args: { data?: any } = {}) {
   const supabaseAdmin = await createAdminClient()
@@ -34,7 +35,7 @@ export async function saveBlocks(args: { data?: any } = {}) {
     // verify ownership
     const { data: piece, error: pErr } = await context.supabase
       .from("content_objects")
-      .select("id, author_id")
+      .select("id, author_id, status")
       .eq("id", data.content_object_id)
       .maybeSingle()
     if (pErr) {
@@ -80,6 +81,7 @@ export async function saveBlocks(args: { data?: any } = {}) {
     }
 
     if (data.blocks.length === 0) return { ok: true }
+    const published = piece.status === "published"
 
     const blocksWithOrder = data.blocks.map((b, idx: number) => ({
       ...b,
@@ -151,6 +153,8 @@ export async function saveBlocks(args: { data?: any } = {}) {
       }
     }
 
+    // Editing a published piece: newly added @mentions notify (once per person per piece).
+    if (published) await notifyPieceMentions(context.supabase, data.content_object_id)
     return { ok: true }
   }
   return await __handler({

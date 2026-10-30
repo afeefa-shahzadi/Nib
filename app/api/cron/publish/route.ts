@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { notifyPieceMentions } from "@/lib/activity-notifications"
 import { NextResponse } from "next/server"
 import { revalidateTag } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/server"
@@ -105,6 +106,7 @@ export async function GET(request: Request) {
       }
 
       publishedIds.push(piece.id)
+      await notifyPieceMentions(supabaseAdmin, piece.id)
 
       // Send email notifications
       try {

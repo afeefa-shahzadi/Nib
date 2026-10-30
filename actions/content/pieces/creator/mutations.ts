@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { insertNotifications, notifyPieceMentions } from "@/lib/activity-notifications"
 import { assertCanPost } from "@/lib/parental-consent"
 import { normalizePiecePrice } from "@/lib/piece-price"
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server"
@@ -333,6 +334,7 @@ export async function updatePiece(args: { data?: any } = {}) {
       const { tickQuest } = await import("@/lib/quests.server")
       await tickQuest(context.userId!, "publish_1")
     }
+    if (updated?.status === "published") await notifyPieceMentions(await createServiceRoleClient(), data.id)
 
     if (isNewPublish && pieceDetails && authorDetails) {
       // Background async process to send emails
@@ -355,7 +357,8 @@ export async function updatePiece(args: { data?: any } = {}) {
               "@/lib/supabase/server"
             )
             const svc = await createServiceRoleClient()
-            await svc.from("notifications").insert(
+            await insertNotifications(
+              svc,
               followerIds.map((fid: string) => ({
                 user_id: fid,
                 type: "new_piece",

@@ -63,6 +63,10 @@ export function makeFakeClient(
         return stub
       },
       neq: () => stub,
+      contains: (col: string, val: any) => {
+        state.filters.push([`contains.${col}`, val])
+        return stub
+      },
       lt: (col: string, val: any) => {
         state.filters.push([`lt.${col}`, val])
         return stub

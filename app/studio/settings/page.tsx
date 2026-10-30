@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { NOTIFICATION_TYPES } from "@/lib/activity-notifications"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
@@ -583,7 +584,7 @@ function NotificationsSection() {
     }
   }
   return (
-    <Section title="Notifications" intro="In-app notifications always appear under the bell. These control email.">
+    <Section title="Notifications" intro="Choose what reaches you by email and under the bell.">
       <Row
         title="Emails from Nib"
         htmlFor="set-email-pieces"
@@ -594,7 +595,41 @@ function NotificationsSection() {
       <p className="py-5 text-sm text-muted-foreground">
         Account emails (sign-in links, password resets, receipts) are always sent.
       </p>
+      <h3 className="pt-6 text-base font-medium">Under the bell</h3>
+      {NOTIFICATION_TYPES.map((t) => (
+        <NotificationTypeSwitch key={t.type} type={t.type} title={t.label} help={t.help} />
+      ))}
     </Section>
+  )
+}
+
+function NotificationTypeSwitch({ type, title, help }: { type: string; title: string; help: string }) {
+  const q = useProfile()
+  const muted = ((q.data as { muted_notifications?: string[] } | null | undefined)?.muted_notifications ?? []) as string[]
+  const [local, setLocal] = useState<boolean | null>(null)
+  const on = local ?? !muted.includes(type)
+  const id = `set-notif-${type}`
+  return (
+    <Row title={title} htmlFor={id} help={help}>
+      <Switch
+        id={id}
+        checked={on}
+        disabled={!q.data}
+        onCheckedChange={async (v) => {
+          setLocal(v)
+          try {
+            const next = v ? muted.filter((m) => m !== type) : [...muted, type]
+            await updateMyProfile({ data: { muted_notifications: next } })
+            await q.refetch()
+            setLocal(null)
+            toast.success("Saved")
+          } catch (e) {
+            setLocal(!v)
+            toast.error((e as Error).message)
+          }
+        }}
+      />
+    </Row>
   )
 }
 

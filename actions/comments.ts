@@ -16,7 +16,7 @@ export async function listComments(args: { data?: any } = {}) {
 
   // Page 1: pinned plus the newest COMMENTS_PAGE. Older pages pass `before`
   // (the oldest unpinned created_at the client has) and skip pinned ones.
-  const __handler = async ({ data }: { data: { piece_id: string; before?: string } }) => {
+  const __handler = async ({ data }: { data: { piece_id: string; before?: string; focus?: string } }) => {
     if (data.before && Number.isNaN(Date.parse(data.before))) return []
     if (!(await getViewablePiece(supabaseAdmin, data.piece_id, viewerId))) return []
     let query = supabaseAdmin
@@ -27,6 +27,21 @@ export async function listComments(args: { data?: any } = {}) {
       .order("created_at", { ascending: false })
       .limit(COMMENTS_PAGE)
     if (data.before) query = query.eq("is_pinned", false).lt("created_at", data.before)
+    // A notification's response that isn't on the first page: fetch it and its parent.
+    if (data.focus) {
+      const { data: t } = await supabaseAdmin
+        .from("piece_responses")
+        .select("id, parent_id")
+        .eq("id", data.focus)
+        .eq("piece_id", data.piece_id)
+        .maybeSingle()
+      if (!t) return []
+      query = supabaseAdmin
+        .from("piece_responses")
+        .select("id, body, created_at, user_id, parent_id, sources, quoted_text, serialized_range, is_pinned")
+        .eq("piece_id", data.piece_id)
+        .in("id", [t.id, t.parent_id].filter(Boolean))
+    }
     const { data: rows, error } = await query
 
     if (error) {
@@ -75,7 +90,7 @@ export async function listComments(args: { data?: any } = {}) {
       ...(votesMap.get(r.id) ?? { upvotes: 0, downvotes: 0, user_vote: 0 }),
     }))
   }
-  return await __handler({ data: args?.data as { piece_id: string; before?: string } })
+  return await __handler({ data: args?.data as { piece_id: string; before?: string; focus?: string } })
 }
 
 export async function postComment(args: { data?: any } = {}) {

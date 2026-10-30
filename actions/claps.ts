@@ -3,6 +3,7 @@
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { getViewablePiece } from "@/actions/content/helpers"
 import { checkRateLimit } from "@/lib/rate-limit.server"
+import { notifyClap } from "@/lib/activity-notifications"
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -59,6 +60,7 @@ export async function setMyClaps(args: { data?: any } = {}) {
     console.error("[claps]", error)
     throw new Error("Couldn't save claps.")
   }
+  await notifyClap(db, pieceId, userId)
   // "Clap 5 pieces today" counts distinct pieces clapped today, re-claps included.
   const { checkClapThreshold } = await import("@/lib/quests.server")
   await checkClapThreshold(userId)

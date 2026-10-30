@@ -82,8 +82,23 @@ export function CommentsSheet({
     }
   }
 
-  // ponytail: only finds responses on the first page; older ones need "load older" first.
   const [focused, setFocused] = useState<string | null>(null)
+  // Not on the first page: fetch that response (and its parent) and add it.
+  const [fetchedFocus, setFetchedFocus] = useState<string | null>(null)
+  useEffect(() => {
+    if (!open || loading || !focusId || fetchedFocus === focusId || comments.some((c) => c.id === focusId)) return
+    let active = true
+    listComments({ data: { piece_id: pieceId, focus: focusId } })
+      .then((rows) => {
+        if (!active) return
+        setFetchedFocus(focusId)
+        setComments((cur) => [...cur, ...(rows as any as CommentData[]).filter((r) => !cur.some((c) => c.id === r.id))])
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [open, loading, focusId, fetchedFocus, comments, pieceId])
   useEffect(() => {
     if (!open || !focusId || focused === focusId) return
     if (!comments.some((c) => c.id === focusId)) return

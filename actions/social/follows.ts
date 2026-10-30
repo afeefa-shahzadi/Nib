@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
+import { insertNotifications } from "@/lib/activity-notifications"
 import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { checkRateLimit } from "@/lib/rate-limit.server"
@@ -99,11 +100,11 @@ export async function followAuthor(args: { data?: any } = {}) {
       try {
         // notifications has no INSERT policy by design (system-written only);
         // write with the service role (reused from the insert above).
-        await svc.from("notifications").insert({
+        await insertNotifications(svc, [{
           user_id: data.author_id,
           type: "new_follower",
-          payload: { follower_id: context.userId },
-        })
+          payload: { follower_id: context.userId! },
+        }])
 
         // Fetch author details
         const { data: author } = await context.supabase
