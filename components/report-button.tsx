@@ -107,7 +107,7 @@ export function ReportButton({ pieceId, authed, className, targetType, targetId,
           <DialogHeader>
             <DialogTitle>Report this {noun}</DialogTitle>
             <DialogDescription>
-              Tell us what's wrong. We review every report.
+              Tell us what&apos;s wrong. We review every report.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
