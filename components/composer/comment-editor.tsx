@@ -80,7 +80,9 @@ const MentionList = forwardRef((props: SuggestionProps<ProfileItem>, ref) => {
           </button>
         ))
       ) : (
-        <div className="px-3 py-2 text-sm text-muted-foreground">No users found</div>
+        <div className="px-3 py-2 text-sm text-muted-foreground">
+          {props.query ? "No one by that name" : "Type a name to mention someone"}
+        </div>
       )}
     </div>
   )
@@ -88,13 +90,31 @@ const MentionList = forwardRef((props: SuggestionProps<ProfileItem>, ref) => {
 MentionList.displayName = "MentionList"
 
 const suggestion: Omit<SuggestionOptions, "editor"> = {
+  // Like Instagram: a bare "@" offers people you follow; typing searches
+  // handles and names, with people you follow ranked first.
   items: async ({ query }) => {
+    const q = query.replace(/[^\p{L}\p{N}_.-]/gu, "")
+    const { data: auth } = await supabase.auth.getSession()
+    const me = auth.session?.user.id
+    const { data: follows } = me
+      ? await supabase.from("follows").select("author_id").eq("follower_id", me).limit(500)
+      : { data: [] }
+    const followed = new Set((follows ?? []).map((f) => f.author_id as string))
+    const cols = "id, handle, display_name, avatar_url"
+    if (!q) {
+      if (!followed.size) return []
+      const { data } = await supabase.from("profiles").select(cols).in("id", [...followed].slice(0, 50)).limit(6)
+      return data ?? []
+    }
     const { data } = await supabase
       .from("profiles")
-      .select("id, handle, display_name, avatar_url")
-      .ilike("handle", `${query}%`)
-      .limit(5)
-    return data || []
+      .select(cols)
+      .or(`handle.ilike.${q}%,display_name.ilike.${q}%,display_name.ilike.% ${q}%`)
+      .neq("id", me ?? "")
+      .limit(20)
+    return (data ?? [])
+      .sort((a, b) => Number(followed.has(b.id)) - Number(followed.has(a.id)))
+      .slice(0, 6)
   },
   render: () => {
     let component: ReactRenderer
