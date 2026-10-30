@@ -9,6 +9,7 @@ import {
 } from "@/lib/types/content"
 import { submitRecommendationFeedback } from "@/actions/recommendations"
 import { useState } from "react"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { toast } from "sonner"
 
 interface ReaderAsideProps {
@@ -81,10 +82,7 @@ export function ReaderAside({
     <aside className="space-y-6">
       {/* Outline */}
       {showOutline && headings.length > 0 && (
-        <div className="surface top-24 rounded-md p-5">
-          <p className="mb-3 flex items-center gap-1 text-xs text-muted-foreground">
-            <List className="size-3" /> On this page
-          </p>
+        <Panel value="outline" title={<><List className="size-3.5" aria-hidden /> On this page</>}>
           <nav aria-label="In-page outline" className="space-y-1.5">
             {headings.map((h) => (
               <Link
@@ -96,7 +94,7 @@ export function ReaderAside({
               </Link>
             ))}
           </nav>
-        </div>
+        </Panel>
       )}
 
       {sourcesCount > 0 && onShowSources && (
@@ -122,13 +120,7 @@ export function ReaderAside({
       )}
 
       {showBranches && branches.length > 0 && (
-        <div id="branches" className="surface scroll-mt-24 rounded-md p-5">
-          <p className="mb-3 text-xs text-muted-foreground">
-            Branches
-          </p>
-          {branches.length === 0 && (
-            <p className="text-sm text-muted-foreground">No branches yet.</p>
-          )}
+        <Panel id="branches" value="branches" title={`Branches · ${branches.length}`}>
           <ul className="space-y-3">
             {branches.map((b) => {
               const gated = b.visibility !== "public" && !authed
@@ -152,7 +144,7 @@ export function ReaderAside({
               )
             })}
           </ul>
-        </div>
+        </Panel>
       )}
 
       {showRelated && related.length > 0 && (
@@ -227,5 +219,19 @@ export function ReaderAside({
         </p>
       )}
     </aside>
+  )
+}
+
+// Collapsible sidebar section; long lists scroll inside instead of stretching the sidebar.
+function Panel({ id, value, title, children }: { id?: string; value: string; title: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Accordion id={id} type="single" collapsible defaultValue={value} className="surface scroll-mt-24 rounded-md px-5">
+      <AccordionItem value={value} className="border-b-0">
+        <AccordionTrigger className="min-h-11 py-3 text-sm font-medium hover:no-underline">
+          <span className="flex items-center gap-1.5">{title}</span>
+        </AccordionTrigger>
+        <AccordionContent className="pb-4"><div className="custom-scrollbar max-h-72 overflow-y-auto pr-1">{children}</div></AccordionContent>
+      </AccordionItem>
+    </Accordion>
   )
 }
