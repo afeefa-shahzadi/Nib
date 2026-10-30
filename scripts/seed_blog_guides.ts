@@ -658,7 +658,7 @@ pie               "Label" : 40
       summary: "Every exercise type with a live example: multiple choice, select all, matching, fill in the blanks, short answer and polls.",
       tags: ["guide", "composer", "teaching", "reference"],
       body: `
-An **Exercise** block asks the reader to do something before they see the answer. Readers answer in place, press **Check Answer**, and see your solution. Nothing is graded or stored: it's practice, for them. Every exercise on this page is live, so try them.
+An **Exercise** block asks the reader to do something before they see the answer. Readers answer in place, press **Check answer**, and see your solution. Answers aren't graded and stay in the reader's browser, except poll votes, which are counted so everyone sees the results. It's practice, for them. Every exercise on this page is live, so try them.
 
 ## Adding one
 
@@ -698,7 +698,7 @@ ${block("exercise", { exerciseType: "short_answer", prompt: "In one sentence: wh
 
 ## Poll
 
-No right answer: readers pick an option and press **Submit Vote**. Use it to get readers thinking about where they stand before the argument starts.
+No right answer: readers pick an option, press **Submit vote**, and see how everyone else voted. Use it to get readers thinking about where they stand before the argument starts.
 
 ${block("exercise", { exerciseType: "poll", prompt: "How do you usually read a long guide?", options: [{ id: "a", text: "Skim the headings first" }, { id: "b", text: "Top to bottom" }, { id: "c", text: "Jump to the part I need" }] })}
 

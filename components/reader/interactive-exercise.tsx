@@ -5,6 +5,21 @@ import { Check, Edit2, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { castPollVote, getPollResults } from "@/actions/polls"
+
+type PollResults = { total: number; rows: { option: string; count: number; percent: number }[] }
+
+// Guests vote with a random id kept in this browser, so a refresh doesn't count twice.
+function voterId() {
+  try {
+    let id = localStorage.getItem("nib_voter")
+    if (!id) localStorage.setItem("nib_voter", (id = crypto.randomUUID()))
+    return id
+  } catch {
+    return undefined
+  }
+}
 
 export function InteractiveExercise({
   blockId,
@@ -26,6 +41,23 @@ export function InteractiveExercise({
   )
   const [isCommitted, setIsCommitted] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [poll, setPoll] = useState<PollResults | null>(null)
+  const isPoll = exerciseType === "poll"
+
+  // A returning voter sees the current results straight away.
+  useEffect(() => {
+    if (isPoll && isCommitted && !poll) getPollResults(blockId).then((r) => r && setPoll(r)).catch(() => {})
+  }, [isPoll, isCommitted, poll, blockId])
+
+  const submit = async () => {
+    if (!isPoll) return setIsCommitted(true)
+    try {
+      setPoll(await castPollVote(blockId, userAnswer as string, voterId()))
+      setIsCommitted(true)
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -85,6 +117,31 @@ export function InteractiveExercise({
         <div className="space-y-2">
           {validOptions.map((opt, i) => {
             const isSelected = userAnswer === opt.text
+            const row = isPoll && isCommitted ? poll?.rows.find((r) => r.option === (opt.text ?? "").trim()) : undefined
+            if (row) {
+              return (
+                <div
+                  key={opt.id || i}
+                  className={`relative overflow-hidden rounded-md border px-4 py-3 ${isSelected ? "border-primary" : "border-border"}`}
+                >
+                  <span
+                    aria-hidden
+                    className={`absolute inset-y-0 left-0 transition-[width] duration-500 ${isSelected ? "bg-primary/20" : "bg-muted"}`}
+                    style={{ width: `${row.percent}%` }}
+                  />
+                  <span className="relative flex items-center justify-between gap-4">
+                    <span className="flex items-center gap-2">
+                      {opt.text}
+                      {isSelected && <Check className="size-4 text-primary" aria-label="Your vote" />}
+                    </span>
+                    <span className="shrink-0 text-sm tabular-nums">
+                      <span className="font-medium">{row.percent}%</span>
+                      <span className="text-muted-foreground"> · {row.count}</span>
+                    </span>
+                  </span>
+                </div>
+              )
+            }
             let styleClass =
               "border-border hover:border-primary hover:bg-primary/5"
             if (isSelected && !isCommitted)
@@ -229,12 +286,12 @@ export function InteractiveExercise({
 
         {!isCommitted ? (
           <Button
-            onClick={() => setIsCommitted(true)}
+            onClick={submit}
             disabled={isAnswerEmpty()}
             className="w-full gap-2 sm:w-auto"
           >
             <Check className="size-4" />
-            {exerciseType === "poll" ? "Submit Vote" : "Check Answer"}
+            {isPoll ? "Submit vote" : "Check answer"}
           </Button>
         ) : (
           <div className="mt-4 flex animate-in flex-col gap-4 duration-300 fade-in slide-in-from-top-2">
@@ -246,8 +303,13 @@ export function InteractiveExercise({
                 className="gap-2 text-muted-foreground"
               >
                 <Edit2 className="size-3" />
-                Revise Answer
+                {isPoll ? "Change vote" : "Revise answer"}
               </Button>
+              {isPoll && poll && (
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {poll.total} {poll.total === 1 ? "vote" : "votes"}
+                </span>
+              )}
             </div>
 
             {(answer ||
