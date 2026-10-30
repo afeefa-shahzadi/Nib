@@ -70,12 +70,12 @@ export const PILLARS = [
     id: "debates",
     label: "Debates",
     title: "Structured disagreement.",
-    body: "Convert any claim block into a debate. Readers post responses tagged to specific blocks. The strongest counter — measured by citations and engagement — surfaces first.",
+    body: "Open a debate room on any piece with a prompt. Readers post responses marked for, against, a question or a comment, and the room sits under the piece for everyone to follow.",
     bullets: [
-      "Block-anchored threading",
-      "Surface the strongest counter-arguments",
-      "Author-moderated synthesis",
-      "Debates can be branched into a new piece",
+      "Every response carries a stance: for, against, question or comment",
+      "Public, members-only or organization-only rooms",
+      "The room's creator can delete it",
+      "Linked from the piece's Counterpoints mode",
     ],
   },
   {

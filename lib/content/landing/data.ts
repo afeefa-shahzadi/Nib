@@ -28,7 +28,7 @@ export const FEATURE_BLOCKS = [
   {
     label: "Debates",
     anchor: "debates",
-    body: "Open a contested claim to responses. Readers vote, and the strongest counter-argument rises.",
+    body: "Open a debate room on a piece. Readers respond for, against, with a question or a comment.",
   },
   {
     label: "Your audience",
