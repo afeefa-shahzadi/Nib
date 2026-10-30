@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient, createClient } from "@/lib/supabase/server"
 import { ActionContext } from "@/lib/types/actions"
 import { hasStudioAccess } from "@/lib/plan"
 import { CO_COLS } from "../../helpers"
@@ -178,6 +178,7 @@ export async function getStudioStats(args: { data?: any } = {}) {
     data: { days?: number; org_id?: string | null }
     context: ActionContext
   }) => {
+    if (!context.userId) return null
     const { data: profile } = await context.supabase.from("profiles").select("plan").eq("id", context.userId).single()
     if (!hasStudioAccess(profile?.plan)) {
       return null
@@ -240,7 +241,9 @@ export async function getStudioStats(args: { data?: any } = {}) {
         .select("*", { count: "exact", head: true })
         .eq("status", "active")
         .eq("author_id", context.userId),
-      context.supabase
+      // Purchases RLS only shows buyers their own rows; read the author's
+      // sales with the admin client, scoped to the signed-in author.
+      (await createAdminClient())
         .from("purchases")
         .select("amount_paise, created_at")
         .eq("status", "paid")
@@ -264,10 +267,13 @@ export async function getStudioStats(args: { data?: any } = {}) {
 
     let currentRevenue = 0
     let prevRevenue = 0
+    const revenueByDay: Record<string, number> = {}
 
     for (const r of revenueRows ?? []) {
       if (r.created_at >= since) {
         currentRevenue += r.amount_paise || 0
+        const k = String(r.created_at).slice(0, 10)
+        revenueByDay[k] = (revenueByDay[k] ?? 0) + (r.amount_paise || 0)
       } else {
         prevRevenue += r.amount_paise || 0
       }
@@ -287,6 +293,7 @@ export async function getStudioStats(args: { data?: any } = {}) {
       debateRooms: debateRooms ?? 0,
       revenue30dPaise: currentRevenue,
       revenueDelta,
+      revenueByDay,
     }
   }
   return await __handler({
@@ -312,6 +319,7 @@ export async function getRecentActivity(args: { data?: any } = {}) {
     data: { org_id?: string | null }
     context: ActionContext
   }) => {
+    if (!context.userId) return null
     let piecesQuery = context.supabase
       .from("content_objects")
       .select("id, title, status, updated_at, published_at")
@@ -332,7 +340,7 @@ export async function getRecentActivity(args: { data?: any } = {}) {
           .eq("author_id", context.userId)
           .order("started_at", { ascending: false })
           .limit(8),
-        context.supabase
+        (await createAdminClient())
           .from("purchases")
           .select("id, user_id, amount_paise, kind, created_at, status")
           .eq("author_id", context.userId)

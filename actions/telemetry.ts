@@ -133,6 +133,7 @@ export async function getAuthorTelemetry(args: { data?: any } = {}) {
     const byDay = new Map<
       string,
       {
+        day: string
         date: string
         views: number
         uniqueViews: number
@@ -147,6 +148,7 @@ export async function getAuthorTelemetry(args: { data?: any } = {}) {
       const d = new Date(Date.now() - i * 86_400_000)
       const key = d.toISOString().slice(0, 10)
       byDay.set(key, {
+        day: key,
         date: d.toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
         views: 0,
         uniqueViews: 0,
