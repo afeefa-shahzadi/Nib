@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
-import { listMessages, postMessage } from "@/actions/debate"
+import { getRoomContext, listMessages, postMessage, setRoomSummary } from "@/actions/debate"
+import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { DebateMessage } from "@/lib/types/content"
@@ -25,6 +26,13 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
     "for" | "against" | "comment" | "question"
   >("comment")
   const [posting, setPosting] = useState(false)
+  const [blocks, setBlocks] = useState<{ id: string; excerpt: string }[]>([])
+  const [blockId, setBlockId] = useState("")
+  const [summary, setSummary] = useState<string | null>(null)
+  const [canEditSummary, setCanEditSummary] = useState(false)
+  const [editingSummary, setEditingSummary] = useState(false)
+  const [summaryDraft, setSummaryDraft] = useState("")
+  const excerptOf = (id?: string | null) => (id ? blocks.find((b) => b.id === id)?.excerpt : undefined)
   const fetchMsgs = listMessages
   const send = postMessage
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -36,6 +44,14 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
     fetchMsgs({ data: { room_id: roomId } }).then((r) => {
       if (active) setMsgs(r)
     })
+    getRoomContext({ data: { room_id: roomId } })
+      .then((c) => {
+        if (!active) return
+        setBlocks(c.blocks)
+        setSummary(c.summary)
+        setCanEditSummary(c.canEditSummary)
+      })
+      .catch(() => {})
     const channel = supabase
       .channel(`debate:${roomId}`)
       .on(
@@ -73,6 +89,7 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
     setPosting(true)
     const currentBody = body.trim()
     const currentStance = stance
+    const currentBlock = blockId || null
 
     // Optimistic update
     const tempId = crypto.randomUUID()
@@ -84,15 +101,17 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
         user_id: "optimistic",
         stance: currentStance,
         body: currentBody,
+        block_id: currentBlock,
         created_at: new Date().toISOString(),
         author: { handle: "you", display_name: "You" },
       },
     ])
     setBody("")
+    setBlockId("")
 
     try {
       await send({
-        data: { room_id: roomId, stance: currentStance, body: currentBody },
+        data: { room_id: roomId, stance: currentStance, body: currentBody, block_id: currentBlock },
       })
       // Subscription will automatically trigger fetchMsgs to overwrite this optimistic update
     } catch (e: any) {
@@ -105,11 +124,53 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
     }
   }
 
+  async function saveSummary() {
+    try {
+      const r = await setRoomSummary({ data: { room_id: roomId, summary: summaryDraft } })
+      setSummary(r.summary)
+      setEditingSummary(false)
+    } catch (e) {
+      toast.error((e as Error).message)
+    }
+  }
+
   return (
     <div className="surface rounded-md p-5">
       <p className="text-xs tracking-wider text-primary uppercase">Debate</p>
       <p className="mt-1 font-display text-xl text-foreground">{title}</p>
       {prompt && <p className="mt-2 text-sm text-muted-foreground">{prompt}</p>}
+      {editingSummary ? (
+        <div className="mt-3 space-y-2">
+          <Textarea
+            value={summaryDraft}
+            onChange={(e) => setSummaryDraft(e.target.value)}
+            maxLength={2000}
+            rows={3}
+            aria-label="Where the debate landed"
+            placeholder="Where did this debate land?"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={saveSummary}>Pin summary</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditingSummary(false)}>Cancel</Button>
+          </div>
+        </div>
+      ) : summary ? (
+        <div className="mt-3 rounded-md border-l-2 border-primary bg-muted/40 p-3 text-sm">
+          <p className="text-xs tracking-wider text-primary uppercase">Where it landed</p>
+          <p className="mt-1 whitespace-pre-wrap text-foreground/90">{summary}</p>
+          {canEditSummary && (
+            <button onClick={() => { setSummaryDraft(summary); setEditingSummary(true) }} className="mt-1 text-xs text-muted-foreground hover:text-foreground">
+              Edit summary
+            </button>
+          )}
+        </div>
+      ) : (
+        canEditSummary && (
+          <button onClick={() => { setSummaryDraft(""); setEditingSummary(true) }} className="mt-3 text-xs text-primary hover:underline">
+            Pin a summary of where this landed
+          </button>
+        )
+      )}
 
       <div
         ref={containerRef}
@@ -156,6 +217,11 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
                 </button>
               )}
             </div>
+            {excerptOf(m.block_id) && (
+              <blockquote className="mt-1 border-l-2 border-border pl-2 text-xs text-muted-foreground italic">
+                {excerptOf(m.block_id)}
+              </blockquote>
+            )}
             <div
               className="mt-1 whitespace-pre-wrap text-foreground/90 prose prose-sm dark:prose-invert max-w-none prose-p:my-1"
               dangerouslySetInnerHTML={{ __html: sanitize(m.body) }}
@@ -180,6 +246,21 @@ export function DebateRoom({ roomId, title, prompt, authed }: Props) {
               </button>
             ))}
           </div>
+          {blocks.length > 0 && (
+            <select
+              value={blockId}
+              onChange={(e) => setBlockId(e.target.value)}
+              aria-label="What this response is about"
+              className="h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
+            >
+              <option value="">About the whole piece</option>
+              {blocks.map((b, i) => (
+                <option key={b.id} value={b.id}>
+                  ¶{i + 1}: {b.excerpt.length > 60 ? b.excerpt.slice(0, 60) + "…" : b.excerpt}
+                </option>
+              ))}
+            </select>
+          )}
           <CommentEditor
             ref={editorRef}
             value={body}

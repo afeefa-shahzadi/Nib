@@ -70,7 +70,7 @@ async function canAccessRoom(
 }
 
 const ROOM_ACCESS_COLS =
-  "id, title, prompt, access_mode, required_tier_id, branch_id, created_at, is_public, created_by, org_id"
+  "id, title, prompt, access_mode, required_tier_id, branch_id, created_at, is_public, created_by, org_id, content_object_id, summary"
 
 // PUBLIC: list rooms accessible to the caller for a piece
 export async function listRoomsForPiece(args: { data?: any } = {}) {
@@ -119,7 +119,7 @@ export async function listMessages(args: { data?: any } = {}) {
       throw new Error("Not authorized")
     const { data: msgs, error } = await client
       .from("debate_messages")
-      .select("id, user_id, stance, body, created_at")
+      .select("id, user_id, stance, body, created_at, block_id")
       .eq("room_id", data.room_id)
       .order("created_at", { ascending: true })
       .limit(500)
@@ -151,6 +151,7 @@ export async function listMessages(args: { data?: any } = {}) {
         stance: string
         body: string
         created_at: string
+        block_id: string | null
       }) => ({
         ...m,
         author: map.get(m.user_id) ?? null,
@@ -320,7 +321,7 @@ export async function postMessage(args: { data?: any } = {}) {
     data,
     context,
   }: {
-    data: { room_id: string; stance: string; body: string }
+    data: { room_id: string; stance: string; body: string; block_id?: string | null }
     context: ActionContext
   }) => {
     if (!context.userId) throw new Error("Unauthorized")
@@ -338,11 +339,18 @@ export async function postMessage(args: { data?: any } = {}) {
     ) {
       throw new Error("Not authorized")
     }
+    const blockId = data.block_id || null
+    if (blockId) {
+      const free = await freeBlocks(context.supabase, (room as { content_object_id: string }).content_object_id)
+      if (!free.some((b) => b.id === blockId))
+        throw new Error("That paragraph isn't part of this piece")
+    }
     const { error } = await context.supabase.from("debate_messages").insert({
       room_id: data.room_id,
       user_id: context.userId,
       stance: data.stance,
       body: data.body,
+      block_id: blockId,
     })
     if (error) {
       console.error("[server]", error)
@@ -351,9 +359,66 @@ export async function postMessage(args: { data?: any } = {}) {
     return { ok: true }
   }
   return await __handler({
-    data: args?.data as { room_id: string; stance: string; body: string },
+    data: args?.data as { room_id: string; stance: string; body: string; block_id?: string | null },
     context,
   })
+}
+
+// A piece's free paragraphs with a short excerpt each. Paid blocks are left
+// out so a room never leaks text behind the paywall.
+async function freeBlocks(supabase: SupabaseClient, contentObjectId: string) {
+  const { data } = await supabase
+    .from("blocks")
+    .select("id, content, monetization_eligible")
+    .eq("content_object_id", contentObjectId)
+    .order("order", { ascending: true })
+  return ((data ?? []) as { id: string; content: Record<string, unknown>; monetization_eligible: boolean | null }[])
+    .filter((b) => !b.monetization_eligible)
+    .map((b) => {
+      const raw = typeof b.content?.text === "string" ? b.content.text : typeof b.content?.html === "string" ? b.content.html : ""
+      const text = raw.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+      return { id: b.id, excerpt: text.length > 120 ? text.slice(0, 120).trimEnd() + "…" : text }
+    })
+    .filter((b) => b.excerpt)
+}
+
+async function accessibleRoom(supabase: SupabaseClient, roomId: string, userId: string | null) {
+  const { data: room } = await supabase.from("debate_rooms").select(ROOM_ACCESS_COLS).eq("id", roomId).maybeSingle()
+  if (!room || !(await canAccessRoom(supabase, room as RoomAccess, userId))) throw new Error("Not authorized")
+  return room as RoomAccess & { content_object_id: string; summary: string | null }
+}
+
+// PUBLIC: what a room needs beyond its messages: the paragraphs a response can
+// be tied to, the pinned summary, and whether the caller may edit it.
+export async function getRoomContext(args: { data?: any } = {}) {
+  const supabaseAdmin = await createAdminClient()
+  const { data: _auth } = await (await createClient()).auth.getUser()
+  const userId = _auth?.user?.id ?? null
+  const room = await accessibleRoom(supabaseAdmin, (args?.data ?? {}).room_id, userId)
+  return {
+    summary: room.summary ?? null,
+    canEditSummary: !!userId && room.created_by === userId,
+    blocks: await freeBlocks(supabaseAdmin, room.content_object_id),
+  }
+}
+
+// ROOM CREATOR: pin (or clear) the closing summary of a debate
+export async function setRoomSummary(args: { data?: any } = {}) {
+  const supabaseAdmin = await createAdminClient()
+  const { data: _auth } = await (await createClient()).auth.getUser()
+  const userId = _auth?.user?.id
+  if (!userId) throw new Error("Unauthorized")
+  const { room_id, summary } = (args?.data ?? {}) as { room_id: string; summary: string }
+  const room = await accessibleRoom(supabaseAdmin, room_id, userId)
+  if (room.created_by !== userId) throw new Error("Not authorized")
+  const text = (summary ?? "").trim()
+  if (text.length > 2000) throw new Error("Keep the summary under 2,000 characters")
+  const { error } = await supabaseAdmin.from("debate_rooms").update({ summary: text || null }).eq("id", room_id)
+  if (error) {
+    console.error("[server]", error)
+    throw new Error("Request failed. Please try again.")
+  }
+  return { summary: text || null }
 }
 
 // AUTHOR: search own followers/following to invite (handle/display_name match)

@@ -305,6 +305,7 @@ export interface DebateMessage {
   body: string
   created_at: string
   author?: { id?: string; handle: string | null; display_name: string } | null
+  block_id?: string | null
 }
 
 // Related piece structure used in reader

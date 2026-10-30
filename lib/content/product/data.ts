@@ -74,7 +74,8 @@ export const PILLARS = [
     bullets: [
       "Every response carries a stance: for, against, question or comment",
       "Public, members-only or organization-only rooms",
-      "The room's creator can delete it",
+      "Responses can point to the exact paragraph they argue with",
+      "The room's creator pins a summary of where the debate landed",
       "Linked from the piece's Counterpoints mode",
     ],
   },
